@@ -9,6 +9,14 @@
 *.exe
 *.out
 *.app
+*.docx
+*.xlsx
+*.pptx
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
 
 # IDE and editor files
 /.vscode/
