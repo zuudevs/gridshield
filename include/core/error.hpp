@@ -2,7 +2,7 @@
  * @file error.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief 
- * @version 0.1
+ * @version 0.2
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <utility>
+#include <new>
 
 namespace gridshield::core {
 
@@ -93,17 +94,18 @@ private:
 template<typename T>
 class Result {
 public:
-    constexpr Result(T&& value) noexcept 
+    // Removed constexpr because placement new is not constexpr-friendly in C++11/14
+    Result(T&& value) noexcept 
         : has_value_(true), error_(ErrorCode::Success) {
         new (&storage_.value) T(std::move(value));
     }
     
-    constexpr Result(const T& value) noexcept 
+    Result(const T& value) noexcept 
         : has_value_(true), error_(ErrorCode::Success) {
         new (&storage_.value) T(value);
     }
     
-    constexpr Result(ErrorContext error) noexcept 
+    Result(ErrorContext error) noexcept 
         : has_value_(false), error_(error) {}
     
     ~Result() {
@@ -134,15 +136,16 @@ public:
         }
     }
     
-    constexpr bool is_ok() const noexcept { return has_value_; }
-    constexpr bool is_error() const noexcept { return !has_value_; }
+    bool is_ok() const noexcept { return has_value_; }
+    bool is_error() const noexcept { return !has_value_; }
     
-    constexpr T& value() noexcept { return storage_.value; }
-    constexpr const T& value() const noexcept { return storage_.value; }
+    // Removed constexpr and overloads causing ambiguity in older compilers
+    T& value() noexcept { return storage_.value; }
+    const T& value() const noexcept { return storage_.value; }
     
-    constexpr ErrorContext error() const noexcept { return error_; }
+    ErrorContext error() const noexcept { return error_; }
     
-    constexpr T value_or(T&& default_value) const noexcept {
+    T value_or(T&& default_value) const noexcept {
         return has_value_ ? storage_.value : std::move(default_value);
     }
     

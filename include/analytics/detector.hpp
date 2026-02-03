@@ -2,7 +2,7 @@
  * @file detector.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief 
- * @version 0.1
+ * @version 0.2
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -109,12 +109,14 @@ struct CrossLayerValidation {
           consumption_anomaly_detected(false),
           validation_timestamp(0) {}
     
-    constexpr bool requires_investigation() const noexcept {
+    // Removed constexpr because complexity/multiple returns might fail on older compilers
+    bool requires_investigation() const noexcept {
         return (physical_tamper_detected && consumption_anomaly_detected) ||
                (network_anomaly_detected && consumption_anomaly_detected);
     }
     
-    constexpr core::Priority get_priority() const noexcept {
+    // Removed constexpr because complexity/multiple returns might fail on older compilers
+    core::Priority get_priority() const noexcept {
         if (physical_tamper_detected && consumption_anomaly_detected && network_anomaly_detected) {
             return core::Priority::Emergency;
         }
