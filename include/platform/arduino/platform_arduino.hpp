@@ -13,7 +13,6 @@
 
 #include <Arduino.h>
 #include "platform/platform.hpp"
-#include <vector>
 
 namespace gridshield::platform::arduino {
 

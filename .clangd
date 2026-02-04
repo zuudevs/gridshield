@@ -1,0 +1,23 @@
+CompileFlags:
+  Add:
+    - --target=avr
+    - -mmcu=atmega328p
+    - -std=c++14   # ENABLE std::move, auto, nullptr, dll
+
+    # Arduino core
+    - -ID:/Project/gridshield/include/platform/arduino/core
+    - -ID:/Project/gridshield/include/platform/arduino/variants/standard
+
+    # AVR libc
+    - -ID:/Project/gridshield/include/platform/arduino/libc
+
+    # Arduino libraries
+    - -ID:/Project/gridshield/include/platform/arduino/libraries/SoftwareSerial/src
+    - -ID:/Project/gridshield/include/platform/arduino/libraries/EEPROM/src
+    - -ID:/Project/gridshield/include/platform/arduino/libraries/SPI/src
+    - -ID:/Project/gridshield/include/platform/arduino/libraries/Wire/src
+    - -ID:/Project/gridshield/include/platform/arduino/libraries/HID/src
+
+    # defines
+    - -DARDUINO_AVR_UNO
+    - -DF_CPU=16000000L

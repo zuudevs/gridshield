@@ -11,8 +11,16 @@
 
 #pragma once
 
-#include <cstdint>
-#include <utility>
+#if defined(__AVR__)
+  #define ZMOVE(x) (x)
+#else
+  #include <utility>
+  #define ZMOVE(x) std::move(x)
+#endif
+
+
+#include <stdint.h>
+#include <SoftwareSerial.h>
 #include <new>
 
 namespace gridshield::core {
@@ -97,7 +105,7 @@ public:
     // Removed constexpr because placement new is not constexpr-friendly in C++11/14
     Result(T&& value) noexcept 
         : has_value_(true), error_(ErrorCode::Success) {
-        new (&storage_.value) T(std::move(value));
+        new (&storage_.value) T(ZMOVE(value));
     }
     
     Result(const T& value) noexcept 
@@ -132,7 +140,7 @@ public:
     
     Result(Result&& other) noexcept : has_value_(other.has_value_), error_(other.error_) {
         if (has_value_) {
-            new (&storage_.value) T(std::move(other.storage_.value));
+            new (&storage_.value) T(ZMOVE(other.storage_.value));
         }
     }
     
@@ -146,7 +154,7 @@ public:
     ErrorContext error() const noexcept { return error_; }
     
     T value_or(T&& default_value) const noexcept {
-        return has_value_ ? storage_.value : std::move(default_value);
+        return has_value_ ? storage_.value : ZMOVE(default_value);
     }
     
 private:

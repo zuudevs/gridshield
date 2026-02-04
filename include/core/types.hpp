@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstring>
+#include <stdint.h>
+#include <string.h>
 
 namespace gridshield::core {
 

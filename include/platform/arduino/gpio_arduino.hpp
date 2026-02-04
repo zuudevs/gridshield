@@ -11,6 +11,10 @@
 
 #pragma once
 
+#if !defined(INPUT_PULLDOWN)
+  #define INPUT_PULLDOWN INPUT
+#endif
+
 #include <Arduino.h>
 #include "platform/platform.hpp"
 
