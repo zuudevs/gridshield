@@ -36,7 +36,7 @@ platform::PlatformServices services;
 // 3. Main System
 GridShieldSystem* gridSystem = nullptr;
 
-void setup() {
+void gridshield_setup() {
     // 1. Inisialisasi Serial untuk Debugging
     Serial.begin(115200);
     while (!Serial) { delay(10); } // Tunggu serial monitor (opsional)
@@ -92,7 +92,7 @@ void setup() {
     }
 }
 
-void loop() {
+void gridshield_loop() {
     // Jalankan siklus proses utama GridShield
     if (gridSystem) {
         gridSystem->process_cycle();

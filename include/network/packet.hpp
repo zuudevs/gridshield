@@ -11,6 +11,13 @@
 
 #pragma once
 
+#if defined(__AVR__)
+  #define ZMOVE(x) (x)
+#else
+  #include <utility>
+  #define ZMOVE(x) std::move(x)
+#endif
+
 #include "core/error.hpp"
 #include "core/types.hpp"
 #include "platform/platform.hpp"

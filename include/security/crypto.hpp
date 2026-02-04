@@ -14,7 +14,7 @@
 #include "core/error.hpp"
 #include "core/types.hpp"
 #include "platform/platform.hpp"
-#include <cstdint>
+#include <stdint.h>
 
 namespace gridshield::security {
 

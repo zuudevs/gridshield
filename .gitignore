@@ -1,14 +1,26 @@
+# =========================
 # Build artifacts
+# =========================
 /bin/
 /build/
+/build-*/
 /.cache/
 
-# Compiled object files
+# =========================
+# Compiled object & binaries
+# =========================
 *.o
 *.obj
 *.exe
 *.out
 *.app
+*.elf
+*.hex
+
+# =========================
+# Documents & media (generated)
+# =========================
+*.pdf
 *.docx
 *.xlsx
 *.pptx
@@ -16,51 +28,65 @@
 *.jpg
 *.jpeg
 *.gif
-*.pdf
 
-# IDE and editor files
-/.vscode/
-/.idea/
+# =========================
+# IDE & editor files
+# =========================
+.vscode/
+.idea/
 *.swp
 *.swo
 *~
 .clangd/
 compile_commands.json
 
+# =========================
 # CMake
+# =========================
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
-Makefile
 *.cmake
 !CMakeLists.txt
 
-# Configuration files (keep examples)
+# =========================
+# Configuration files
+# =========================
 *.conf
 !example.conf
 
+# =========================
 # Operating system files
+# =========================
 .DS_Store
 Thumbs.db
 Desktop.ini
 ehthumbs.db
 
+# =========================
 # Compiled libraries
+# =========================
 *.so
 *.dylib
 *.dll
 *.a
 *.lib
 
-# Log files
+# =========================
+# Logs & temp
+# =========================
 *.log
+*.tmp
 
-# Package files
+# =========================
+# Archives
+# =========================
 *.zip
 *.tar.gz
 *.rar
 
+# =========================
 # Backup files
+# =========================
 *.bak
 *.backup
-*~

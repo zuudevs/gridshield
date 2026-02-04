@@ -18,7 +18,6 @@
   #define ZMOVE(x) std::move(x)
 #endif
 
-
 #include <stdint.h>
 #include <SoftwareSerial.h>
 #include <new>

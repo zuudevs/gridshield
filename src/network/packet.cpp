@@ -10,7 +10,7 @@
  */
 
 #include "network/packet.hpp"
-#include <cstring>
+#include <string.h>
 
 namespace gridshield::network {
 
@@ -252,7 +252,7 @@ core::Result<SecurePacket> PacketTransport::receive_packet(security::ICryptoEngi
         return parse_result.error();
     }
     
-    return core::Result<SecurePacket>(std::move(packet));
+    return core::Result<SecurePacket>(ZMOVE(packet));
 }
 
 } // namespace gridshield::network

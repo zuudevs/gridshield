@@ -9,7 +9,7 @@
  * 
  */
 
-#include "analytics/detector.hpp"
+#include "../../include/analytics/detector.hpp"
 
 namespace gridshield::analytics {
 

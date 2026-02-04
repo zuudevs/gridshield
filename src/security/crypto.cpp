@@ -10,7 +10,7 @@
  */
 
 #include "security/crypto.hpp"
-#include <cstring>
+#include <string.h>
 
 namespace gridshield::security {
 
