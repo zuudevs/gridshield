@@ -10,7 +10,12 @@
  */
 
 #include "network/packet.hpp"
-#include <string.h>
+
+#if	defined(__AVR__) || defined(__ARDUINO_ARCH_AVR__)
+	#include <string.h>
+#elif defined(__CLANG__) || defined(__GNUC__) || defined(__GNUG__)
+	#include <string>
+#endif 
 
 namespace gridshield::network {
 
@@ -140,12 +145,12 @@ core::Result<void> SecurePacket::parse(const uint8_t* buffer,
 
 core::Result<size_t> SecurePacket::serialize(uint8_t* buffer, size_t buffer_size) const noexcept {
     if (!is_valid_) {
-        return MAKE_ERROR(core::ErrorCode::InvalidState);
+        return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidState));
     }
     
     size_t required_size = sizeof(PacketHeader) + header_.payload_length + sizeof(PacketFooter);
     if (buffer_size < required_size) {
-        return MAKE_ERROR(core::ErrorCode::BufferOverflow);
+        return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::BufferOverflow));
     }
     
     // Serialize header
@@ -238,18 +243,18 @@ core::Result<SecurePacket> PacketTransport::receive_packet(security::ICryptoEngi
     
     auto recv_result = comm_.receive(buffer, sizeof(buffer), timeout_ms);
     if (recv_result.is_error()) {
-        return recv_result.error();
+        return core::Result<SecurePacket>(recv_result.error());
     }
     
     size_t received_bytes = recv_result.value();
     if (received_bytes < sizeof(PacketHeader) + sizeof(PacketFooter)) {
-        return MAKE_ERROR(core::ErrorCode::InvalidPacket);
+        return core::Result<SecurePacket>(MAKE_ERROR(core::ErrorCode::InvalidPacket));
     }
     
     SecurePacket packet;
     auto parse_result = packet.parse(buffer, received_bytes, crypto, keypair);
     if (parse_result.is_error()) {
-        return parse_result.error();
+        return core::Result<SecurePacket>(parse_result.error());
     }
     
     return core::Result<SecurePacket>(ZMOVE(packet));

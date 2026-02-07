@@ -10,7 +10,12 @@
  */
 
 #include "security/crypto.hpp"
-#include <string.h>
+
+#if	defined(__AVR__) || defined(__ARDUINO_ARCH_AVR__)
+	#include <string.h>
+#elif defined(__CLANG__) || defined(__GNUC__) || defined(__GNUG__)
+	#include <string>
+#endif 
 
 namespace gridshield::security {
 
@@ -145,14 +150,14 @@ core::Result<bool> CryptoEngine::verify(const ECCKeyPair& keypair,
                                         const uint8_t* message, size_t msg_len,
                                         const uint8_t* signature) noexcept {
     if (!keypair.has_public_key() || message == nullptr || signature == nullptr) {
-        return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+        return core::Result<bool>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
     }
     
     // Hash the message
     uint8_t hash[32];
     auto result = hash_sha256(message, msg_len, hash);
     if (result.is_error()) {
-        return result.error();
+        return core::Result<bool>(result.error());
     }
     
     // Placeholder: In production, verify ECDSA signature
@@ -185,7 +190,7 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(const uint8_t* key,
                                                    uint8_t* tag_out) noexcept {
     if (key == nullptr || nonce == nullptr || plaintext == nullptr || 
         ciphertext_out == nullptr || tag_out == nullptr) {
-        return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+        return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
     }
     
     // Placeholder: In production, use AES-256-GCM
@@ -197,7 +202,7 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(const uint8_t* key,
     // Generate dummy authentication tag
     auto result = platform_crypto_.random_bytes(tag_out, 16);
     if (result.is_error()) {
-        return result.error();
+        return core::Result<size_t>(result.error());
     }
     
     return core::Result<size_t>(pt_len);
@@ -210,7 +215,7 @@ core::Result<size_t> CryptoEngine::decrypt_aes_gcm(const uint8_t* key,
                                                    uint8_t* plaintext_out) noexcept {
     if (key == nullptr || nonce == nullptr || ciphertext == nullptr || 
         tag == nullptr || plaintext_out == nullptr) {
-        return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+        return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
     }
     
     // Placeholder: In production, verify tag then decrypt

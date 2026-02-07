@@ -148,6 +148,8 @@ void TamperDetector::handle_tamper_event() noexcept {
         // Debounce check
         platform_->time->delay_ms(config_.debounce_ms);
         
+		// FIXME: Overload resolution selected deleted operator '='clang(ovl_deleted_oper)
+		// error.hpp(96, 13): Candidate function has been explicitly deleted
         read_result = platform_->gpio->read(config_.sensor_pin);
         if (read_result.is_error() || read_result.value()) {
             return; // False trigger or read error

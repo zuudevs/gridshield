@@ -1,75 +1,61 @@
 cmake_minimum_required(VERSION 3.20)
+
 project(
-    gridshield
+    GRIDSHIELD
     VERSION 1.0.0
-    DESCRIPTION "Multi-layer Security Model for Protection of AMI (Advanced Metering Infrastructure) Systems"
-    LANGUAGES CXX
+    DESCRIPTION "Multi-layer Security Model for AMI Systems"
+    LANGUAGES CXX C
 )
 
-set(CMAKE_CXX_STANDARD 23)
+if(NOT DEFINED PLATFORM)
+    set(PLATFORM "NATIVE")
+endif()
+
+message(STATUS "═══════════════════════════════════")
+message(STATUS " Target Platform: ${PLATFORM}")
+
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${PLATFORM})
 
-# Compiler warnings and optimizations
-if(MSVC)
-    add_compile_options(
-        /W4 
-        /permissive-
-        /utf-8
-    )
-else()
-    add_compile_options(
-        -Wall 
-        -Wextra 
-        -Wpedantic 
-        -Wconversion 
-        -Wshadow
-        -Wno-unused-parameter
-    )
-endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    if(MSVC)
-        add_compile_options(/O2)
-    else()
-        add_compile_options(-O3)
-    endif()
-endif()
-
-# Source files
-set(GRIDSHIELD_SOURCES
+add_executable(${PROJECT_NAME} 
     src/main.cpp
-    src/core/system.cpp
-    src/hardware/tamper.cpp
-    src/security/crypto.cpp
-    src/network/packet.cpp
-    src/analytics/detector.cpp
 )
 
-# Create executable
-add_executable(${PROJECT_NAME} ${GRIDSHIELD_SOURCES})
-
-# Include directories
 target_include_directories(${PROJECT_NAME} PRIVATE 
     "${CMAKE_SOURCE_DIR}/include"
 )
 
-# Installation rules
-install(TARGETS ${PROJECT_NAME}
-    RUNTIME DESTINATION bin
-)
+if(PLATFORM STREQUAL "AVR")
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".elf")
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} -O ihex -R .eeprom 
+                $<TARGET_FILE:${PROJECT_NAME}> 
+                ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}.hex
+        COMMENT "Generating HEX file for Arduino..."
+    )
 
-# Print build information
-message(STATUS "")
-message(STATUS "═══════════════════════════════════════════════════════════")
-message(STATUS "  Project: ${PROJECT_NAME}")
-message(STATUS "  Version: ${PROJECT_VERSION}")
-message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "  Compiler: ${CMAKE_CXX_COMPILER_ID}")
-message(STATUS "═══════════════════════════════════════════════════════════")
-message(STATUS "")
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_SIZE} -C --mcu=atmega328p $<TARGET_FILE:${PROJECT_NAME}>
+        COMMENT "Checking Memory Usage..."
+    )
+
+elseif(PLATFORM STREQUAL "NATIVE")
+    if(MSVC)
+        target_compile_options(${PROJECT_NAME} PRIVATE /W4 /utf-8)
+    else()
+        target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
+
+        if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+            target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+            target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+        endif()
+    endif()
+
+endif()
+
+message(STATUS " Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS " Output Dir: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+message(STATUS "═══════════════════════════════════")

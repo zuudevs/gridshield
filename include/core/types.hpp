@@ -11,8 +11,13 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <string.h>
+#if	defined(__AVR__) || defined(__ARDUINO_ARCH_AVR__)
+	#include <stdint.h>
+	#include <string.h>
+#elif defined(__CLANG__) || defined(__GNUC__) || defined(__GNUG__)
+	#include <cstdint>
+	#include <string>
+#endif 
 
 namespace gridshield::core {
 

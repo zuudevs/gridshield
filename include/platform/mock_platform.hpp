@@ -1,45 +1,89 @@
 /**
  * @file mock_platform.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief 
- * @version 0.1
- * @date 2026-02-03
- * 
- * @copyright Copyright (c) 2026
- * 
- */
+ * @brief Mock implementation for platform interfaces
+ * @version 0.2
+ * @date 2026-02-07
+ * * @copyright Copyright (c) 2026
+ * */
 
 #pragma once
 
 #include "platform/platform.hpp"
-#include <chrono>
-#include <random>
+
+#if defined(__AVR__) || defined(ARDUINO_ARCH_AVR)
+    #define PLATFORM_AVR
+    #include <Arduino.h>
+	#include <stdint.h>
+
+    using TimePoint = unsigned long;
+    using Duration  = unsigned long;
+
+#else
+    #define PLATFORM_NATIVE
+    #include <chrono>
+    #include <random>
+    #include <thread>
+	#include <cstdint>
+
+    using SysClock = std::chrono::steady_clock;
+    using TimePoint = std::chrono::time_point<SysClock>;
+    using Duration = std::chrono::milliseconds;
+#endif 
+
+// Helper function untuk waktu sekarang
+inline TimePoint getCurrentTime() {
+    #if defined(PLATFORM_NATIVE)
+        return SysClock::now();
+    #else
+        return millis(); 
+    #endif
+}
 
 namespace gridshield::platform::mock {
 
+// -----------------------------------------------------------------------------
+// MOCK TIME
+// -----------------------------------------------------------------------------
 class MockTime : public IPlatformTime {
 public:
-    MockTime() noexcept : start_time_(std::chrono::steady_clock::now()) {}
+    MockTime() noexcept {
+        #if defined(PLATFORM_NATIVE)
+        start_time_ = SysClock::now();
+        #endif
+    }
     
     core::timestamp_t get_timestamp_ms() noexcept override {
-        auto now = std::chrono::steady_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time_);
-        return static_cast<core::timestamp_t>(duration.count());
+        #if defined(PLATFORM_NATIVE)
+            auto now = SysClock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time_);
+            return static_cast<core::timestamp_t>(duration.count());
+        #else
+            return static_cast<core::timestamp_t>(millis());
+        #endif
     }
     
     void delay_ms(uint32_t ms) noexcept override {
-        auto start = std::chrono::steady_clock::now();
-        while (true) {
-            auto now = std::chrono::steady_clock::now();
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
-            if (elapsed.count() >= ms) break;
-        }
+        #if defined(PLATFORM_NATIVE)
+            // JANGAN pakai while(true) loop kosong! Itu bikin CPU 100%.
+            // Pakai sleep_for dari std::thread.
+            std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+        #else
+            delay(ms);
+        #endif
     }
     
 private:
-    std::chrono::steady_clock::time_point start_time_;
+    // Member ini HANYA boleh ada di Native. 
+    // Kalau di AVR, tipe data ini tidak dikenal.
+    #if defined(PLATFORM_NATIVE)
+    SysClock::time_point start_time_;
+    #endif
 };
 
+// -----------------------------------------------------------------------------
+// MOCK GPIO
+// -----------------------------------------------------------------------------
 class MockGPIO : public IPlatformGPIO {
 public:
     MockGPIO() noexcept {
@@ -50,6 +94,7 @@ public:
     }
     
     core::Result<void> configure(uint8_t pin, PinMode mode) noexcept override {
+        // Mencegah buffer overflow
         if (pin >= 256) {
             return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
@@ -59,7 +104,7 @@ public:
     
     core::Result<bool> read(uint8_t pin) noexcept override {
         if (pin >= 256) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+            return core::Result<bool>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         return core::Result<bool>(pin_states_[pin]);
     }
@@ -72,6 +117,7 @@ public:
         return core::Result<void>();
     }
     
+    // Helper untuk test environment
     void simulate_trigger(uint8_t pin, bool state) {
         if (pin < 256) {
             pin_states_[pin] = state;
@@ -83,6 +129,9 @@ private:
     PinMode pin_modes_[256];
 };
 
+// -----------------------------------------------------------------------------
+// MOCK INTERRUPT
+// -----------------------------------------------------------------------------
 class MockInterrupt : public IPlatformInterrupt {
 public:
     MockInterrupt() noexcept {
@@ -93,7 +142,7 @@ public:
         }
     }
     
-    core::Result<void> attach(uint8_t pin, TriggerMode mode, 
+    core::Result<void> attach(uint8_t pin, TriggerMode /*mode*/, 
                              InterruptCallback callback, 
                              void* context) noexcept override {
         if (pin >= 256 || callback == nullptr) {
@@ -141,29 +190,47 @@ private:
     bool enabled_[256];
 };
 
+// -----------------------------------------------------------------------------
+// MOCK CRYPTO
+// -----------------------------------------------------------------------------
 class MockCrypto : public IPlatformCrypto {
 public:
-    MockCrypto() noexcept : rng_(std::random_device{}()) {}
+    MockCrypto() noexcept {
+        #if defined(PLATFORM_NATIVE)
+            // Seed random engine
+            std::random_device rd;
+            rng_ = std::mt19937(rd());
+        #else
+            // Arduino random seed (baca analog pin yg floating biasanya)
+            randomSeed(analogRead(0));
+        #endif
+    }
     
     core::Result<void> random_bytes(uint8_t* buffer, size_t length) noexcept override {
         if (buffer == nullptr || length == 0) {
             return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
-        std::uniform_int_distribution<int> dist(0, 255);
-        for (size_t i = 0; i < length; ++i) {
-            buffer[i] = static_cast<uint8_t>(dist(rng_));
-        }
+        #if defined(PLATFORM_NATIVE)
+            std::uniform_int_distribution<int> dist(0, 255);
+            for (size_t i = 0; i < length; ++i) {
+                buffer[i] = static_cast<uint8_t>(dist(rng_));
+            }
+        #else
+            for (size_t i = 0; i < length; ++i) {
+                buffer[i] = static_cast<uint8_t>(random(256));
+            }
+        #endif
         
         return core::Result<void>();
     }
     
     core::Result<uint32_t> crc32(const uint8_t* data, size_t length) noexcept override {
         if (data == nullptr) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+            return core::Result<uint32_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
-        // Simple checksum (not real CRC32)
+        // Simple checksum (Mock implementation)
         uint32_t sum = 0;
         for (size_t i = 0; i < length; ++i) {
             sum += data[i];
@@ -177,18 +244,27 @@ public:
             return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
-        // Placeholder hash (not real SHA256)
+        // Placeholder hash
         for (size_t i = 0; i < 32; ++i) {
-            hash_out[i] = static_cast<uint8_t>((data[i % length] + i) & 0xFF);
+            // Safe modulo arithmetic
+            uint8_t val = (length > 0) ? data[i % length] : 0;
+            hash_out[i] = static_cast<uint8_t>((val + i) & 0xFF);
         }
         
         return core::Result<void>();
     }
     
 private:
+    // INI YANG BIKIN ERROR SEBELUMNYA
+    // std::mt19937 tidak ada di Arduino, jadi harus dibungkus #ifdef
+    #if defined(PLATFORM_NATIVE)
     std::mt19937 rng_;
+    #endif
 };
 
+// -----------------------------------------------------------------------------
+// MOCK COMM
+// -----------------------------------------------------------------------------
 class MockComm : public IPlatformComm {
 public:
     MockComm() noexcept : initialized_(false), connected_(true) {
@@ -209,14 +285,14 @@ public:
     
     core::Result<size_t> send(const uint8_t* data, size_t length) noexcept override {
         if (!initialized_ || !connected_) {
-            return MAKE_ERROR(core::ErrorCode::NetworkDisconnected);
+            return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::NetworkDisconnected));
         }
         
         if (data == nullptr || length == 0) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+            return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
-        // Simulate sending by storing in TX buffer
+        // Simpan ke TX buffer (seolah-olah dikirim keluar)
         for (size_t i = 0; i < length && !tx_buffer_.full(); ++i) {
             tx_buffer_.push(data[i]);
         }
@@ -227,24 +303,29 @@ public:
     core::Result<size_t> receive(uint8_t* buffer, size_t max_length, 
                                 uint32_t timeout_ms) noexcept override {
         if (!initialized_ || !connected_) {
-            return MAKE_ERROR(core::ErrorCode::NetworkDisconnected);
+            return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::NetworkDisconnected));
         }
         
         if (buffer == nullptr || max_length == 0) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+            return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        }
+
+        // Simulasi timeout sederhana kalau buffer kosong
+        if (rx_buffer_.empty()) {
+            #if defined(PLATFORM_NATIVE)
+                std::this_thread::sleep_for(std::chrono::milliseconds(1)); 
+            #endif
+            // Kalau real implementation mungkin nunggu sampai timeout, 
+            // tapi untuk mock kita langsung return timeout error saja kalau kosong.
+            return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::NetworkTimeout));
         }
         
-        // Simulate receiving from RX buffer
         size_t received = 0;
         while (received < max_length && !rx_buffer_.empty()) {
             uint8_t byte;
             if (rx_buffer_.pop(byte)) {
                 buffer[received++] = byte;
             }
-        }
-        
-        if (received == 0) {
-            return MAKE_ERROR(core::ErrorCode::NetworkTimeout);
         }
         
         return core::Result<size_t>(received);
@@ -254,8 +335,21 @@ public:
         return connected_;
     }
     
+    // Getter untuk memeriksa apa yang sudah "dikirim" oleh aplikasi (untuk Unit Test)
     const core::StaticBuffer<uint8_t, 2048>& get_tx_buffer() const { return tx_buffer_; }
     
+    // Helper untuk menyuntikkan data "diterima" (untuk Unit Test)
+    void inject_rx_data(const uint8_t* data, size_t len) {
+        for(size_t i=0; i<len && !rx_buffer_.full(); i++) {
+            rx_buffer_.push(data[i]);
+        }
+    }
+    
+    void clear_buffers() {
+        tx_buffer_.clear();
+        rx_buffer_.clear();
+    }
+
 private:
     bool initialized_;
     bool connected_;

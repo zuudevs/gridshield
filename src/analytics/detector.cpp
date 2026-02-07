@@ -9,7 +9,7 @@
  * 
  */
 
-#include "../../include/analytics/detector.hpp"
+#include "analytics/detector.hpp"
 
 namespace gridshield::analytics {
 
@@ -68,7 +68,7 @@ core::Result<void> AnomalyDetector::update_profile(const core::MeterReading& rea
 
 core::Result<AnomalyReport> AnomalyDetector::analyze(const core::MeterReading& reading) noexcept {
     if (!initialized_) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
+        return core::Result<AnomalyReport>(MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
     }
     
     AnomalyReport report;

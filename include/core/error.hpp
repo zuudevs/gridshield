@@ -11,16 +11,12 @@
 
 #pragma once
 
-#if defined(__AVR__)
-  #define ZMOVE(x) (x)
-#else
-  #include <utility>
-  #define ZMOVE(x) std::move(x)
-#endif
-
-#include <stdint.h>
-#include <SoftwareSerial.h>
-#include <new>
+#if	defined(__AVR__) || defined(__ARDUINO_ARCH_AVR__)
+	#include <stdint.h>
+	#include <SoftwareSerial.h>
+#elif defined(__CLANG__) || defined(__GNUC__) || defined(__GNUG__)
+	#include <cstdint>
+#endif 
 
 namespace gridshield::core {
 
