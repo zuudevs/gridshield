@@ -1,8 +1,8 @@
 /**
  * @file types.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief 
- * @version 0.2
+ * @brief Domain types for GridShield
+ * @version 0.3
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -11,13 +11,15 @@
 
 #pragma once
 
-#if	defined(__AVR__) || defined(__ARDUINO_ARCH_AVR__)
-	#include <stdint.h>
-	#include <string.h>
-#elif defined(__CLANG__) || defined(__GNUC__) || defined(__GNUG__)
-	#include <cstdint>
-	#include <string>
-#endif 
+#include "utils/gs_macros.hpp"
+
+#if PLATFORM_NATIVE
+    #include <cstdint>
+    #include <cstring>
+#else
+    #include <stdint.h>
+    #include <string.h>
+#endif
 
 namespace gridshield::core {
 
@@ -56,20 +58,15 @@ enum class Priority : uint8_t {
 struct MeterReading {
     timestamp_t timestamp;
     uint32_t energy_wh;
-    uint32_t voltage_mv; // CHANGED: uint16_t -> uint32_t to hold 220000 (220V)
+    uint32_t voltage_mv;  // 220V = 220000 mV
     uint16_t current_ma;
-    uint16_t power_factor;
+    uint16_t power_factor; // 0-100 (scaled by 100)
     uint8_t phase;
     uint8_t reserved;
     
-    constexpr MeterReading() noexcept 
-        : timestamp(0), energy_wh(0), voltage_mv(0), 
-          current_ma(0), power_factor(0), phase(0), reserved(0) {}
+    MeterReading() : timestamp(0), energy_wh(0), voltage_mv(0),
+                     current_ma(0), power_factor(0), phase(0), reserved(0) {}
 };
-
-// Size changed due to voltage_mv expansion (24 -> 26 bytes approx, but padding might apply)
-// Removing static_assert or adjusting it is necessary. 
-// For safety in this prototype, let's allow compiler padding.
 
 struct TamperEvent {
     timestamp_t timestamp;
@@ -78,77 +75,76 @@ struct TamperEvent {
     uint16_t sensor_id;
     uint32_t metadata;
     
-    constexpr TamperEvent() noexcept 
-        : timestamp(0), event_type(0), severity(0), 
-          sensor_id(0), metadata(0) {}
+    TamperEvent() : timestamp(0), event_type(0), severity(0),
+                    sensor_id(0), metadata(0) {}
 };
 
-static_assert(sizeof(TamperEvent) == 16, "TamperEvent must be 16 bytes");
+static_assert(sizeof(TamperEvent) == 16, "TamperEvent size mismatch");
 
+// Fixed-size buffer for embedded systems
 template<typename T, size_t N>
 class StaticBuffer {
 public:
-    constexpr StaticBuffer() noexcept : size_(0) {}
+    StaticBuffer() : size_(0) {}
     
-    bool push(const T& item) noexcept {
-        if (size_ >= N) return false;
+    bool push(const T& item) {
+        if (UNLIKELY(size_ >= N)) return false;
         data_[size_++] = item;
         return true;
     }
     
-    bool pop(T& item) noexcept {
-        if (size_ == 0) return false;
+    bool pop(T& item) {
+        if (UNLIKELY(size_ == 0)) return false;
         item = data_[--size_];
         return true;
     }
     
-    void clear() noexcept { size_ = 0; }
+    void clear() { size_ = 0; }
     
-    constexpr size_t size() const noexcept { return size_; }
-    constexpr size_t capacity() const noexcept { return N; }
-    constexpr bool empty() const noexcept { return size_ == 0; }
-    constexpr bool full() const noexcept { return size_ == N; }
+    size_t size() const { return size_; }
+    size_t capacity() const { return N; }
+    bool empty() const { return size_ == 0; }
+    bool full() const { return size_ == N; }
     
-    T& operator[](size_t idx) noexcept { return data_[idx]; }
-    const T& operator[](size_t idx) const noexcept { return data_[idx]; }
+    T& operator[](size_t idx) { return data_[idx]; }
+    const T& operator[](size_t idx) const { return data_[idx]; }
     
-    T* data() noexcept { return data_; }
-    const T* data() const noexcept { return data_; }
+    T* data() { return data_; }
+    const T* data() const { return data_; }
     
 private:
     T data_[N];
     size_t size_;
 };
 
+// Byte array with append operations
 template<size_t N>
 class ByteArray {
 public:
-    // REMOVED constexpr: C++11/14 doesn't allow loops in constexpr constructors
-    ByteArray() noexcept : size_(0) {
-        for (size_t i = 0; i < N; ++i) data_[i] = 0;
+    ByteArray() : size_(0) {
+        memset(data_, 0, N);
     }
     
-    void clear() noexcept { 
+    void clear() {
         size_ = 0;
-        for (size_t i = 0; i < N; ++i) data_[i] = 0;
+        memset(data_, 0, N);
     }
     
-    bool append(const uint8_t* data, size_t len) noexcept {
-        if (size_ + len > N) return false;
-        for (size_t i = 0; i < len; ++i) {
-            data_[size_++] = data[i];
-        }
+    bool append(const uint8_t* data, size_t len) {
+        if (UNLIKELY(size_ + len > N)) return false;
+        memcpy(data_ + size_, data, len);
+        size_ += len;
         return true;
     }
     
-    constexpr size_t size() const noexcept { return size_; }
-    constexpr size_t capacity() const noexcept { return N; }
+    size_t size() const { return size_; }
+    size_t capacity() const { return N; }
     
-    uint8_t* data() noexcept { return data_; }
-    const uint8_t* data() const noexcept { return data_; }
+    uint8_t* data() { return data_; }
+    const uint8_t* data() const { return data_; }
     
-    uint8_t& operator[](size_t idx) noexcept { return data_[idx]; }
-    const uint8_t& operator[](size_t idx) const noexcept { return data_[idx]; }
+    uint8_t& operator[](size_t idx) { return data_[idx]; }
+    const uint8_t& operator[](size_t idx) const { return data_[idx]; }
     
 private:
     uint8_t data_[N];

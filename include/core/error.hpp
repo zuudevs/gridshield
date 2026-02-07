@@ -11,12 +11,13 @@
 
 #pragma once
 
-#if	defined(__AVR__) || defined(__ARDUINO_ARCH_AVR__)
-	#include <stdint.h>
-	#include <SoftwareSerial.h>
-#elif defined(__CLANG__) || defined(__GNUC__) || defined(__GNUG__)
-	#include <cstdint>
-#endif 
+#include "utils/gs_macros.hpp"
+
+#if PLATFORM_NATIVE
+    #include <cstdint>
+#else
+    #include <stdint.h>
+#endif
 
 namespace gridshield::core {
 
@@ -70,56 +71,58 @@ enum class ErrorCode : uint16_t {
     NotSupported = 902
 };
 
-class ErrorContext {
-public:
-    constexpr ErrorContext(ErrorCode code, uint32_t line = 0, const char* file = nullptr) noexcept
-        : code_(code), line_(line), file_(file), timestamp_(0) {}
+struct ErrorContext {
+    ErrorCode code;
+    uint32_t line;
+    const char* file;
+    uint32_t timestamp;
     
-    constexpr ErrorCode code() const noexcept { return code_; }
-    constexpr uint32_t line() const noexcept { return line_; }
-    constexpr const char* file() const noexcept { return file_; }
-    constexpr uint32_t timestamp() const noexcept { return timestamp_; }
+    CONSTEXPR14 ErrorContext(ErrorCode c, uint32_t ln = 0, const char* f = nullptr) 
+        : code(c), line(ln), file(f), timestamp(0) {}
     
-    void set_timestamp(uint32_t ts) noexcept { timestamp_ = ts; }
-    
-    constexpr bool is_critical() const noexcept {
-        return static_cast<uint16_t>(code_) >= 200 && 
-               static_cast<uint16_t>(code_) < 400;
+    CONSTEXPR14 bool is_critical() const {
+        return static_cast<uint16_t>(code) >= 200 && 
+               static_cast<uint16_t>(code) < 400;
     }
-    
-private:
-    ErrorCode code_;
-    uint32_t line_;
-    const char* file_;
-    uint32_t timestamp_;
 };
 
+// Result<T> - Type-safe error propagation
 template<typename T>
 class Result {
 public:
-    // Removed constexpr because placement new is not constexpr-friendly in C++11/14
-    Result(T&& value) noexcept 
-        : has_value_(true), error_(ErrorCode::Success) {
-        new (&storage_.value) T(ZMOVE(value));
+    // Success constructor
+    explicit Result(const T& val) : has_value_(true), error_(ErrorCode::Success) {
+        new (&storage_.value) T(val);
     }
     
-    Result(const T& value) noexcept 
-        : has_value_(true), error_(ErrorCode::Success) {
-        new (&storage_.value) T(value);
+    explicit Result(T&& val) : has_value_(true), error_(ErrorCode::Success) {
+        new (&storage_.value) T(ZMOVE(val));
     }
     
-    Result(ErrorContext error) noexcept 
-        : has_value_(false), error_(error) {}
+    // Error constructor
+    explicit Result(ErrorContext err) : has_value_(false), error_(err) {}
     
+    // Destructor
     ~Result() {
         if (has_value_) {
             storage_.value.~T();
         }
     }
     
+    // Deleted copy constructor - force explicit handling
     Result(const Result&) = delete;
+    Result& operator=(const Result&) = delete;
     
-    Result& operator=(const Result& other) {
+    // Move constructor
+    Result(Result&& other) noexcept 
+        : has_value_(other.has_value_), error_(other.error_) {
+        if (has_value_) {
+            new (&storage_.value) T(ZMOVE(other.storage_.value));
+        }
+    }
+    
+    // Move assignment
+    Result& operator=(Result&& other) noexcept {
         if (this != &other) {
             if (has_value_) {
                 storage_.value.~T();
@@ -127,68 +130,76 @@ public:
             has_value_ = other.has_value_;
             error_ = other.error_;
             if (has_value_) {
-                new (&storage_.value) T(other.storage_.value);
+                new (&storage_.value) T(ZMOVE(other.storage_.value));
             }
         }
         return *this;
     }
     
-    Result(Result&& other) noexcept : has_value_(other.has_value_), error_(other.error_) {
-        if (has_value_) {
-            new (&storage_.value) T(ZMOVE(other.storage_.value));
-        }
+    // Status check
+    CONSTEXPR14 bool is_ok() const { return has_value_; }
+    CONSTEXPR14 bool is_error() const { return !has_value_; }
+    
+    // Value access (unsafe - caller must check is_ok first)
+    T& value() { return storage_.value; }
+    const T& value() const { return storage_.value; }
+    
+    // Safe value access
+    T value_or(const T& default_val) const {
+        return has_value_ ? storage_.value : default_val;
     }
     
-    bool is_ok() const noexcept { return has_value_; }
-    bool is_error() const noexcept { return !has_value_; }
-    
-    // Removed constexpr and overloads causing ambiguity in older compilers
-    T& value() noexcept { return storage_.value; }
-    const T& value() const noexcept { return storage_.value; }
-    
-    ErrorContext error() const noexcept { return error_; }
-    
-    T value_or(T&& default_value) const noexcept {
-        return has_value_ ? storage_.value : ZMOVE(default_value);
-    }
+    // Error access
+    ErrorContext error() const { return error_; }
     
 private:
     union Storage {
         T value;
-        Storage() {}
-        ~Storage() {}
+        Storage() {} // Do nothing
+        ~Storage() {} // Do nothing
     } storage_;
     
     bool has_value_;
     ErrorContext error_;
 };
 
+// Specialization for void
 template<>
 class Result<void> {
 public:
-    constexpr Result() noexcept : error_(ErrorCode::Success) {}
-    constexpr Result(ErrorContext error) noexcept : error_(error) {}
+    Result() : error_(ErrorCode::Success) {}
+    explicit Result(ErrorContext err) : error_(err) {}
     
-    constexpr bool is_ok() const noexcept { 
-        return error_.code() == ErrorCode::Success; 
+    CONSTEXPR14 bool is_ok() const { 
+        return error_.code == ErrorCode::Success; 
     }
-    constexpr bool is_error() const noexcept { return !is_ok(); }
-    constexpr ErrorContext error() const noexcept { return error_; }
+    CONSTEXPR14 bool is_error() const { return !is_ok(); }
+    ErrorContext error() const { return error_; }
     
 private:
     ErrorContext error_;
 };
 
+// Error creation macro
 #define MAKE_ERROR(code) \
     ::gridshield::core::ErrorContext((code), __LINE__, __FILE__)
 
+// Early return on error
 #define TRY(expr) \
-    ({ \
-        auto _result = (expr); \
-        if (_result.is_error()) { \
-            return _result.error(); \
+    do { \
+        auto _gs_result = (expr); \
+        if (UNLIKELY(_gs_result.is_error())) { \
+            return _gs_result.error(); \
         } \
-        std::move(_result.value()); \
-    })
+    } while(0)
+
+#define TRY_ASSIGN(var, expr) \
+    do { \
+        auto _gs_result = (expr); \
+        if (UNLIKELY(_gs_result.is_error())) { \
+            return _gs_result.error(); \
+        } \
+        var = ZMOVE(_gs_result.value()); \
+    } while(0)
 
 } // namespace gridshield::core

@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief 
+ * @brief GridShield Arduino firmware entry point
  * @version 0.1
  * @date 2026-02-03
  * 
@@ -9,96 +9,109 @@
  * 
  */
 
+#if PLATFORM_AVR
+
 #include <Arduino.h>
 #include "core/system.hpp"
-
-// Include implementasi driver
 #include "platform/arduino/gpio_arduino.hpp"
 #include "platform/arduino/platform_arduino.hpp"
 
 using namespace gridshield;
 
-// --- Global Objects ---
-// Karena Arduino memisahkan setup() dan loop(), kita butuh pointer global
-// atau objek global agar state-nya terjaga.
+// ============================================================================
+// GLOBAL STATE (Arduino requires globals for setup/loop pattern)
+// ============================================================================
 
-// 1. Platform Drivers
-platform::arduino::ArduinoGPIO platformGpio;
-platform::arduino::ArduinoTime platformTime;
-platform::arduino::ArduinoSerialComm platformComm;
-platform::arduino::ArduinoSimpleCrypto platformCrypto;
-platform::arduino::ArduinoInterruptStub platformInterrupt; // Masih stub
-platform::arduino::ArduinoStorageStub platformStorage;     // Masih stub
+// Platform drivers
+platform::arduino::ArduinoGPIO g_gpio;
+platform::arduino::ArduinoTime g_time;
+platform::arduino::ArduinoSerialComm g_comm;
+platform::arduino::ArduinoSimpleCrypto g_crypto;
+platform::arduino::ArduinoInterruptStub g_interrupt;
+platform::arduino::ArduinoStorageStub g_storage;
 
-// 2. Platform Services Container
-platform::PlatformServices services;
+// Platform services container
+platform::PlatformServices g_services;
 
-// 3. Main System
-GridShieldSystem* gridSystem = nullptr;
+// Main system
+GridShieldSystem* g_system = nullptr;
+
+// ============================================================================
+// SETUP (called once on boot)
+// ============================================================================
 
 void gridshield_setup() {
-    // 1. Inisialisasi Serial untuk Debugging
+    // Initialize serial
     Serial.begin(115200);
-    while (!Serial) { delay(10); } // Tunggu serial monitor (opsional)
+    while (!Serial) { delay(10); }
     
-    Serial.println("\n=== Booting GridShield Firmware v1.0 ===");
-
-    // 2. Wiring Platform Services
-    // Sambungkan driver yang kita buat ke struct services
-    services.gpio = &platformGpio;
-    services.time = &platformTime;
-    services.comm = &platformComm;
-    services.crypto = &platformCrypto;
-    services.interrupt = &platformInterrupt;
-    services.storage = &platformStorage;
-
-    // 3. Konfigurasi Sistem
+    Serial.println(F("\n=== GridShield v1.0 ==="));
+    Serial.println(F("Booting..."));
+    
+    // Wire platform services
+    g_services.gpio = &g_gpio;
+    g_services.time = &g_time;
+    g_services.comm = &g_comm;
+    g_services.crypto = &g_crypto;
+    g_services.interrupt = &g_interrupt;
+    g_services.storage = &g_storage;
+    
+    // System configuration
     SystemConfig config;
-    // FIX: Gunakan Hexadesimal valid (0-9, A-F). 'S' dan 'P' tidak valid.
-    config.meter_id = 0xEA320001; 
-    config.heartbeat_interval_ms = 5000;
-    config.reading_interval_ms = 10000;
+    config.meter_id = 0xEA320001;
+    config.heartbeat_interval_ms = 30000;  // 30s
+    config.reading_interval_ms = 10000;    // 10s
     
-    // Konfigurasi Tamper Pin (Sesuaikan dengan wiring di board kamu!)
-    // Misal: Gunakan tombol BOOT di ESP32 (GPIO 0) atau pin lain
-    config.tamper_config.sensor_pin = 0; 
+    // Tamper pin: GPIO0 (BOOT button on most ESP boards)
+    config.tamper_config.sensor_pin = 0;
     config.tamper_config.debounce_ms = 50;
-
-    // 4. Inisialisasi GridShield System
-    gridSystem = new GridShieldSystem();
-    if (gridSystem == nullptr) {
-        Serial.println("FATAL: Failed to allocate system memory!");
-        while(1) delay(1000); // Halt
-    }
-
-    Serial.print("Initializing System... ");
-    auto initResult = gridSystem->initialize(config, services);
     
-    if (initResult.is_error()) {
-        Serial.print("FAILED! Code: ");
-        Serial.println((int)initResult.error().code());
-        while(1) delay(1000); // Halt on error
+    // Allocate system
+    g_system = new GridShieldSystem();
+    if (g_system == nullptr) {
+        Serial.println(F("FATAL: Memory allocation failed!"));
+        while (1) { delay(1000); }
     }
-    Serial.println("OK!");
-
-    // 5. Start System
-    Serial.print("Starting Security Monitor... ");
-    auto startResult = gridSystem->start();
     
-    if (startResult.is_error()) {
-        Serial.println("FAILED!");
-    } else {
-        Serial.println("OK! System Running.");
+    // Initialize system
+    Serial.print(F("Initializing... "));
+    auto init_result = g_system->initialize(config, g_services);
+    
+    if (init_result.is_error()) {
+        Serial.print(F("FAILED! Code: "));
+        Serial.println(static_cast<int>(init_result.error().code));
+        while (1) { delay(1000); }
     }
+    Serial.println(F("OK"));
+    
+    // Start system
+    Serial.print(F("Starting... "));
+    auto start_result = g_system->start();
+    
+    if (start_result.is_error()) {
+        Serial.println(F("FAILED!"));
+        while (1) { delay(1000); }
+    }
+    Serial.println(F("OK"));
+    Serial.println(F("System running."));
 }
+
+// ============================================================================
+// LOOP (called repeatedly)
+// ============================================================================
 
 void gridshield_loop() {
-    // Jalankan siklus proses utama GridShield
-    if (gridSystem) {
-        gridSystem->process_cycle();
+    if (g_system != nullptr) {
+        auto result = g_system->process_cycle();
+        
+        // Log errors (non-blocking)
+        if (result.is_error()) {
+            Serial.print(F("Cycle error: "));
+            Serial.println(static_cast<int>(result.error().code));
+        }
     }
     
-    // Beri sedikit delay agar tidak memakan CPU 100% dan trigger Watchdog
-    // Di RTOS asli nanti bisa pakai vTaskDelay
-    delay(10); 
+    delay(100); // Prevent watchdog timeout
 }
+
+#endif // PLATFORM_AVR
