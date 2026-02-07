@@ -2,152 +2,87 @@
  * @file tamper.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Physical tamper detection implementation
- * @version 0.2
+ * @version 0.1
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
  * 
  */
 
-#include "hardware/tamper.hpp"
+#pragma once
+
+#include "core/error.hpp"
+#include "core/types.hpp"
+#include "platform/platform.hpp"
 
 namespace gridshield::hardware {
 
-TamperDetector::TamperDetector() noexcept
-    : platform_(nullptr),
-      is_tampered_(false),
-      tamper_type_(TamperType::None),
-      tamper_timestamp_(0),
-      initialized_(false) {}
+enum class TamperType : uint8_t {
+    None = 0,
+    CasingOpened = 1,
+    MagneticInterference = 2,
+    TemperatureAnomaly = 3,
+    VibrationDetected = 4,
+    PowerCutAttempt = 5,
+    PhysicalShock = 6
+};
 
-core::Result<void> TamperDetector::initialize(const TamperConfig& config, 
-                                              platform::PlatformServices& platform) noexcept {
-    if (UNLIKELY(initialized_)) {
-        return MAKE_ERROR(core::ErrorCode::SystemAlreadyInitialized);
-    }
+struct TamperConfig {
+    uint8_t sensor_pin;
+    uint8_t backup_power_pin;
+    uint16_t debounce_ms;
+    uint8_t sensitivity;
     
-    if (UNLIKELY(!platform.is_valid())) {
-        return MAKE_ERROR(core::ErrorCode::InvalidParameter);
-    }
-    
-    config_ = config;
-    platform_ = &platform;
-    
-    // Configure sensor pin
-    TRY(platform_->gpio->configure(
-        config_.sensor_pin, 
-        platform::IPlatformGPIO::PinMode::InputPullup
-    ));
-    
-    // Configure backup power monitoring
-    if (config_.backup_power_pin > 0) {
-        TRY(platform_->gpio->configure(
-            config_.backup_power_pin,
-            platform::IPlatformGPIO::PinMode::Input
-        ));
-    }
-    
-    initialized_ = true;
-    return core::Result<void>();
-}
+    constexpr TamperConfig() noexcept 
+        : sensor_pin(0), backup_power_pin(0), 
+          debounce_ms(50), sensitivity(128) {}
+};
 
-core::Result<void> TamperDetector::start() noexcept {
-    if (UNLIKELY(!initialized_)) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
-    }
+class ITamperDetector {
+public:
+    virtual ~ITamperDetector() = default;
     
-    // Attach interrupt
-    TRY(platform_->interrupt->attach(
-        config_.sensor_pin,
-        platform::IPlatformInterrupt::TriggerMode::Falling,
-        &TamperDetector::interrupt_handler,
-        this
-    ));
+    virtual core::Result<void> initialize(const TamperConfig& config, 
+                                         platform::PlatformServices& platform) noexcept = 0;
+    virtual core::Result<void> start() noexcept = 0;
+    virtual core::Result<void> stop() noexcept = 0;
     
-    return platform_->interrupt->enable(config_.sensor_pin);
-}
-
-core::Result<void> TamperDetector::stop() noexcept {
-    if (UNLIKELY(!initialized_)) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
-    }
+    virtual bool is_tampered() const noexcept = 0;
+    virtual TamperType get_tamper_type() const noexcept = 0;
+    virtual core::timestamp_t get_tamper_timestamp() const noexcept = 0;
     
-    TRY(platform_->interrupt->disable(config_.sensor_pin));
-    return platform_->interrupt->detach(config_.sensor_pin);
-}
+    virtual core::Result<void> acknowledge_tamper() noexcept = 0;
+    virtual core::Result<void> reset() noexcept = 0;
+};
 
-bool TamperDetector::is_tampered() const noexcept {
-    return is_tampered_;
-}
-
-TamperType TamperDetector::get_tamper_type() const noexcept {
-    return tamper_type_;
-}
-
-core::timestamp_t TamperDetector::get_tamper_timestamp() const noexcept {
-    return tamper_timestamp_;
-}
-
-core::Result<void> TamperDetector::acknowledge_tamper() noexcept {
-    // Tamper acknowledged but not cleared
-    return core::Result<void>();
-}
-
-core::Result<void> TamperDetector::reset() noexcept {
-    if (UNLIKELY(!initialized_)) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
-    }
+class TamperDetector : public ITamperDetector {
+public:
+    TamperDetector() noexcept;
+    ~TamperDetector() override = default;
     
-    is_tampered_ = false;
-    tamper_type_ = TamperType::None;
-    tamper_timestamp_ = 0;
+    core::Result<void> initialize(const TamperConfig& config, 
+                                 platform::PlatformServices& platform) noexcept override;
+    core::Result<void> start() noexcept override;
+    core::Result<void> stop() noexcept override;
     
-    return core::Result<void>();
-}
-
-void TamperDetector::interrupt_handler(void* context) noexcept {
-    auto* detector = static_cast<TamperDetector*>(context);
-    if (LIKELY(detector != nullptr)) {
-        detector->handle_tamper_event();
-    }
-}
-
-void TamperDetector::handle_tamper_event() noexcept {
-    if (UNLIKELY(!initialized_ || platform_ == nullptr)) {
-        return;
-    }
+    bool is_tampered() const noexcept override;
+    TamperType get_tamper_type() const noexcept override;
+    core::timestamp_t get_tamper_timestamp() const noexcept override;
     
-    // Read current sensor state
-    auto read_result = platform_->gpio->read(config_.sensor_pin);
-    if (UNLIKELY(read_result.is_error())) {
-        return;
-    }
+    core::Result<void> acknowledge_tamper() noexcept override;
+    core::Result<void> reset() noexcept override;
     
-    const bool sensor_triggered = !read_result.value(); // Active low
+private:
+    static void interrupt_handler(void* context) noexcept;
+    void handle_tamper_event() noexcept;
     
-    if (sensor_triggered && !is_tampered_) {
-        // Debounce check
-        platform_->time->delay_ms(config_.debounce_ms);
-        
-        // Re-read after debounce
-        read_result = platform_->gpio->read(config_.sensor_pin);
-        if (UNLIKELY(read_result.is_error() || read_result.value())) {
-            return; // False trigger or read error
-        }
-        
-        // Tamper confirmed
-        is_tampered_ = true;
-        tamper_type_ = TamperType::CasingOpened;
-        tamper_timestamp_ = platform_->time->get_timestamp_ms();
-        
-        // Check backup power status
-        if (config_.backup_power_pin > 0) {
-            auto power_result = platform_->gpio->read(config_.backup_power_pin);
-            if (power_result.is_ok() && !power_result.value()) {
-                tamper_type_ = TamperType::PowerCutAttempt;
-            }
-        }
-    }
-}
+    TamperConfig config_;
+    platform::PlatformServices* platform_;
+    
+    volatile bool is_tampered_;
+    volatile TamperType tamper_type_;
+    volatile core::timestamp_t tamper_timestamp_;
+    volatile bool initialized_;
+};
 
 } // namespace gridshield::hardware

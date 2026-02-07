@@ -15,8 +15,10 @@
 
 #if PLATFORM_NATIVE
     #include <cstdint>
+	#include <new>
 #else
     #include <stdint.h>
+	#include <new.h>
 #endif
 
 namespace gridshield::core {

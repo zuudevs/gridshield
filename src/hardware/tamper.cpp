@@ -1,8 +1,8 @@
 /**
- * @file temper.cpp
+ * @file tamper.cpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief 
- * @version 0.1
+ * @brief Physical tamper detection implementation
+ * @version 0.2
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -22,11 +22,11 @@ TamperDetector::TamperDetector() noexcept
 
 core::Result<void> TamperDetector::initialize(const TamperConfig& config, 
                                               platform::PlatformServices& platform) noexcept {
-    if (initialized_) {
+    if (UNLIKELY(initialized_)) {
         return MAKE_ERROR(core::ErrorCode::SystemAlreadyInitialized);
     }
     
-    if (!platform.is_valid()) {
+    if (UNLIKELY(!platform.is_valid())) {
         return MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
@@ -34,23 +34,17 @@ core::Result<void> TamperDetector::initialize(const TamperConfig& config,
     platform_ = &platform;
     
     // Configure sensor pin
-    auto result = platform_->gpio->configure(
+    TRY(platform_->gpio->configure(
         config_.sensor_pin, 
         platform::IPlatformGPIO::PinMode::InputPullup
-    );
-    if (result.is_error()) {
-        return result.error();
-    }
+    ));
     
     // Configure backup power monitoring
     if (config_.backup_power_pin > 0) {
-        result = platform_->gpio->configure(
+        TRY(platform_->gpio->configure(
             config_.backup_power_pin,
             platform::IPlatformGPIO::PinMode::Input
-        );
-        if (result.is_error()) {
-            return result.error();
-        }
+        ));
     }
     
     initialized_ = true;
@@ -58,35 +52,27 @@ core::Result<void> TamperDetector::initialize(const TamperConfig& config,
 }
 
 core::Result<void> TamperDetector::start() noexcept {
-    if (!initialized_) {
+    if (UNLIKELY(!initialized_)) {
         return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
-    // Attach interrupt for tamper detection
-    auto result = platform_->interrupt->attach(
+    // Attach interrupt
+    TRY(platform_->interrupt->attach(
         config_.sensor_pin,
         platform::IPlatformInterrupt::TriggerMode::Falling,
         &TamperDetector::interrupt_handler,
         this
-    );
-    
-    if (result.is_error()) {
-        return result.error();
-    }
+    ));
     
     return platform_->interrupt->enable(config_.sensor_pin);
 }
 
 core::Result<void> TamperDetector::stop() noexcept {
-    if (!initialized_) {
+    if (UNLIKELY(!initialized_)) {
         return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
-    auto result = platform_->interrupt->disable(config_.sensor_pin);
-    if (result.is_error()) {
-        return result.error();
-    }
-    
+    TRY(platform_->interrupt->disable(config_.sensor_pin));
     return platform_->interrupt->detach(config_.sensor_pin);
 }
 
@@ -103,17 +89,12 @@ core::timestamp_t TamperDetector::get_tamper_timestamp() const noexcept {
 }
 
 core::Result<void> TamperDetector::acknowledge_tamper() noexcept {
-    if (!is_tampered_) {
-        return core::Result<void>();
-    }
-    
-    // Tamper event acknowledged but not cleared
-    // Requires explicit reset or physical intervention
+    // Tamper acknowledged but not cleared
     return core::Result<void>();
 }
 
 core::Result<void> TamperDetector::reset() noexcept {
-    if (!initialized_) {
+    if (UNLIKELY(!initialized_)) {
         return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
@@ -126,32 +107,31 @@ core::Result<void> TamperDetector::reset() noexcept {
 
 void TamperDetector::interrupt_handler(void* context) noexcept {
     auto* detector = static_cast<TamperDetector*>(context);
-    if (detector != nullptr) {
+    if (LIKELY(detector != nullptr)) {
         detector->handle_tamper_event();
     }
 }
 
 void TamperDetector::handle_tamper_event() noexcept {
-    if (!initialized_ || platform_ == nullptr) {
+    if (UNLIKELY(!initialized_ || platform_ == nullptr)) {
         return;
     }
     
-    // Read current sensor state with debouncing
+    // Read current sensor state
     auto read_result = platform_->gpio->read(config_.sensor_pin);
-    if (read_result.is_error()) {
+    if (UNLIKELY(read_result.is_error())) {
         return;
     }
     
-    bool sensor_triggered = !read_result.value(); // Active low
+    const bool sensor_triggered = !read_result.value(); // Active low
     
     if (sensor_triggered && !is_tampered_) {
         // Debounce check
         platform_->time->delay_ms(config_.debounce_ms);
         
-		// FIXME: Overload resolution selected deleted operator '='clang(ovl_deleted_oper)
-		// error.hpp(96, 13): Candidate function has been explicitly deleted
+        // Re-read after debounce
         read_result = platform_->gpio->read(config_.sensor_pin);
-        if (read_result.is_error() || read_result.value()) {
+        if (UNLIKELY(read_result.is_error() || read_result.value())) {
             return; // False trigger or read error
         }
         
