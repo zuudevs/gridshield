@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.23)
 
 project(
     GridShield
@@ -8,18 +8,24 @@ project(
 )
 
 # ============================================================================
-# PLATFORM SELECTION
+# OPTIONS & CONFIGURATION
 # ============================================================================
 
+option(ENABLE_SANITIZERS "Enable AddressSanitizer and UBSan (Native only)" OFF)
+
+# Default platform if not set by preset
 if(NOT DEFINED PLATFORM)
-    set(PLATFORM "NATIVE" CACHE STRING "Build platform: NATIVE or AVR")
+    set(PLATFORM "NATIVE" CACHE STRING "Build platform: NATIVE, AVR, ESP32")
 endif()
 
-message(STATUS "═══════════════════════════════════")
+message(STATUS "════════════════════════════════════════════")
+message(STATUS " GridShield v${PROJECT_VERSION}")
 message(STATUS " Platform: ${PLATFORM}")
+message(STATUS " Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "════════════════════════════════════════════")
 
 # ============================================================================
-# COMPILER SETTINGS
+# C++ STANDARD
 # ============================================================================
 
 set(CMAKE_CXX_STANDARD 17)
@@ -28,11 +34,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Output directory
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${PLATFORM})
+# Output directory based on platform
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY 
+    "${CMAKE_SOURCE_DIR}/bin/${PLATFORM}"
+)
 
 # ============================================================================
-# SOURCE FILES
+# SOURCE FILES (Platform-agnostic)
 # ============================================================================
 
 set(CORE_SOURCES
@@ -56,112 +64,140 @@ set(HEADERS
 )
 
 # ============================================================================
-# PLATFORM-SPECIFIC BUILD
+# PLATFORM-SPECIFIC CONFIGURATION
 # ============================================================================
 
 if(PLATFORM STREQUAL "AVR")
     # ────────────────────────────────────────────────────────────────────────
-    # AVR TOOLCHAIN (Arduino-compatible)
+    # AVR (Arduino)
     # ────────────────────────────────────────────────────────────────────────
     
-    set(CMAKE_SYSTEM_NAME Generic)
-    set(CMAKE_SYSTEM_PROCESSOR avr)
+    message(STATUS "Configuring for AVR (${AVR_MCU})...")
     
-    # AVR toolchain paths (adjust for your system)
-    set(AVR_GCC_DIR "C:/Users/ASUS/AppData/Local/Arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7")
+    # Main executable
+    add_executable(${PROJECT_NAME} ${CORE_SOURCES} src/main.cpp)
     
-    set(CMAKE_C_COMPILER "${AVR_GCC_DIR}/bin/avr-gcc.exe")
-    set(CMAKE_CXX_COMPILER "${AVR_GCC_DIR}/bin/avr-g++.exe")
-    set(CMAKE_OBJCOPY "${AVR_GCC_DIR}/bin/avr-objcopy.exe")
-    set(CMAKE_SIZE "${AVR_GCC_DIR}/bin/avr-size.exe")
-    
-    # MCU settings
-    set(MCU "atmega328p")
-    set(F_CPU "16000000UL")
-    
-    # AVR compiler flags
-    add_compile_options(
-        -mmcu=${MCU}
-        -DF_CPU=${F_CPU}
-        -DPLATFORM_AVR=1
-        -Os
-        -ffunction-sections
-        -fdata-sections
-        -flto
-        -Wall
-        -Wextra
-    )
-    
-    # AVR linker flags
-    add_link_options(
-        -mmcu=${MCU}
-        -Wl,--gc-sections
-        -flto
-    )
-    
-    # Arduino core sources (minimal - extend as needed)
-    set(ARDUINO_CORE_DIR "${AVR_GCC_DIR}/../../../hardware/avr/1.8.7/cores/arduino")
-    
-    add_executable(${PROJECT_NAME}
-        ${CORE_SOURCES}
-        src/main.cpp
-    )
-    
+    # Include directories
     target_include_directories(${PROJECT_NAME} PRIVATE
         include
-        ${ARDUINO_CORE_DIR}
+        ${ARDUINO_CORE_PATH}
+        ${ARDUINO_VARIANT_PATH}
     )
     
-    # Generate HEX file for upload
+    # Arduino core library
+    add_library(arduino_core STATIC
+        ${ARDUINO_CORE_PATH}/wiring.c
+        ${ARDUINO_CORE_PATH}/wiring_digital.c
+        ${ARDUINO_CORE_PATH}/wiring_analog.c
+        ${ARDUINO_CORE_PATH}/hooks.c
+        ${ARDUINO_CORE_PATH}/WInterrupts.c
+        ${ARDUINO_CORE_PATH}/CDC.cpp
+        ${ARDUINO_CORE_PATH}/HardwareSerial.cpp
+        ${ARDUINO_CORE_PATH}/Print.cpp
+        ${ARDUINO_CORE_PATH}/Stream.cpp
+        ${ARDUINO_CORE_PATH}/WMath.cpp
+        ${ARDUINO_CORE_PATH}/WString.cpp
+        ${ARDUINO_CORE_PATH}/abi.cpp
+        ${ARDUINO_CORE_PATH}/main.cpp
+    )
+    
+    target_include_directories(arduino_core PUBLIC
+        ${ARDUINO_CORE_PATH}
+        ${ARDUINO_VARIANT_PATH}
+    )
+    
+    target_link_libraries(${PROJECT_NAME} PRIVATE arduino_core)
+    
+    # Generate HEX file
     set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".elf")
     
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} -O ihex -R .eeprom
+        COMMAND ${AVR_OBJCOPY} -O ihex -R .eeprom
                 $<TARGET_FILE:${PROJECT_NAME}>
                 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}.hex
         COMMENT "Generating HEX file..."
+        VERBATIM
     )
     
+    # Memory usage report
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_SIZE} -C --mcu=${MCU} $<TARGET_FILE:${PROJECT_NAME}>
+        COMMAND ${AVR_SIZE} --format=avr --mcu=${AVR_MCU} 
+                $<TARGET_FILE:${PROJECT_NAME}>
         COMMENT "Memory usage:"
+        VERBATIM
     )
+    
+    # Upload target (usage: cmake --build build-avr --target upload)
+    if(DEFINED AVR_UPLOAD_PORT)
+        avr_add_upload_target(${PROJECT_NAME} ${AVR_UPLOAD_PORT})
+    else()
+        message(STATUS "Upload target disabled. Set AVR_UPLOAD_PORT to enable.")
+    endif()
+
+elseif(PLATFORM STREQUAL "ESP32")
+    # ────────────────────────────────────────────────────────────────────────
+    # ESP32 (Future support)
+    # ────────────────────────────────────────────────────────────────────────
+    
+    message(FATAL_ERROR "ESP32 support coming soon. Use PlatformIO for now.")
 
 elseif(PLATFORM STREQUAL "NATIVE")
     # ────────────────────────────────────────────────────────────────────────
-    # NATIVE BUILD (x86/x64 for testing)
+    # NATIVE (PC - Development/Testing)
     # ────────────────────────────────────────────────────────────────────────
     
-    add_executable(${PROJECT_NAME}
-        ${CORE_SOURCES}
-        # Native uses mock_platform instead of Arduino drivers
-    )
+    message(STATUS "Configuring for Native (${CMAKE_SYSTEM_NAME})...")
+    
+    add_executable(${PROJECT_NAME} ${CORE_SOURCES})
     
     target_include_directories(${PROJECT_NAME} PRIVATE include)
     
     # Compiler warnings
     if(MSVC)
-        target_compile_options(${PROJECT_NAME} PRIVATE /W4 /utf-8)
+        target_compile_options(${PROJECT_NAME} PRIVATE 
+            /W4 /utf-8 /permissive-
+        )
     else()
         target_compile_options(${PROJECT_NAME} PRIVATE
-            -Wall -Wextra -Wpedantic -Wshadow
+            -Wall -Wextra -Wpedantic -Wshadow -Wconversion
         )
     endif()
     
-    # Sanitizers in debug mode
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT MSVC)
-        target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address,undefined)
-        target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address,undefined)
+    # Sanitizers (Debug only)
+    if(ENABLE_SANITIZERS AND CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT MSVC)
+        message(STATUS "Enabling sanitizers...")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            -fsanitize=address,undefined
+            -fno-omit-frame-pointer
+        )
+        target_link_options(${PROJECT_NAME} PRIVATE
+            -fsanitize=address,undefined
+        )
     endif()
     
 else()
-    message(FATAL_ERROR "Unknown PLATFORM: ${PLATFORM}. Use NATIVE or AVR.")
+    message(FATAL_ERROR "Unknown PLATFORM: ${PLATFORM}. Use NATIVE, AVR, or ESP32.")
 endif()
 
 # ============================================================================
-# OUTPUT
+# INSTALL RULES
 # ============================================================================
 
-message(STATUS " Build Type: ${CMAKE_BUILD_TYPE}")
-message(STATUS " Output Dir: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-message(STATUS "═══════════════════════════════════")
+if(PLATFORM STREQUAL "AVR")
+    install(FILES 
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}.hex
+        DESTINATION firmware
+    )
+endif()
+
+# ============================================================================
+# SUMMARY
+# ============================================================================
+
+message(STATUS "────────────────────────────────────────────")
+message(STATUS " Output: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+if(PLATFORM STREQUAL "AVR")
+    message(STATUS " HEX: ${PROJECT_NAME}.hex")
+    message(STATUS " Upload: cmake --build . --target upload")
+endif()
+message(STATUS "════════════════════════════════════════════")

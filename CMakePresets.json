@@ -1,0 +1,161 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "native-debug",
+      "displayName": "Native Debug (PC Testing)",
+      "description": "Development build for x86/x64 with sanitizers",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "PLATFORM": "NATIVE",
+        "ENABLE_SANITIZERS": "ON"
+      }
+    },
+    {
+      "name": "native-release",
+      "displayName": "Native Release (PC Optimized)",
+      "description": "Optimized build for performance testing",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "PLATFORM": "NATIVE",
+        "ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "avr-uno",
+      "displayName": "Arduino Uno (ATmega328P)",
+      "description": "Build for Arduino Uno - WARNING: Limited flash/RAM",
+      "inherits": "base",
+      "toolchainFile": "${sourceDir}/cmake/toolchain-avr.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel",
+        "PLATFORM": "AVR",
+        "AVR_MCU": "atmega328p",
+        "AVR_F_CPU": "16000000UL",
+        "AVR_UPLOAD_BAUD": "115200"
+      }
+    },
+    {
+      "name": "avr-mega",
+      "displayName": "Arduino Mega (ATmega2560)",
+      "description": "Build for Arduino Mega - RECOMMENDED for production",
+      "inherits": "base",
+      "toolchainFile": "${sourceDir}/cmake/toolchain-avr.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel",
+        "PLATFORM": "AVR",
+        "AVR_MCU": "atmega2560",
+        "AVR_F_CPU": "16000000UL",
+        "AVR_UPLOAD_BAUD": "115200"
+      }
+    },
+    {
+      "name": "esp32",
+      "displayName": "ESP32 (Xtensa)",
+      "description": "Build for ESP32 - BEST performance",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "PLATFORM": "ESP32"
+      },
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "native-debug",
+      "configurePreset": "native-debug",
+      "displayName": "Build Native Debug",
+      "jobs": 8
+    },
+    {
+      "name": "native-release",
+      "configurePreset": "native-release",
+      "displayName": "Build Native Release",
+      "jobs": 8
+    },
+    {
+      "name": "avr-uno",
+      "configurePreset": "avr-uno",
+      "displayName": "Build AVR Uno",
+      "jobs": 2
+    },
+    {
+      "name": "avr-mega",
+      "configurePreset": "avr-mega",
+      "displayName": "Build AVR Mega",
+      "jobs": 2
+    },
+    {
+      "name": "esp32",
+      "configurePreset": "esp32",
+      "displayName": "Build ESP32",
+      "jobs": 4
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "native-debug",
+      "configurePreset": "native-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "dev",
+      "displayName": "Development Workflow",
+      "description": "Configure, build, and test native debug",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "native-debug"
+        },
+        {
+          "type": "build",
+          "name": "native-debug"
+        },
+        {
+          "type": "test",
+          "name": "native-debug"
+        }
+      ]
+    },
+    {
+      "name": "deploy-mega",
+      "displayName": "Deploy to Arduino Mega",
+      "description": "Build optimized firmware for Mega",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "avr-mega"
+        },
+        {
+          "type": "build",
+          "name": "avr-mega"
+        }
+      ]
+    }
+  ]
+}
