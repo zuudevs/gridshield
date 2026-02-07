@@ -2,7 +2,7 @@
  * @file gs_macros.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Portable macros for embedded systems
- * @version 0.1
+ * @version 0.2
  * @date 2026-02-07
  * 
  * @copyright Copyright (c) 2026
@@ -35,7 +35,7 @@
     struct remove_reference_gs<T&&> { using type = T; };
     
     template<typename T>
-    typename remove_reference_gs<T>::type&& move_gs(T&& arg) {
+    constexpr typename remove_reference_gs<T>::type&& move_gs(T&& arg) noexcept {
         return static_cast<typename remove_reference_gs<T>::type&&>(arg);
     }
     

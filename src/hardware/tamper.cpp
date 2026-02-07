@@ -69,7 +69,7 @@ core::Result<void> TamperDetector::start() noexcept {
 
 core::Result<void> TamperDetector::stop() noexcept {
     if (UNLIKELY(!initialized_)) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
+        return core::Result<void>(MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
     }
     
     TRY(platform_->interrupt->disable(config_.sensor_pin));

@@ -1,25 +1,26 @@
 /**
- * @file security.cpp
+ * @file crypto.cpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief 
- * @version 0.1
- * @date 2026-02-03
+ * @brief Cryptography engine implementation
+ * @version 0.2
+ * @date 2026-02-07
  * 
  * @copyright Copyright (c) 2026
- * 
  */
 
 #include "security/crypto.hpp"
 
-#if	defined(__AVR__) || defined(__ARDUINO_ARCH_AVR__)
-	#include <string.h>
-#elif defined(__CLANG__) || defined(__GNUC__) || defined(__GNUG__)
-	#include <string>
-#endif 
+#if PLATFORM_NATIVE
+    #include <cstring>
+#else
+    #include <string.h>
+#endif
 
 namespace gridshield::security {
 
+// ============================================================================
 // ECCKeyPair Implementation
+// ============================================================================
 
 ECCKeyPair::ECCKeyPair() noexcept 
     : has_private_(false), has_public_(false) {
@@ -31,7 +32,15 @@ ECCKeyPair::~ECCKeyPair() {
 }
 
 core::Result<void> ECCKeyPair::generate() noexcept {
-    // Placeholder - actual implementation would use secp256r1
+    // NEED ADOPTION: Integrate uECC library or mbedTLS for secp256r1
+    // Example with uECC:
+    // #include <uECC.h>
+    // const struct uECC_Curve_t* curve = uECC_secp256r1();
+    // if (uECC_make_key(public_key_, private_key_, curve)) {
+    //     has_private_ = true;
+    //     has_public_ = true;
+    //     return core::Result<void>();
+    // }
     return MAKE_ERROR(core::ErrorCode::NotImplemented);
 }
 
@@ -40,9 +49,7 @@ core::Result<void> ECCKeyPair::load_private_key(const uint8_t* key, size_t lengt
         return MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
-    for (size_t i = 0; i < ECC_KEY_SIZE; ++i) {
-        private_key_[i] = key[i];
-    }
+    memcpy(private_key_, key, ECC_KEY_SIZE);
     has_private_ = true;
     
     return core::Result<void>();
@@ -53,9 +60,7 @@ core::Result<void> ECCKeyPair::load_public_key(const uint8_t* key, size_t length
         return MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
-    for (size_t i = 0; i < ECC_PUBLIC_KEY_SIZE; ++i) {
-        public_key_[i] = key[i];
-    }
+    memcpy(public_key_, key, ECC_PUBLIC_KEY_SIZE);
     has_public_ = true;
     
     return core::Result<void>();
@@ -78,7 +83,7 @@ bool ECCKeyPair::has_public_key() const noexcept {
 }
 
 void ECCKeyPair::clear() noexcept {
-    // Secure erase
+    // Secure erase using volatile
     volatile uint8_t* vptr = private_key_;
     for (size_t i = 0; i < ECC_KEY_SIZE; ++i) {
         vptr[i] = 0;
@@ -93,21 +98,38 @@ void ECCKeyPair::clear() noexcept {
     has_public_ = false;
 }
 
+// ============================================================================
 // CryptoEngine Implementation
+// ============================================================================
 
 CryptoEngine::CryptoEngine(platform::IPlatformCrypto& platform_crypto) noexcept
     : platform_crypto_(platform_crypto) {}
 
 core::Result<void> CryptoEngine::generate_keypair(ECCKeyPair& keypair) noexcept {
-    // In production: Use secp256r1 curve
-    // For now: Generate random bytes as placeholder
+    // NEED ADOPTION: Replace with real ECC implementation
+    // For production use uECC or mbedTLS:
+    // 
+    // #include <uECC.h>
+    // const struct uECC_Curve_t* curve = uECC_secp256r1();
+    // uint8_t private_key[32];
+    // uint8_t public_key[64];
+    // 
+    // if (!uECC_make_key(public_key, private_key, curve)) {
+    //     return MAKE_ERROR(core::ErrorCode::KeyGenerationFailed);
+    // }
+    // 
+    // auto result = keypair.load_private_key(private_key, 32);
+    // if (result.is_error()) return result.error();
+    // 
+    // return keypair.load_public_key(public_key, 64);
+    
+    // Placeholder implementation for testing
     uint8_t private_key[ECC_KEY_SIZE];
     auto result = platform_crypto_.random_bytes(private_key, ECC_KEY_SIZE);
     if (result.is_error()) {
         return result.error();
     }
     
-    // Derive public key (placeholder - actual implementation needs EC point multiplication)
     uint8_t public_key[ECC_PUBLIC_KEY_SIZE];
     result = platform_crypto_.random_bytes(public_key, ECC_PUBLIC_KEY_SIZE);
     if (result.is_error()) {
@@ -129,15 +151,22 @@ core::Result<void> CryptoEngine::sign(const ECCKeyPair& keypair,
         return MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
-    // Hash the message first
+    // Hash message first
     uint8_t hash[32];
     auto result = hash_sha256(message, msg_len, hash);
     if (result.is_error()) {
         return result.error();
     }
     
-    // Placeholder: In production, use ECDSA with secp256r1
-    // For now: Generate deterministic signature from hash + private key
+    // NEED ADOPTION: Replace with real ECDSA signing
+    // Example with uECC:
+    // #include <uECC.h>
+    // const struct uECC_Curve_t* curve = uECC_secp256r1();
+    // if (!uECC_sign(keypair.get_private_key(), hash, 32, signature_out, curve)) {
+    //     return MAKE_ERROR(core::ErrorCode::SignatureInvalid);
+    // }
+    
+    // Placeholder: Generate deterministic signature
     result = platform_crypto_.random_bytes(signature_out, ECC_SIGNATURE_SIZE);
     if (result.is_error()) {
         return MAKE_ERROR(core::ErrorCode::SignatureInvalid);
@@ -153,15 +182,21 @@ core::Result<bool> CryptoEngine::verify(const ECCKeyPair& keypair,
         return core::Result<bool>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
     }
     
-    // Hash the message
+    // Hash message
     uint8_t hash[32];
     auto result = hash_sha256(message, msg_len, hash);
     if (result.is_error()) {
         return core::Result<bool>(result.error());
     }
     
-    // Placeholder: In production, verify ECDSA signature
-    // For now: Return true (accept all signatures in stub mode)
+    // NEED ADOPTION: Replace with real ECDSA verification
+    // Example with uECC:
+    // #include <uECC.h>
+    // const struct uECC_Curve_t* curve = uECC_secp256r1();
+    // int valid = uECC_verify(keypair.get_public_key(), hash, 32, signature, curve);
+    // return core::Result<bool>(valid != 0);
+    
+    // Placeholder: Accept all signatures in stub mode
     return core::Result<bool>(true);
 }
 
@@ -173,8 +208,16 @@ core::Result<void> CryptoEngine::derive_shared_secret(const ECCKeyPair& our_keyp
         return MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
-    // Placeholder: In production, use ECDH
-    // For now: XOR private key with their public key (insecure placeholder)
+    // NEED ADOPTION: Replace with real ECDH
+    // Example with uECC:
+    // #include <uECC.h>
+    // const struct uECC_Curve_t* curve = uECC_secp256r1();
+    // if (!uECC_shared_secret(their_public_key, our_keypair.get_private_key(), 
+    //                         shared_secret_out, curve)) {
+    //     return MAKE_ERROR(core::ErrorCode::CryptoFailure);
+    // }
+    
+    // Placeholder: XOR (INSECURE)
     const uint8_t* our_private = our_keypair.get_private_key();
     for (size_t i = 0; i < ECC_KEY_SIZE; ++i) {
         shared_secret_out[i] = our_private[i] ^ their_public_key[i];
@@ -193,13 +236,21 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(const uint8_t* key,
         return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
     }
     
-    // Placeholder: In production, use AES-256-GCM
-    // For now: XOR with key (insecure placeholder)
+    // NEED ADOPTION: Replace with real AES-GCM
+    // Example with mbedTLS:
+    // #include <mbedtls/gcm.h>
+    // mbedtls_gcm_context ctx;
+    // mbedtls_gcm_init(&ctx);
+    // mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, key, 256);
+    // mbedtls_gcm_crypt_and_tag(&ctx, MBEDTLS_GCM_ENCRYPT, pt_len, nonce, 12,
+    //                           NULL, 0, plaintext, ciphertext_out, 16, tag_out);
+    // mbedtls_gcm_free(&ctx);
+    
+    // Placeholder: XOR (INSECURE)
     for (size_t i = 0; i < pt_len; ++i) {
         ciphertext_out[i] = plaintext[i] ^ key[i % AES_KEY_SIZE];
     }
     
-    // Generate dummy authentication tag
     auto result = platform_crypto_.random_bytes(tag_out, 16);
     if (result.is_error()) {
         return core::Result<size_t>(result.error());
@@ -218,8 +269,18 @@ core::Result<size_t> CryptoEngine::decrypt_aes_gcm(const uint8_t* key,
         return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
     }
     
-    // Placeholder: In production, verify tag then decrypt
-    // For now: XOR with key (insecure placeholder)
+    // NEED ADOPTION: Replace with real AES-GCM decryption
+    // Example with mbedTLS:
+    // #include <mbedtls/gcm.h>
+    // mbedtls_gcm_context ctx;
+    // mbedtls_gcm_init(&ctx);
+    // mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, key, 256);
+    // int ret = mbedtls_gcm_auth_decrypt(&ctx, ct_len, nonce, 12, NULL, 0, 
+    //                                    tag, 16, ciphertext, plaintext_out);
+    // mbedtls_gcm_free(&ctx);
+    // if (ret != 0) return MAKE_ERROR(core::ErrorCode::DecryptionFailed);
+    
+    // Placeholder: XOR (INSECURE)
     for (size_t i = 0; i < ct_len; ++i) {
         plaintext_out[i] = ciphertext[i] ^ key[i % AES_KEY_SIZE];
     }

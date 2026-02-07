@@ -49,6 +49,7 @@ set(CORE_SOURCES
     src/security/crypto.cpp
     src/network/packet.cpp
     src/analytics/detector.cpp
+    src/platform/platform.cpp
 )
 
 set(HEADERS
@@ -148,7 +149,8 @@ elseif(PLATFORM STREQUAL "NATIVE")
     
     message(STATUS "Configuring for Native (${CMAKE_SYSTEM_NAME})...")
     
-    add_executable(${PROJECT_NAME} ${CORE_SOURCES})
+    # Add demo main for native
+    add_executable(${PROJECT_NAME} ${CORE_SOURCES} src/main.cpp)
     
     target_include_directories(${PROJECT_NAME} PRIVATE include)
     

@@ -1,12 +1,11 @@
 /**
- * @file packet.hpp
+ * @file packet.cpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Secure packet protocol implementation
- * @version 0.1
- * @date 2026-02-03
+ * @version 0.2
+ * @date 2026-02-07
  * 
  * @copyright Copyright (c) 2026
- * 
  */
 
 #include "network/packet.hpp"
@@ -32,7 +31,7 @@ core::Result<void> SecurePacket::build(PacketType type,
                                        security::ICryptoEngine& crypto,
                                        const security::ECCKeyPair& keypair) noexcept {
     if (UNLIKELY(payload_len > MAX_PAYLOAD_SIZE)) {
-        return MAKE_ERROR(::core::ErrorCode::BufferOverflow);
+        return MAKE_ERROR(core::ErrorCode::BufferOverflow);
     }
     
     if (UNLIKELY(!keypair.has_private_key())) {
