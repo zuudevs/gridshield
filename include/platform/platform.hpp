@@ -1,8 +1,8 @@
 /**
  * @file platform.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief 
- * @version 0.1
+ * @brief Hardware Abstraction Layer (HAL) interfaces
+ * @version 0.2
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -14,18 +14,25 @@
 #include "core/error.hpp"
 #include "core/types.hpp"
 
-namespace gridshield::platform {
+namespace gridshield {
+namespace platform {
 
+// ============================================================================
+// TIME INTERFACE
+// ============================================================================
 class IPlatformTime {
 public:
-    virtual ~IPlatformTime() = default;
+    virtual ~IPlatformTime();
     virtual core::timestamp_t get_timestamp_ms() noexcept = 0;
     virtual void delay_ms(uint32_t ms) noexcept = 0;
 };
 
+// ============================================================================
+// GPIO INTERFACE
+// ============================================================================
 class IPlatformGPIO {
 public:
-    virtual ~IPlatformGPIO() = default;
+    virtual ~IPlatformGPIO();
     
     enum class PinMode : uint8_t {
         Input = 0,
@@ -39,9 +46,12 @@ public:
     virtual core::Result<void> write(uint8_t pin, bool value) noexcept = 0;
 };
 
+// ============================================================================
+// INTERRUPT INTERFACE
+// ============================================================================
 class IPlatformInterrupt {
 public:
-    virtual ~IPlatformInterrupt() = default;
+    virtual ~IPlatformInterrupt();
     
     enum class TriggerMode : uint8_t {
         Rising = 0,
@@ -61,9 +71,12 @@ public:
     virtual core::Result<void> disable(uint8_t pin) noexcept = 0;
 };
 
+// ============================================================================
+// CRYPTO INTERFACE
+// ============================================================================
 class IPlatformCrypto {
 public:
-    virtual ~IPlatformCrypto() = default;
+    virtual ~IPlatformCrypto();
     
     virtual core::Result<void> random_bytes(uint8_t* buffer, size_t length) noexcept = 0;
     virtual core::Result<uint32_t> crc32(const uint8_t* data, size_t length) noexcept = 0;
@@ -71,9 +84,12 @@ public:
                                      uint8_t* hash_out) noexcept = 0;
 };
 
+// ============================================================================
+// STORAGE INTERFACE
+// ============================================================================
 class IPlatformStorage {
 public:
-    virtual ~IPlatformStorage() = default;
+    virtual ~IPlatformStorage();
     
     virtual core::Result<size_t> read(uint32_t address, uint8_t* buffer, 
                                      size_t length) noexcept = 0;
@@ -82,9 +98,12 @@ public:
     virtual core::Result<void> erase(uint32_t address, size_t length) noexcept = 0;
 };
 
+// ============================================================================
+// COMMUNICATION INTERFACE
+// ============================================================================
 class IPlatformComm {
 public:
-    virtual ~IPlatformComm() = default;
+    virtual ~IPlatformComm();
     
     virtual core::Result<void> init() noexcept = 0;
     virtual core::Result<void> shutdown() noexcept = 0;
@@ -94,6 +113,9 @@ public:
     virtual bool is_connected() noexcept = 0;
 };
 
+// ============================================================================
+// PLATFORM SERVICES AGGREGATOR
+// ============================================================================
 struct PlatformServices {
     IPlatformTime* time;
     IPlatformGPIO* gpio;
@@ -112,4 +134,5 @@ struct PlatformServices {
     }
 };
 
-} // namespace gridshield::platform
+} // namespace platform
+} // namespace gridshield

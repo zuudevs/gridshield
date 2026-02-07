@@ -1,8 +1,8 @@
 /**
  * @file system.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief 
- * @version 0.1
+ * @brief Main system orchestrator coordinating all security layers
+ * @version 0.2
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -21,6 +21,9 @@
 
 namespace gridshield {
 
+// ============================================================================
+// SYSTEM CONFIGURATION
+// ============================================================================
 struct SystemConfig {
     core::meter_id_t meter_id;
     hardware::TamperConfig tamper_config;
@@ -32,6 +35,9 @@ struct SystemConfig {
         : meter_id(0), heartbeat_interval_ms(60000), reading_interval_ms(5000) {}
 };
 
+// ============================================================================
+// OPERATION MODE
+// ============================================================================
 enum class OperationMode : uint8_t {
     Normal = 0,
     TamperResponse = 1,
@@ -39,11 +45,15 @@ enum class OperationMode : uint8_t {
     Maintenance = 3
 };
 
+// ============================================================================
+// GRIDSHIELD SYSTEM (Main Orchestrator)
+// ============================================================================
 class GridShieldSystem {
 public:
     GridShieldSystem() noexcept;
     ~GridShieldSystem();
     
+    // Lifecycle management
     core::Result<void> initialize(const SystemConfig& config,
                                  platform::PlatformServices& platform) noexcept;
     
@@ -51,11 +61,14 @@ public:
     core::Result<void> stop() noexcept;
     core::Result<void> shutdown() noexcept;
     
+    // Main processing loop
     core::Result<void> process_cycle() noexcept;
     
+    // State queries
     core::SystemState get_state() const noexcept { return state_; }
     OperationMode get_mode() const noexcept { return mode_; }
     
+    // Operations
     core::Result<void> send_meter_reading(const core::MeterReading& reading) noexcept;
     core::Result<void> send_tamper_alert() noexcept;
     core::Result<void> send_heartbeat() noexcept;

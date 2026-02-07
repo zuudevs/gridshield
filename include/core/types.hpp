@@ -1,7 +1,7 @@
 /**
  * @file types.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Domain types for GridShield
+ * @brief Core domain types with optimized memory layout
  * @version 0.3
  * @date 2026-02-03
  * 
@@ -21,12 +21,19 @@
     #include <string.h>
 #endif
 
-namespace gridshield::core {
+namespace gridshield {
+namespace core {
 
+// ============================================================================
+// TYPE ALIASES
+// ============================================================================
 using timestamp_t = uint64_t;
 using meter_id_t = uint64_t;
 using sequence_t = uint32_t;
 
+// ============================================================================
+// ENUMERATIONS
+// ============================================================================
 enum class SecurityLevel : uint8_t {
     None = 0,
     Low = 1,
@@ -55,56 +62,66 @@ enum class Priority : uint8_t {
     Emergency = 5
 };
 
-struct MeterReading {
-    timestamp_t timestamp;
-    uint32_t energy_wh;
-    uint32_t voltage_mv;  // 220V = 220000 mV
-    uint16_t current_ma;
-    uint16_t power_factor; // 0-100 (scaled by 100)
-    uint8_t phase;
-    uint8_t reserved;
+// ============================================================================
+// METER READING (24 bytes - cache aligned)
+// ============================================================================
+struct GS_ALIGN(8) MeterReading {
+    timestamp_t timestamp;    // 8 bytes
+    uint32_t energy_wh;       // 4 bytes
+    uint32_t voltage_mv;      // 4 bytes (220V = 220000mV)
+    uint16_t current_ma;      // 2 bytes
+    uint16_t power_factor;    // 2 bytes (0-100 scaled)
+    uint8_t phase;            // 1 byte
+    uint8_t reserved[3];      // 3 bytes padding
     
-    MeterReading() : timestamp(0), energy_wh(0), voltage_mv(0),
-                     current_ma(0), power_factor(0), phase(0), reserved(0) {}
+    MeterReading() 
+        : timestamp(0), energy_wh(0), voltage_mv(0),
+          current_ma(0), power_factor(0), phase(0), reserved{0} {}
 };
+static_assert(sizeof(MeterReading) == 24, "MeterReading size must be 24 bytes");
 
-struct TamperEvent {
-    timestamp_t timestamp;
-    uint8_t event_type;
-    uint8_t severity;
-    uint16_t sensor_id;
-    uint32_t metadata;
+// ============================================================================
+// TAMPER EVENT (16 bytes - optimized)
+// ============================================================================
+struct GS_ALIGN(8) TamperEvent {
+    timestamp_t timestamp;  // 8 bytes
+    uint32_t metadata;      // 4 bytes
+    uint16_t sensor_id;     // 2 bytes
+    uint8_t event_type;     // 1 byte
+    uint8_t severity;       // 1 byte
     
-    TamperEvent() : timestamp(0), event_type(0), severity(0),
-                    sensor_id(0), metadata(0) {}
+    TamperEvent() 
+        : timestamp(0), metadata(0), sensor_id(0),
+          event_type(0), severity(0) {}
 };
+static_assert(sizeof(TamperEvent) == 16, "TamperEvent size must be 16 bytes");
 
-static_assert(sizeof(TamperEvent) == 16, "TamperEvent size mismatch");
-
-// Fixed-size buffer for embedded systems
+// ============================================================================
+// STATIC BUFFER (fixed-size, no heap allocation)
+// ============================================================================
 template<typename T, size_t N>
 class StaticBuffer {
 public:
     StaticBuffer() : size_(0) {}
     
-    bool push(const T& item) {
-        if (UNLIKELY(size_ >= N)) return false;
+    GS_INLINE bool push(const T& item) {
+        if (GS_UNLIKELY(size_ >= N)) return false;
         data_[size_++] = item;
         return true;
     }
     
-    bool pop(T& item) {
-        if (UNLIKELY(size_ == 0)) return false;
-        item = data_[--size_];
+    GS_INLINE bool pop(T& item) {
+        if (GS_UNLIKELY(size_ == 0)) return false;
+        item = ZMOVE(data_[--size_]);
         return true;
     }
     
     void clear() { size_ = 0; }
     
-    size_t size() const { return size_; }
-    size_t capacity() const { return N; }
-    bool empty() const { return size_ == 0; }
-    bool full() const { return size_ == N; }
+    constexpr size_t size() const { return size_; }
+    constexpr size_t capacity() const { return N; }
+    constexpr bool empty() const { return size_ == 0; }
+    constexpr bool full() const { return size_ == N; }
     
     T& operator[](size_t idx) { return data_[idx]; }
     const T& operator[](size_t idx) const { return data_[idx]; }
@@ -117,7 +134,9 @@ private:
     size_t size_;
 };
 
-// Byte array with append operations
+// ============================================================================
+// BYTE ARRAY (specialized for raw bytes)
+// ============================================================================
 template<size_t N>
 class ByteArray {
 public:
@@ -130,15 +149,15 @@ public:
         memset(data_, 0, N);
     }
     
-    bool append(const uint8_t* data, size_t len) {
-        if (UNLIKELY(size_ + len > N)) return false;
+    GS_INLINE bool append(const uint8_t* data, size_t len) {
+        if (GS_UNLIKELY(size_ + len > N)) return false;
         memcpy(data_ + size_, data, len);
         size_ += len;
         return true;
     }
     
-    size_t size() const { return size_; }
-    size_t capacity() const { return N; }
+    constexpr size_t size() const { return size_; }
+    constexpr size_t capacity() const { return N; }
     
     uint8_t* data() { return data_; }
     const uint8_t* data() const { return data_; }
@@ -151,4 +170,5 @@ private:
     size_t size_;
 };
 
-} // namespace gridshield::core
+} // namespace core
+} // namespace gridshield

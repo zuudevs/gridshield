@@ -1,8 +1,8 @@
 /**
  * @file packet.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief 
- * @version 0.1
+ * @brief Secure packet protocol with ECDSA authentication
+ * @version 0.2
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -16,13 +16,20 @@
 #include "platform/platform.hpp"
 #include "security/crypto.hpp"
 
-namespace gridshield::network {
+namespace gridshield {
+namespace network {
 
+// ============================================================================
+// PROTOCOL CONSTANTS
+// ============================================================================
 constexpr uint16_t PROTOCOL_VERSION = 0x0100;
 constexpr uint16_t MAX_PAYLOAD_SIZE = 512;
 constexpr uint8_t MAGIC_HEADER = 0xA5;
 constexpr uint8_t MAGIC_FOOTER = 0x5A;
 
+// ============================================================================
+// PACKET TYPE
+// ============================================================================
 enum class PacketType : uint8_t {
     Invalid = 0,
     MeterData = 1,
@@ -33,6 +40,9 @@ enum class PacketType : uint8_t {
     KeyExchange = 6
 };
 
+// ============================================================================
+// PACKET STRUCTURES (wire format)
+// ============================================================================
 #pragma pack(push, 1)
 struct PacketHeader {
     uint8_t magic_header;
@@ -57,29 +67,32 @@ struct PacketFooter {
     uint8_t magic_footer;
     
     PacketFooter() noexcept : magic_footer(MAGIC_FOOTER) {
-        for (size_t i = 0; i < security::ECC_SIGNATURE_SIZE; ++i) {
-            signature[i] = 0;
-        }
+        memset(signature, 0, security::ECC_SIGNATURE_SIZE);
     }
 };
 #pragma pack(pop)
 
+// ============================================================================
+// SECURE PACKET
+// ============================================================================
 class SecurePacket {
 public:
     SecurePacket() noexcept;
     
-    core::Result<void> build(PacketType type, 
-                            core::meter_id_t meter_id,
-                            core::Priority priority,
-                            const uint8_t* payload, 
-                            uint16_t payload_len,
-                            security::ICryptoEngine& crypto,
-                            const security::ECCKeyPair& keypair) noexcept;
+    core::Result<void> build(
+        PacketType type, 
+        core::meter_id_t meter_id,
+        core::Priority priority,
+        const uint8_t* payload, 
+        uint16_t payload_len,
+        security::ICryptoEngine& crypto,
+        const security::ECCKeyPair& keypair) noexcept;
     
-    core::Result<void> parse(const uint8_t* buffer, 
-                            size_t buffer_len,
-                            security::ICryptoEngine& crypto,
-                            const security::ECCKeyPair& server_keypair) noexcept;
+    core::Result<void> parse(
+        const uint8_t* buffer, 
+        size_t buffer_len,
+        security::ICryptoEngine& crypto,
+        const security::ECCKeyPair& server_keypair) noexcept;
     
     core::Result<size_t> serialize(uint8_t* buffer, size_t buffer_size) const noexcept;
     
@@ -91,8 +104,9 @@ public:
     
 private:
     core::Result<void> verify_integrity(security::ICryptoEngine& crypto) const noexcept;
-    core::Result<void> compute_signature(security::ICryptoEngine& crypto,
-                                        const security::ECCKeyPair& keypair) noexcept;
+    core::Result<void> compute_signature(
+        security::ICryptoEngine& crypto,
+        const security::ECCKeyPair& keypair) noexcept;
     
     PacketHeader header_;
     uint8_t payload_[MAX_PAYLOAD_SIZE];
@@ -101,34 +115,45 @@ private:
     core::sequence_t next_sequence_;
 };
 
+// ============================================================================
+// PACKET TRANSPORT INTERFACE
+// ============================================================================
 class IPacketTransport {
 public:
     virtual ~IPacketTransport() = default;
     
-    virtual core::Result<void> send_packet(const SecurePacket& packet,
-                                          security::ICryptoEngine& crypto,
-                                          const security::ECCKeyPair& keypair) noexcept = 0;
+    virtual core::Result<void> send_packet(
+        const SecurePacket& packet,
+        security::ICryptoEngine& crypto,
+        const security::ECCKeyPair& keypair) noexcept = 0;
     
-    virtual core::Result<SecurePacket> receive_packet(security::ICryptoEngine& crypto,
-                                                      const security::ECCKeyPair& keypair,
-                                                      uint32_t timeout_ms) noexcept = 0;
+    virtual core::Result<SecurePacket> receive_packet(
+        security::ICryptoEngine& crypto,
+        const security::ECCKeyPair& keypair,
+        uint32_t timeout_ms) noexcept = 0;
 };
 
+// ============================================================================
+// PACKET TRANSPORT IMPLEMENTATION
+// ============================================================================
 class PacketTransport : public IPacketTransport {
 public:
     explicit PacketTransport(platform::IPlatformComm& comm) noexcept;
     ~PacketTransport() override = default;
     
-    core::Result<void> send_packet(const SecurePacket& packet,
-                                  security::ICryptoEngine& crypto,
-                                  const security::ECCKeyPair& keypair) noexcept override;
+    core::Result<void> send_packet(
+        const SecurePacket& packet,
+        security::ICryptoEngine& crypto,
+        const security::ECCKeyPair& keypair) noexcept override;
     
-    core::Result<SecurePacket> receive_packet(security::ICryptoEngine& crypto,
-                                             const security::ECCKeyPair& keypair,
-                                             uint32_t timeout_ms) noexcept override;
+    core::Result<SecurePacket> receive_packet(
+        security::ICryptoEngine& crypto,
+        const security::ECCKeyPair& keypair,
+        uint32_t timeout_ms) noexcept override;
     
 private:
     platform::IPlatformComm& comm_;
 };
 
-} // namespace gridshield::network
+} // namespace network
+} // namespace gridshield

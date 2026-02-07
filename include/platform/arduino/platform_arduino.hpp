@@ -1,11 +1,16 @@
 /**
  * @file platform_arduino.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Complete Arduino platform implementation
- * @version 0.1
+ * @brief Complete Arduino platform implementation for AVR
+ * @version 0.2
  * @date 2026-02-07
  * 
  * @copyright Copyright (c) 2026
+ *
+ * PRODUCTION NOTE:
+ * - Replace mock crypto with Crypto library by Rhys Weatherley
+ * - Implement EEPROM storage using EEPROM.h
+ * - Use hardware RNG if available (ESP32 has esp_random())
  */
 
 #pragma once
@@ -13,12 +18,15 @@
 #include "platform/platform.hpp"
 
 #if PLATFORM_AVR
+// NEED ADOPTION: Arduino core headers
 #include <Arduino.h>
 
-namespace gridshield::platform::arduino {
+namespace gridshield {
+namespace platform {
+namespace arduino {
 
 // ============================================================================
-// TIME
+// ARDUINO TIME
 // ============================================================================
 class ArduinoTime : public IPlatformTime {
 public:
@@ -32,7 +40,41 @@ public:
 };
 
 // ============================================================================
-// INTERRUPT (Stub - requires manual ISR registration)
+// ARDUINO GPIO
+// ============================================================================
+class ArduinoGPIO : public IPlatformGPIO {
+public:
+    core::Result<void> configure(uint8_t pin, PinMode mode) noexcept override {
+        switch (mode) {
+            case PinMode::Input:
+                pinMode(pin, INPUT);
+                break;
+            case PinMode::Output:
+                pinMode(pin, OUTPUT);
+                break;
+            case PinMode::InputPullup:
+                pinMode(pin, INPUT_PULLUP);
+                break;
+            case PinMode::InputPulldown:
+                // AVR doesn't have internal pulldown - use external resistor
+                pinMode(pin, INPUT);
+                break;
+        }
+        return core::Result<void>();
+    }
+    
+    core::Result<bool> read(uint8_t pin) noexcept override {
+        return core::Result<bool>(digitalRead(pin) == HIGH);
+    }
+    
+    core::Result<void> write(uint8_t pin, bool value) noexcept override {
+        digitalWrite(pin, value ? HIGH : LOW);
+        return core::Result<void>();
+    }
+};
+
+// ============================================================================
+// ARDUINO INTERRUPT (Stub - requires manual ISR registration)
 // ============================================================================
 class ArduinoInterruptStub : public IPlatformInterrupt {
 public:
@@ -58,12 +100,12 @@ public:
 };
 
 // ============================================================================
-// CRYPTO (Simple implementation - not cryptographically secure!)
+// ARDUINO CRYPTO (Simple implementation - NOT cryptographically secure!)
 // ============================================================================
 class ArduinoSimpleCrypto : public IPlatformCrypto {
 public:
     core::Result<void> random_bytes(uint8_t* buffer, size_t length) noexcept override {
-        if (buffer == nullptr || length == 0) {
+        if (GS_UNLIKELY(buffer == nullptr || length == 0)) {
             return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
@@ -75,7 +117,7 @@ public:
     }
     
     core::Result<uint32_t> crc32(const uint8_t* data, size_t length) noexcept override {
-        if (data == nullptr) {
+        if (GS_UNLIKELY(data == nullptr)) {
             return core::Result<uint32_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
@@ -89,19 +131,20 @@ public:
     
     core::Result<void> sha256(const uint8_t* data, size_t length,
                              uint8_t* hash_out) noexcept override {
-        if (data == nullptr || hash_out == nullptr) {
+        if (GS_UNLIKELY(data == nullptr || hash_out == nullptr)) {
             return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
-        // PLACEHOLDER - Use library like "Crypto" by Rhys Weatherley
-        // // NEED ADOPTION: #include <SHA256.h>
+        // NEED ADOPTION: Replace with Crypto library
+        // #include <SHA256.h>
         // SHA256 sha256;
         // sha256.update(data, length);
         // sha256.finalize(hash_out, 32);
         
-        // For now: simple hash
+        // Placeholder: Simple hash (INSECURE)
         for (size_t i = 0; i < 32; ++i) {
-            hash_out[i] = (length > 0) ? data[i % length] ^ i : i;
+            hash_out[i] = (length > 0) ? data[i % length] ^ static_cast<uint8_t>(i) : 
+                                         static_cast<uint8_t>(i);
         }
         
         return core::Result<void>();
@@ -109,13 +152,14 @@ public:
 };
 
 // ============================================================================
-// STORAGE (Stub - requires EEPROM library)
+// ARDUINO STORAGE (Stub - requires EEPROM library)
 // ============================================================================
 class ArduinoStorageStub : public IPlatformStorage {
 public:
     core::Result<size_t> read(uint32_t /*address*/, uint8_t* /*buffer*/,
                              size_t /*length*/) noexcept override {
-        // // NEED ADOPTION: #include <EEPROM.h>
+        // NEED ADOPTION: Implement with EEPROM library
+        // #include <EEPROM.h>
         // for (size_t i = 0; i < length; ++i) {
         //     buffer[i] = EEPROM.read(address + i);
         // }
@@ -133,7 +177,7 @@ public:
 };
 
 // ============================================================================
-// SERIAL COMMUNICATION
+// ARDUINO SERIAL COMMUNICATION
 // ============================================================================
 class ArduinoSerialComm : public IPlatformComm {
 public:
@@ -155,11 +199,11 @@ public:
     }
     
     core::Result<size_t> send(const uint8_t* data, size_t length) noexcept override {
-        if (!initialized_) {
+        if (GS_UNLIKELY(!initialized_)) {
             return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::NetworkDisconnected));
         }
         
-        if (data == nullptr || length == 0) {
+        if (GS_UNLIKELY(data == nullptr || length == 0)) {
             return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
@@ -171,11 +215,11 @@ public:
     
     core::Result<size_t> receive(uint8_t* buffer, size_t max_length,
                                 uint32_t timeout_ms) noexcept override {
-        if (!initialized_) {
+        if (GS_UNLIKELY(!initialized_)) {
             return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::NetworkDisconnected));
         }
         
-        if (buffer == nullptr || max_length == 0) {
+        if (GS_UNLIKELY(buffer == nullptr || max_length == 0)) {
             return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
@@ -207,6 +251,8 @@ private:
     bool initialized_;
 };
 
-} // namespace gridshield::platform::arduino
+} // namespace arduino
+} // namespace platform
+} // namespace gridshield
 
 #endif // PLATFORM_AVR

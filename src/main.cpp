@@ -1,25 +1,31 @@
 /**
  * @file demo_main.cpp
- * @brief Native platform demo/test entry point
- * @version 0.1
+ * @brief Native platform entry point for development/testing
+ * @version 0.2
  * @date 2026-02-07
  * 
  * @copyright Copyright (c) 2026
+ *
+ * This file is for NATIVE (PC) builds only.
+ * Arduino builds use gridshield.ino instead.
  */
 
 #include "core/system.hpp"
 #include "platform/mock_platform.hpp"
+
+#if PLATFORM_NATIVE
+
 #include <iostream>
 #include <iomanip>
 
 using namespace gridshield;
 
-void print_header(const char* title) {
+static void print_header(const char* title) {
     std::cout << "\n[" << title << "]\n";
     std::cout << std::string(40, '-') << "\n";
 }
 
-void print_error(const core::ErrorContext& error) {
+static void print_error(const core::ErrorContext& error) {
     std::cerr << "ERROR: Code " << static_cast<int>(error.code);
     if (error.file) {
         std::cerr << " at " << error.file << ":" << error.line;
@@ -46,7 +52,7 @@ int main() {
     services.interrupt = &mock_interrupt;
     services.crypto = &mock_crypto;
     services.comm = &mock_comm;
-    services.storage = nullptr; // Not used in demo
+    services.storage = nullptr;
     
     // Initialize communication
     auto init_result = mock_comm.init();
@@ -175,3 +181,8 @@ int main() {
     
     return 0;
 }
+
+#else
+// AVR platform uses gridshield.ino entry point
+#error "This file is for NATIVE builds only. Use gridshield.ino for Arduino."
+#endif

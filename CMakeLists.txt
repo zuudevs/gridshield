@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.20)
 
 project(
     GridShield
-    VERSION 1.1.0
+    VERSION 1.0.0
     DESCRIPTION "Multi-layer Security for AMI Systems"
     LANGUAGES CXX C
 )
@@ -13,9 +13,9 @@ project(
 
 option(ENABLE_SANITIZERS "Enable AddressSanitizer and UBSan (Native only)" OFF)
 
-# Default platform if not set by preset
+# Default platform if not set
 if(NOT DEFINED PLATFORM)
-    set(PLATFORM "NATIVE" CACHE STRING "Build platform: NATIVE, AVR, ESP32")
+    set(PLATFORM "NATIVE" CACHE STRING "Build platform: NATIVE, AVR")
 endif()
 
 message(STATUS "════════════════════════════════════════════")
@@ -25,7 +25,7 @@ message(STATUS " Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "════════════════════════════════════════════")
 
 # ============================================================================
-# C++ STANDARD
+# C++ STANDARD (C++17 for compatibility)
 # ============================================================================
 
 set(CMAKE_CXX_STANDARD 17)
@@ -128,19 +128,19 @@ if(PLATFORM STREQUAL "AVR")
         VERBATIM
     )
     
-    # Upload target (usage: cmake --build build-avr --target upload)
+    # Upload target
     if(DEFINED AVR_UPLOAD_PORT)
-        avr_add_upload_target(${PROJECT_NAME} ${AVR_UPLOAD_PORT})
+        add_custom_target(upload
+            DEPENDS ${PROJECT_NAME}
+            COMMAND avrdude -p ${AVR_MCU} -c arduino 
+                    -P ${AVR_UPLOAD_PORT} -b ${AVR_UPLOAD_BAUD}
+                    -U flash:w:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}.hex:i
+            COMMENT "Uploading to ${AVR_UPLOAD_PORT}..."
+            VERBATIM
+        )
     else()
         message(STATUS "Upload target disabled. Set AVR_UPLOAD_PORT to enable.")
     endif()
-
-elseif(PLATFORM STREQUAL "ESP32")
-    # ────────────────────────────────────────────────────────────────────────
-    # ESP32 (Future support)
-    # ────────────────────────────────────────────────────────────────────────
-    
-    message(FATAL_ERROR "ESP32 support coming soon. Use PlatformIO for now.")
 
 elseif(PLATFORM STREQUAL "NATIVE")
     # ────────────────────────────────────────────────────────────────────────
@@ -149,7 +149,7 @@ elseif(PLATFORM STREQUAL "NATIVE")
     
     message(STATUS "Configuring for Native (${CMAKE_SYSTEM_NAME})...")
     
-    # Add demo main for native
+    # Add main for native
     add_executable(${PROJECT_NAME} ${CORE_SOURCES} src/main.cpp)
     
     target_include_directories(${PROJECT_NAME} PRIVATE include)
@@ -178,7 +178,7 @@ elseif(PLATFORM STREQUAL "NATIVE")
     endif()
     
 else()
-    message(FATAL_ERROR "Unknown PLATFORM: ${PLATFORM}. Use NATIVE, AVR, or ESP32.")
+    message(FATAL_ERROR "Unknown PLATFORM: ${PLATFORM}. Use NATIVE or AVR.")
 endif()
 
 # ============================================================================

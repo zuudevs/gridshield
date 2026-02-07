@@ -1,8 +1,8 @@
 /**
  * @file tamper.cpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Physical tamper detection implementation
- * @version 0.2
+ * @brief Tamper detection implementation with interrupt handling
+ * @version 0.3
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -11,7 +11,8 @@
 
 #include "hardware/tamper.hpp"
 
-namespace gridshield::hardware {
+namespace gridshield {
+namespace hardware {
 
 TamperDetector::TamperDetector() noexcept
     : platform_(nullptr),
@@ -20,13 +21,15 @@ TamperDetector::TamperDetector() noexcept
       tamper_timestamp_(0),
       initialized_(false) {}
 
-core::Result<void> TamperDetector::initialize(const TamperConfig& config, 
-                                              platform::PlatformServices& platform) noexcept {
-    if (UNLIKELY(initialized_)) {
+core::Result<void> TamperDetector::initialize(
+    const TamperConfig& config, 
+    platform::PlatformServices& platform) noexcept {
+    
+    if (GS_UNLIKELY(initialized_)) {
         return MAKE_ERROR(core::ErrorCode::SystemAlreadyInitialized);
     }
     
-    if (UNLIKELY(!platform.is_valid())) {
+    if (GS_UNLIKELY(!platform.is_valid())) {
         return MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
@@ -52,7 +55,7 @@ core::Result<void> TamperDetector::initialize(const TamperConfig& config,
 }
 
 core::Result<void> TamperDetector::start() noexcept {
-    if (UNLIKELY(!initialized_)) {
+    if (GS_UNLIKELY(!initialized_)) {
         return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
@@ -68,8 +71,8 @@ core::Result<void> TamperDetector::start() noexcept {
 }
 
 core::Result<void> TamperDetector::stop() noexcept {
-    if (UNLIKELY(!initialized_)) {
-        return core::Result<void>(MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
+    if (GS_UNLIKELY(!initialized_)) {
+        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
     TRY(platform_->interrupt->disable(config_.sensor_pin));
@@ -89,12 +92,12 @@ core::timestamp_t TamperDetector::get_tamper_timestamp() const noexcept {
 }
 
 core::Result<void> TamperDetector::acknowledge_tamper() noexcept {
-    // Tamper acknowledged but not cleared
+    // Tamper acknowledged but not cleared (requires manual reset)
     return core::Result<void>();
 }
 
 core::Result<void> TamperDetector::reset() noexcept {
-    if (UNLIKELY(!initialized_)) {
+    if (GS_UNLIKELY(!initialized_)) {
         return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
@@ -107,19 +110,19 @@ core::Result<void> TamperDetector::reset() noexcept {
 
 void TamperDetector::interrupt_handler(void* context) noexcept {
     auto* detector = static_cast<TamperDetector*>(context);
-    if (LIKELY(detector != nullptr)) {
+    if (GS_LIKELY(detector != nullptr)) {
         detector->handle_tamper_event();
     }
 }
 
 void TamperDetector::handle_tamper_event() noexcept {
-    if (UNLIKELY(!initialized_ || platform_ == nullptr)) {
+    if (GS_UNLIKELY(!initialized_ || platform_ == nullptr)) {
         return;
     }
     
     // Read current sensor state
     auto read_result = platform_->gpio->read(config_.sensor_pin);
-    if (UNLIKELY(read_result.is_error())) {
+    if (GS_UNLIKELY(read_result.is_error())) {
         return;
     }
     
@@ -131,7 +134,7 @@ void TamperDetector::handle_tamper_event() noexcept {
         
         // Re-read after debounce
         read_result = platform_->gpio->read(config_.sensor_pin);
-        if (UNLIKELY(read_result.is_error() || read_result.value())) {
+        if (GS_UNLIKELY(read_result.is_error() || read_result.value())) {
             return; // False trigger or read error
         }
         
@@ -150,4 +153,5 @@ void TamperDetector::handle_tamper_event() noexcept {
     }
 }
 
-} // namespace gridshield::hardware
+} // namespace hardware
+} // namespace gridshield

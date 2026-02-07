@@ -1,8 +1,8 @@
 /**
  * @file system.cpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief 
- * @version 0.1
+ * @brief System orchestrator implementation
+ * @version 0.2
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -10,7 +10,13 @@
  */
 
 #include "core/system.hpp"
-#include <new>
+
+#if PLATFORM_NATIVE
+    #include <new>
+#else
+    // NEED ADOPTION: Ensure placement new is available
+    #include <new.h>
+#endif
 
 namespace gridshield {
 
@@ -36,8 +42,10 @@ GridShieldSystem::~GridShieldSystem() {
     }
 }
 
-core::Result<void> GridShieldSystem::initialize(const SystemConfig& config,
-                                                platform::PlatformServices& platform) noexcept {
+core::Result<void> GridShieldSystem::initialize(
+    const SystemConfig& config,
+    platform::PlatformServices& platform) noexcept {
+    
     if (initialized_) {
         return MAKE_ERROR(core::ErrorCode::SystemAlreadyInitialized);
     }
@@ -52,18 +60,10 @@ core::Result<void> GridShieldSystem::initialize(const SystemConfig& config,
     transition_state(core::SystemState::Initializing);
     
     // Initialize hardware layer
-    auto result = tamper_detector_.initialize(config_.tamper_config, platform);
-    if (result.is_error()) {
-        transition_state(core::SystemState::Error);
-        return result.error();
-    }
+    TRY(tamper_detector_.initialize(config_.tamper_config, platform));
     
     // Initialize security layer
-    result = initialize_crypto();
-    if (result.is_error()) {
-        transition_state(core::SystemState::Error);
-        return result.error();
-    }
+    TRY(initialize_crypto());
     
     // Initialize network layer
     if (platform_->comm != nullptr) {
@@ -73,19 +73,11 @@ core::Result<void> GridShieldSystem::initialize(const SystemConfig& config,
             return MAKE_ERROR(core::ErrorCode::ResourceExhausted);
         }
         
-        result = platform_->comm->init();
-        if (result.is_error()) {
-            transition_state(core::SystemState::Error);
-            return result.error();
-        }
+        TRY(platform_->comm->init());
     }
     
     // Initialize analytics layer
-    result = anomaly_detector_.initialize(config_.baseline_profile);
-    if (result.is_error()) {
-        transition_state(core::SystemState::Error);
-        return result.error();
-    }
+    TRY(anomaly_detector_.initialize(config_.baseline_profile));
     
     initialized_ = true;
     transition_state(core::SystemState::Ready);
@@ -99,10 +91,7 @@ core::Result<void> GridShieldSystem::start() noexcept {
     }
     
     // Start tamper monitoring
-    auto result = tamper_detector_.start();
-    if (result.is_error()) {
-        return result.error();
-    }
+    TRY(tamper_detector_.start());
     
     transition_state(core::SystemState::Operating);
     last_heartbeat_ = platform_->time->get_timestamp_ms();
@@ -116,10 +105,7 @@ core::Result<void> GridShieldSystem::stop() noexcept {
         return MAKE_ERROR(core::ErrorCode::InvalidState);
     }
     
-    auto result = tamper_detector_.stop();
-    if (result.is_error()) {
-        return result.error();
-    }
+    TRY(tamper_detector_.stop());
     
     transition_state(core::SystemState::Ready);
     
@@ -135,10 +121,7 @@ core::Result<void> GridShieldSystem::shutdown() noexcept {
     }
     
     if (platform_ != nullptr && platform_->comm != nullptr) {
-        auto result = platform_->comm->shutdown();
-        if (result.is_error()) {
-            return result.error();
-        }
+        TRY(platform_->comm->shutdown());
     }
     
     device_keypair_.clear();
@@ -151,13 +134,14 @@ core::Result<void> GridShieldSystem::shutdown() noexcept {
 }
 
 core::Result<void> GridShieldSystem::process_cycle() noexcept {
-    if (state_ != core::SystemState::Operating && state_ != core::SystemState::Tampered) {
+    if (state_ != core::SystemState::Operating && 
+        state_ != core::SystemState::Tampered) {
         return MAKE_ERROR(core::ErrorCode::InvalidState);
     }
     
     core::timestamp_t current_time = platform_->time->get_timestamp_ms();
     
-    // Check for tamper events
+    // Check for tamper events (highest priority)
     if (tamper_detector_.is_tampered() && state_ != core::SystemState::Tampered) {
         auto result = handle_tamper_event();
         if (result.is_error()) {
@@ -168,15 +152,14 @@ core::Result<void> GridShieldSystem::process_cycle() noexcept {
     // Send heartbeat if interval elapsed
     if (current_time - last_heartbeat_ >= config_.heartbeat_interval_ms) {
         auto result = send_heartbeat();
-        if (result.is_error()) {
-            // Non-critical error - log but continue
-        }
+        // Non-critical error - log but continue
+        (void)result;
         last_heartbeat_ = current_time;
     }
     
-    // Process periodic reading (simulated here)
+    // Process periodic reading
     if (current_time - last_reading_ >= config_.reading_interval_ms) {
-        // In production: Read actual meter data
+        // In production: Read actual meter hardware
         core::MeterReading reading;
         reading.timestamp = current_time;
         reading.energy_wh = 1000; // Placeholder
@@ -185,22 +168,22 @@ core::Result<void> GridShieldSystem::process_cycle() noexcept {
         reading.power_factor = 95; // 0.95
         
         auto result = send_meter_reading(reading);
-        if (result.is_error()) {
-            // Non-critical error
-        }
+        // Non-critical error
+        (void)result;
         last_reading_ = current_time;
     }
     
     // Perform cross-layer validation periodically
     auto validation_result = perform_cross_layer_validation();
-    if (validation_result.is_error()) {
-        // Log error but continue operation
-    }
+    // Log error but continue operation
+    (void)validation_result;
     
     return core::Result<void>();
 }
 
-core::Result<void> GridShieldSystem::send_meter_reading(const core::MeterReading& reading) noexcept {
+core::Result<void> GridShieldSystem::send_meter_reading(
+    const core::MeterReading& reading) noexcept {
+    
     if (!initialized_ || crypto_engine_ == nullptr || packet_transport_ == nullptr) {
         return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
@@ -215,14 +198,11 @@ core::Result<void> GridShieldSystem::send_meter_reading(const core::MeterReading
     }
     
     // Update consumption profile
-    auto update_result = anomaly_detector_.update_profile(reading);
-    if (update_result.is_error()) {
-        return update_result.error();
-    }
+    TRY(anomaly_detector_.update_profile(reading));
     
     // Build packet
     network::SecurePacket packet;
-    auto build_result = packet.build(
+    TRY(packet.build(
         network::PacketType::MeterData,
         config_.meter_id,
         core::Priority::Normal,
@@ -230,11 +210,7 @@ core::Result<void> GridShieldSystem::send_meter_reading(const core::MeterReading
         sizeof(core::MeterReading),
         *crypto_engine_,
         device_keypair_
-    );
-    
-    if (build_result.is_error()) {
-        return build_result.error();
-    }
+    ));
     
     // Send packet
     return packet_transport_->send_packet(packet, *crypto_engine_, device_keypair_);
@@ -252,7 +228,7 @@ core::Result<void> GridShieldSystem::send_tamper_alert() noexcept {
     event.sensor_id = config_.tamper_config.sensor_pin;
     
     network::SecurePacket packet;
-    auto build_result = packet.build(
+    TRY(packet.build(
         network::PacketType::TamperAlert,
         config_.meter_id,
         core::Priority::Emergency,
@@ -260,11 +236,7 @@ core::Result<void> GridShieldSystem::send_tamper_alert() noexcept {
         sizeof(core::TamperEvent),
         *crypto_engine_,
         device_keypair_
-    );
-    
-    if (build_result.is_error()) {
-        return build_result.error();
-    }
+    ));
     
     return packet_transport_->send_packet(packet, *crypto_engine_, device_keypair_);
 }
@@ -276,12 +248,14 @@ core::Result<void> GridShieldSystem::send_heartbeat() noexcept {
     
     uint8_t heartbeat_data[8];
     core::timestamp_t timestamp = platform_->time->get_timestamp_ms();
+    
+    // Serialize timestamp to bytes
     for (size_t i = 0; i < sizeof(timestamp); ++i) {
         heartbeat_data[i] = static_cast<uint8_t>((timestamp >> (i * 8)) & 0xFF);
     }
     
     network::SecurePacket packet;
-    auto build_result = packet.build(
+    TRY(packet.build(
         network::PacketType::Heartbeat,
         config_.meter_id,
         core::Priority::Low,
@@ -289,11 +263,7 @@ core::Result<void> GridShieldSystem::send_heartbeat() noexcept {
         sizeof(heartbeat_data),
         *crypto_engine_,
         device_keypair_
-    );
-    
-    if (build_result.is_error()) {
-        return build_result.error();
-    }
+    ));
     
     return packet_transport_->send_packet(packet, *crypto_engine_, device_keypair_);
 }
@@ -309,17 +279,11 @@ core::Result<void> GridShieldSystem::initialize_crypto() noexcept {
     }
     
     // Generate device keypair
-    auto result = crypto_engine_->generate_keypair(device_keypair_);
-    if (result.is_error()) {
-        return result.error();
-    }
+    TRY(crypto_engine_->generate_keypair(device_keypair_));
     
     // In production: Load server public key from secure storage
     // For now: Generate placeholder
-    result = crypto_engine_->generate_keypair(server_public_key_);
-    if (result.is_error()) {
-        return result.error();
-    }
+    TRY(crypto_engine_->generate_keypair(server_public_key_));
     
     return core::Result<void>();
 }
@@ -347,7 +311,7 @@ core::Result<void> GridShieldSystem::perform_cross_layer_validation() noexcept {
     // Check physical layer
     validation_state_.physical_tamper_detected = tamper_detector_.is_tampered();
     
-    // Network anomaly detection would go here (not implemented in this version)
+    // Network anomaly detection (placeholder - implement in production)
     validation_state_.network_anomaly_detected = false;
     
     // If multiple layers indicate attack, escalate priority

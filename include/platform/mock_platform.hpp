@@ -1,7 +1,7 @@
 /**
  * @file mock_platform.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Mock implementation for platform interfaces
+ * @brief Mock implementation for native testing (PC/Mac/Linux)
  * @version 0.3
  * @date 2026-02-07
  * 
@@ -19,18 +19,16 @@
     #include <thread>
     #include <cstdint>
     #include <cstring>
-    
-    using SysClock = std::chrono::steady_clock;
-    using TimePoint = std::chrono::time_point<SysClock>;
 #else
+    // NEED ADOPTION: For Arduino compatibility
     #include <Arduino.h>
     #include <stdint.h>
     #include <string.h>
-    
-    using TimePoint = unsigned long;
-#endif 
+#endif
 
-namespace gridshield::platform::mock {
+namespace gridshield {
+namespace platform {
+namespace mock {
 
 // ============================================================================
 // MOCK TIME
@@ -39,14 +37,16 @@ class MockTime : public IPlatformTime {
 public:
     MockTime() noexcept {
         #if PLATFORM_NATIVE
-        start_time_ = SysClock::now();
+        start_time_ = std::chrono::steady_clock::now();
         #endif
     }
     
     core::timestamp_t get_timestamp_ms() noexcept override {
         #if PLATFORM_NATIVE
-            auto now = SysClock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time_);
+            auto now = std::chrono::steady_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+                now - start_time_
+            );
             return static_cast<core::timestamp_t>(duration.count());
         #else
             return static_cast<core::timestamp_t>(millis());
@@ -63,7 +63,7 @@ public:
     
 private:
     #if PLATFORM_NATIVE
-    SysClock::time_point start_time_;
+    std::chrono::time_point<std::chrono::steady_clock> start_time_;
     #endif
 };
 
@@ -78,29 +78,29 @@ public:
     }
     
     core::Result<void> configure(uint8_t pin, PinMode mode) noexcept override {
-        if (pin >= 256) {
-            return core::Result<void>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        if (GS_UNLIKELY(pin >= 256)) {
+            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         pin_modes_[pin] = mode;
         return core::Result<void>();
     }
     
     core::Result<bool> read(uint8_t pin) noexcept override {
-        if (pin >= 256) {
+        if (GS_UNLIKELY(pin >= 256)) {
             return core::Result<bool>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         return core::Result<bool>(pin_states_[pin]);
     }
     
     core::Result<void> write(uint8_t pin, bool value) noexcept override {
-        if (pin >= 256) {
-            return core::Result<void>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        if (GS_UNLIKELY(pin >= 256)) {
+            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         pin_states_[pin] = value;
         return core::Result<void>();
     }
     
-    // Helper for test environment
+    // Test helper
     void simulate_trigger(uint8_t pin, bool state) {
         if (pin < 256) {
             pin_states_[pin] = state;
@@ -126,7 +126,7 @@ public:
     core::Result<void> attach(uint8_t pin, TriggerMode /*mode*/, 
                              InterruptCallback callback, 
                              void* context) noexcept override {
-        if (pin >= 256 || callback == nullptr) {
+        if (GS_UNLIKELY(pin >= 256 || callback == nullptr)) {
             return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         callbacks_[pin] = callback;
@@ -135,8 +135,8 @@ public:
     }
     
     core::Result<void> detach(uint8_t pin) noexcept override {
-        if (pin >= 256) {
-            return core::Result<void>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        if (GS_UNLIKELY(pin >= 256)) {
+            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         callbacks_[pin] = nullptr;
         contexts_[pin] = nullptr;
@@ -144,21 +144,22 @@ public:
     }
     
     core::Result<void> enable(uint8_t pin) noexcept override {
-        if (pin >= 256) {
-            return core::Result<void>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        if (GS_UNLIKELY(pin >= 256)) {
+            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         enabled_[pin] = true;
         return core::Result<void>();
     }
     
     core::Result<void> disable(uint8_t pin) noexcept override {
-        if (pin >= 256) {
-            return core::Result<void>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        if (GS_UNLIKELY(pin >= 256)) {
+            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         enabled_[pin] = false;
         return core::Result<void>();
     }
     
+    // Test helper
     void simulate_interrupt(uint8_t pin) {
         if (pin < 256 && enabled_[pin] && callbacks_[pin] != nullptr) {
             callbacks_[pin](contexts_[pin]);
@@ -186,8 +187,8 @@ public:
     }
     
     core::Result<void> random_bytes(uint8_t* buffer, size_t length) noexcept override {
-        if (buffer == nullptr || length == 0) {
-            return core::Result<void>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        if (GS_UNLIKELY(buffer == nullptr || length == 0)) {
+            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
         #if PLATFORM_NATIVE
@@ -205,11 +206,11 @@ public:
     }
     
     core::Result<uint32_t> crc32(const uint8_t* data, size_t length) noexcept override {
-        if (data == nullptr) {
+        if (GS_UNLIKELY(data == nullptr)) {
             return core::Result<uint32_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
-        // Simple checksum (not true CRC32)
+        // Simple checksum (NOT cryptographic CRC32)
         uint32_t sum = 0;
         for (size_t i = 0; i < length; ++i) {
             sum = ((sum << 5) + sum) + data[i];
@@ -219,8 +220,8 @@ public:
     
     core::Result<void> sha256(const uint8_t* data, size_t length, 
                              uint8_t* hash_out) noexcept override {
-        if (data == nullptr || hash_out == nullptr) {
-            return core::Result<void>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        if (GS_UNLIKELY(data == nullptr || hash_out == nullptr)) {
+            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
         // Placeholder hash (NOT cryptographically secure)
@@ -239,7 +240,7 @@ private:
 };
 
 // ============================================================================
-// MOCK COMM
+// MOCK COMMUNICATION
 // ============================================================================
 class MockComm : public IPlatformComm {
 public:
@@ -260,11 +261,11 @@ public:
     }
     
     core::Result<size_t> send(const uint8_t* data, size_t length) noexcept override {
-        if (!initialized_ || !connected_) {
+        if (GS_UNLIKELY(!initialized_ || !connected_)) {
             return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::NetworkDisconnected));
         }
         
-        if (data == nullptr || length == 0) {
+        if (GS_UNLIKELY(data == nullptr || length == 0)) {
             return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
@@ -278,11 +279,11 @@ public:
     
     core::Result<size_t> receive(uint8_t* buffer, size_t max_length, 
                                 uint32_t /*timeout_ms*/) noexcept override {
-        if (!initialized_ || !connected_) {
+        if (GS_UNLIKELY(!initialized_ || !connected_)) {
             return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::NetworkDisconnected));
         }
         
-        if (buffer == nullptr || max_length == 0) {
+        if (GS_UNLIKELY(buffer == nullptr || max_length == 0)) {
             return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
 
@@ -305,12 +306,13 @@ public:
         return connected_;
     }
     
+    // Test helpers
     const core::StaticBuffer<uint8_t, 2048>& get_tx_buffer() const { 
         return tx_buffer_; 
     }
     
     void inject_rx_data(const uint8_t* data, size_t len) {
-        for(size_t i = 0; i < len && !rx_buffer_.full(); i++) {
+        for (size_t i = 0; i < len && !rx_buffer_.full(); i++) {
             rx_buffer_.push(data[i]);
         }
     }
@@ -327,4 +329,6 @@ private:
     core::StaticBuffer<uint8_t, 2048> rx_buffer_;
 };
 
-} // namespace gridshield::platform::mock
+} // namespace mock
+} // namespace platform
+} // namespace gridshield

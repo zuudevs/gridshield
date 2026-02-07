@@ -1,8 +1,8 @@
 /**
  * @file error.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief 
- * @version 0.2
+ * @brief Type-safe error handling without exceptions (C++17)
+ * @version 0.3
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -15,14 +15,19 @@
 
 #if PLATFORM_NATIVE
     #include <cstdint>
-	#include <new>
+    #include <new>
 #else
     #include <stdint.h>
-	#include <new.h>
+    // NEED ADOPTION: Ensure <new.h> or placement new is available
+    #include <new.h>
 #endif
 
-namespace gridshield::core {
+namespace gridshield {
+namespace core {
 
+// ============================================================================
+// ERROR CODES
+// ============================================================================
 enum class ErrorCode : uint16_t {
     Success = 0,
     
@@ -73,26 +78,31 @@ enum class ErrorCode : uint16_t {
     NotSupported = 902
 };
 
+// ============================================================================
+// ERROR CONTEXT
+// ============================================================================
 struct ErrorContext {
     ErrorCode code;
     uint32_t line;
     const char* file;
     uint32_t timestamp;
     
-    CONSTEXPR14 ErrorContext(ErrorCode c, uint32_t ln = 0, const char* f = nullptr) 
+    constexpr ErrorContext(ErrorCode c, uint32_t ln = 0, const char* f = nullptr) 
         : code(c), line(ln), file(f), timestamp(0) {}
     
-    CONSTEXPR14 bool is_critical() const {
-        return static_cast<uint16_t>(code) >= 200 && 
-               static_cast<uint16_t>(code) < 400;
+    constexpr bool is_critical() const {
+        uint16_t code_val = static_cast<uint16_t>(code);
+        return code_val >= 200 && code_val < 400;
     }
 };
 
-// Result<T> - Type-safe error propagation
+// ============================================================================
+// RESULT<T> MONAD
+// ============================================================================
 template<typename T>
 class Result {
 public:
-    // Success constructor
+    // Success constructors
     explicit Result(const T& val) : has_value_(true), error_(ErrorCode::Success) {
         new (&storage_.value) T(val);
     }
@@ -111,7 +121,7 @@ public:
         }
     }
     
-    // Deleted copy constructor - force explicit handling
+    // Delete copy (force explicit handling)
     Result(const Result&) = delete;
     Result& operator=(const Result&) = delete;
     
@@ -139,14 +149,14 @@ public:
     }
     
     // Status check
-    CONSTEXPR14 bool is_ok() const { return has_value_; }
-    CONSTEXPR14 bool is_error() const { return !has_value_; }
+    constexpr bool is_ok() const { return has_value_; }
+    constexpr bool is_error() const { return !has_value_; }
     
-    // Value access (unsafe - caller must check is_ok first)
+    // Value access (unsafe - must check is_ok first)
     T& value() { return storage_.value; }
     const T& value() const { return storage_.value; }
     
-    // Safe value access
+    // Safe value access with default
     T value_or(const T& default_val) const {
         return has_value_ ? storage_.value : default_val;
     }
@@ -157,32 +167,36 @@ public:
 private:
     union Storage {
         T value;
-        Storage() {} // Do nothing
-        ~Storage() {} // Do nothing
+        Storage() {} // Empty constructor
+        ~Storage() {} // Empty destructor
     } storage_;
     
     bool has_value_;
     ErrorContext error_;
 };
 
-// Specialization for void
+// ============================================================================
+// RESULT<void> SPECIALIZATION
+// ============================================================================
 template<>
 class Result<void> {
 public:
     Result() : error_(ErrorCode::Success) {}
     explicit Result(ErrorContext err) : error_(err) {}
     
-    CONSTEXPR14 bool is_ok() const { 
+    constexpr bool is_ok() const { 
         return error_.code == ErrorCode::Success; 
     }
-    CONSTEXPR14 bool is_error() const { return !is_ok(); }
+    constexpr bool is_error() const { return !is_ok(); }
     ErrorContext error() const { return error_; }
     
 private:
     ErrorContext error_;
 };
 
-// Error creation macro
+// ============================================================================
+// ERROR HANDLING MACROS
+// ============================================================================
 #define MAKE_ERROR(code) \
     ::gridshield::core::ErrorContext((code), __LINE__, __FILE__)
 
@@ -190,18 +204,20 @@ private:
 #define TRY(expr) \
     do { \
         auto _gs_result = (expr); \
-        if (UNLIKELY(_gs_result.is_error())) { \
+        if (GS_UNLIKELY(_gs_result.is_error())) { \
             return _gs_result.error(); \
         } \
     } while(0)
 
+// Assign and early return on error
 #define TRY_ASSIGN(var, expr) \
     do { \
         auto _gs_result = (expr); \
-        if (UNLIKELY(_gs_result.is_error())) { \
+        if (GS_UNLIKELY(_gs_result.is_error())) { \
             return _gs_result.error(); \
         } \
         var = ZMOVE(_gs_result.value()); \
     } while(0)
 
-} // namespace gridshield::core
+} // namespace core
+} // namespace gridshield

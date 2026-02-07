@@ -1,8 +1,8 @@
 /**
  * @file detector.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief 
- * @version 0.2
+ * @brief Consumption anomaly detection with profile learning
+ * @version 0.3
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -14,10 +14,14 @@
 #include "core/error.hpp"
 #include "core/types.hpp"
 
-namespace gridshield::analytics {
+namespace gridshield {
+namespace analytics {
 
 constexpr size_t PROFILE_HISTORY_SIZE = 24; // 24 hours of hourly averages
 
+// ============================================================================
+// ANOMALY CLASSIFICATION
+// ============================================================================
 enum class AnomalyType : uint8_t {
     None = 0,
     UnexpectedDrop = 1,
@@ -35,6 +39,9 @@ enum class AnomalySeverity : uint8_t {
     Critical = 4
 };
 
+// ============================================================================
+// CONSUMPTION PROFILE
+// ============================================================================
 struct ConsumptionProfile {
     uint32_t hourly_avg_wh[PROFILE_HISTORY_SIZE];
     uint32_t daily_avg_wh;
@@ -48,6 +55,9 @@ struct ConsumptionProfile {
           variance_threshold(30), profile_confidence(0), reserved(0) {}
 };
 
+// ============================================================================
+// ANOMALY REPORT
+// ============================================================================
 struct AnomalyReport {
     core::timestamp_t timestamp;
     AnomalyType type;
@@ -62,6 +72,9 @@ struct AnomalyReport {
           confidence(0), current_value(0), expected_value(0), deviation_percent(0) {}
 };
 
+// ============================================================================
+// ANOMALY DETECTOR INTERFACE
+// ============================================================================
 class IAnomalyDetector {
 public:
     virtual ~IAnomalyDetector() = default;
@@ -75,6 +88,9 @@ public:
     virtual core::Result<void> reset_profile() noexcept = 0;
 };
 
+// ============================================================================
+// ANOMALY DETECTOR IMPLEMENTATION
+// ============================================================================
 class AnomalyDetector : public IAnomalyDetector {
 public:
     AnomalyDetector() noexcept;
@@ -97,6 +113,9 @@ private:
     bool initialized_;
 };
 
+// ============================================================================
+// CROSS-LAYER VALIDATION
+// ============================================================================
 struct CrossLayerValidation {
     bool physical_tamper_detected;
     bool network_anomaly_detected;
@@ -109,15 +128,14 @@ struct CrossLayerValidation {
           consumption_anomaly_detected(false),
           validation_timestamp(0) {}
     
-    // Removed constexpr because complexity/multiple returns might fail on older compilers
     bool requires_investigation() const noexcept {
         return (physical_tamper_detected && consumption_anomaly_detected) ||
                (network_anomaly_detected && consumption_anomaly_detected);
     }
     
-    // Removed constexpr because complexity/multiple returns might fail on older compilers
     core::Priority get_priority() const noexcept {
-        if (physical_tamper_detected && consumption_anomaly_detected && network_anomaly_detected) {
+        if (physical_tamper_detected && consumption_anomaly_detected && 
+            network_anomaly_detected) {
             return core::Priority::Emergency;
         }
         if (physical_tamper_detected || 
@@ -131,4 +149,5 @@ struct CrossLayerValidation {
     }
 };
 
-} // namespace gridshield::analytics
+} // namespace analytics
+} // namespace gridshield
