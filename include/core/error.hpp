@@ -2,7 +2,7 @@
  * @file error.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Type-safe error handling without exceptions (C++17)
- * @version 0.3
+ * @version 0.5
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -111,8 +111,8 @@ public:
         new (&storage_.value) T(ZMOVE(val));
     }
     
-    // Error constructor
-    explicit Result(ErrorContext err) : has_value_(false), error_(err) {}
+    // Error constructor (implicit conversion allowed for MAKE_ERROR pattern)
+    Result(ErrorContext err) : has_value_(false), error_(err) {}
     
     // Destructor
     ~Result() {
@@ -182,7 +182,7 @@ template<>
 class Result<void> {
 public:
     Result() : error_(ErrorCode::Success) {}
-    explicit Result(ErrorContext err) : error_(err) {}
+    Result(ErrorContext err) : error_(err) {}
     
     constexpr bool is_ok() const { 
         return error_.code == ErrorCode::Success; 

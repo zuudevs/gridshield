@@ -1,19 +1,21 @@
 /**
- * @file demo_main.cpp
+ * @file main.cpp
+ * @author zuudevs (zuudevs@gmail.com)
  * @brief Native platform entry point for development/testing
- * @version 0.2
- * @date 2026-02-07
+ * @version 0.3
+ * @date 2026-02-08
  * 
  * @copyright Copyright (c) 2026
- *
- * This file is for NATIVE (PC) builds only.
- * Arduino builds use gridshield.ino instead.
  */
 
 #include "core/system.hpp"
 #include "platform/mock_platform.hpp"
 
 #if PLATFORM_NATIVE
+
+#if defined(_WIN32)
+    #include <windows.h>
+#endif
 
 #include <iostream>
 #include <iomanip>
@@ -33,7 +35,39 @@ static void print_error(const core::ErrorContext& error) {
     std::cerr << "\n";
 }
 
+/**
+ * @brief Initialize console to properly handle UTF-8 output.
+ *
+ * This function configures the console so UTF-8 encoded text
+ * (e.g. Unicode characters, emojis, symbols) can be displayed correctly.
+ *
+ * Platform behavior:
+ * - Windows:
+ *   - Sets input and output code page to UTF-8 (CP_UTF8).
+ *   - Enables full buffering for stdout to reduce flickering
+ *     and improve performance.
+ *
+ * - Linux / macOS:
+ *   - No action is required.
+ *   - Modern terminals already use UTF-8 by default.
+ *
+ * Safe to call multiple times.
+ */
+inline void utf8_console() {
+#if defined(_WIN32)
+	SetConsoleOutputCP(CP_UTF8);
+	SetConsoleCP(CP_UTF8);
+	setvbuf(stdout, nullptr, _IOFBF, 1024);
+
+#elif defined(__linux__) || defined(__APPLE__)
+	(void)0;
+#else
+	(void)0;
+#endif
+}
+
 int main() {
+	utf8_console();
     std::cout << "═══════════════════════════════════════════════════════════════════\n";
     std::cout << "  GridShield AMI Security System v1.0.0\n";
     std::cout << "  Multi-Layer Protection for Advanced Metering Infrastructure\n";
@@ -71,7 +105,7 @@ int main() {
     
     // Initialize baseline consumption profile
     for (size_t i = 0; i < analytics::PROFILE_HISTORY_SIZE; ++i) {
-        config.baseline_profile.hourly_avg_wh[i] = 1000 + (i * 50);
+        config.baseline_profile.hourly_avg_wh[i] = 1000 + static_cast<uint32_t>(i * 50);
     }
     config.baseline_profile.daily_avg_wh = 1200;
     config.baseline_profile.variance_threshold = 30;
@@ -146,7 +180,7 @@ int main() {
     reading.power_factor = 95;
     
     for (int i = 0; i < 3; ++i) {
-        reading.energy_wh = 1000 + (i * 10);
+        reading.energy_wh = 1000 + static_cast<uint32_t>(i * 10);
         reading.timestamp = mock_time.get_timestamp_ms();
         
         result = system.send_meter_reading(reading);

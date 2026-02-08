@@ -2,7 +2,7 @@
  * @file mock_platform.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Mock implementation for native testing (PC/Mac/Linux)
- * @version 0.3
+ * @version 0.4
  * @date 2026-02-07
  * 
  * @copyright Copyright (c) 2026
@@ -78,33 +78,22 @@ public:
     }
     
     core::Result<void> configure(uint8_t pin, PinMode mode) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
-        }
         pin_modes_[pin] = mode;
         return core::Result<void>();
     }
     
     core::Result<bool> read(uint8_t pin) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return core::Result<bool>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
-        }
         return core::Result<bool>(pin_states_[pin]);
     }
     
     core::Result<void> write(uint8_t pin, bool value) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
-        }
         pin_states_[pin] = value;
         return core::Result<void>();
     }
     
     // Test helper
     void simulate_trigger(uint8_t pin, bool state) {
-        if (pin < 256) {
-            pin_states_[pin] = state;
-        }
+        pin_states_[pin] = state;
     }
     
 private:
@@ -126,7 +115,7 @@ public:
     core::Result<void> attach(uint8_t pin, TriggerMode /*mode*/, 
                              InterruptCallback callback, 
                              void* context) noexcept override {
-        if (GS_UNLIKELY(pin >= 256 || callback == nullptr)) {
+        if (GS_UNLIKELY(callback == nullptr)) {
             return MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         callbacks_[pin] = callback;
@@ -135,33 +124,24 @@ public:
     }
     
     core::Result<void> detach(uint8_t pin) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
-        }
         callbacks_[pin] = nullptr;
         contexts_[pin] = nullptr;
         return core::Result<void>();
     }
     
     core::Result<void> enable(uint8_t pin) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
-        }
         enabled_[pin] = true;
         return core::Result<void>();
     }
     
     core::Result<void> disable(uint8_t pin) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
-        }
         enabled_[pin] = false;
         return core::Result<void>();
     }
     
     // Test helper
     void simulate_interrupt(uint8_t pin) {
-        if (pin < 256 && enabled_[pin] && callbacks_[pin] != nullptr) {
+        if (enabled_[pin] && callbacks_[pin] != nullptr) {
             callbacks_[pin](contexts_[pin]);
         }
     }

@@ -2,7 +2,7 @@
  * @file crypto.cpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Crypto engine implementation (requires production library integration)
- * @version 0.*
+ * @version 0.3
  * @date 2026-02-07
  * 
  * @copyright Copyright (c) 2026

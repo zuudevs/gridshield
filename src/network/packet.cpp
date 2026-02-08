@@ -2,7 +2,7 @@
  * @file packet.cpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Packet protocol implementation with cryptographic authentication
- * @version 0.3
+ * @version 0.4
  * @date 2026-02-07
  * 
  * @copyright Copyright (c) 2026
@@ -55,7 +55,7 @@ core::Result<void> SecurePacket::build(
     }
     
     // Compute checksum (use first 4 bytes of SHA256 hash)
-    uint8_t hash[security::SHA256_HASH_SIZE];
+    uint8_t hash[::gridshield::security::SHA256_HASH_SIZE];
     TRY(crypto.hash_sha256(payload_, payload_len, hash));
     memcpy(&header_.checksum, hash, sizeof(uint32_t));
     
