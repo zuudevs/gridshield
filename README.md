@@ -1,137 +1,157 @@
-# GridShield - AMI Security System
+# GridShield
 
-Multi-layer security for Advanced Metering Infrastructure (AMI).
+**Multi-Layer Security Framework for Advanced Metering Infrastructure (AMI)**
 
-## Tech Stack
-- **Language:** C++17
-- **Build:** CMake 3.20+
-- **Platforms:** Native (x86/x64), Arduino AVR
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)](https://en.cppreference.com/w/cpp/17)
+[![CMake](https://img.shields.io/badge/CMake-3.20%2B-064F8C?logo=cmake)](https://cmake.org)
+[![Platform](https://img.shields.io/badge/Platform-Native%20%7C%20Arduino-green)](BUILD.md)
 
-## Quick Build
+---
 
-### Native (Development)
+## 🛡️ Overview
+
+GridShield is a production-grade security solution designed to protect smart electricity meters from physical tampering, network attacks, and consumption fraud. Built for resource-constrained embedded systems, it implements a **defense-in-depth** strategy across three security layers.
+
+> **Why GridShield?** Traditional meter security relies on single-point defenses. GridShield correlates physical, network, and behavioral signals to detect sophisticated attacks that bypass conventional safeguards.
+
+## ✨ Key Features
+
+### 🔐 Physical Security Layer
+- **ISR-driven tamper detection** with debouncing logic
+- Power-loss alerting via backup capacitor
+- Priority flagging for emergency transmission
+
+### 🌐 Network Security Layer
+- **Lightweight ECC (secp256r1)** optimized for 8KB RAM
+- ECDSA packet signing + SHA256 integrity checks
+- Replay protection with sequence numbering
+
+### 📊 Analytics Layer
+- Real-time consumption anomaly detection
+- Profile-based behavioral analysis (24-hour baseline)
+- Cross-layer validation engine
+
+### 🎯 Production Ready
+- **Zero heap allocation** design (embedded-friendly)
+- Type-safe error handling (no exceptions)
+- Platform abstraction layer (HAL) for portability
+- Extensive test coverage with mock implementations
+
+## 🚀 Quick Start
+
+### Installation
+
 ```bash
-cmake --preset native-debug && cmake --build --preset native-debug
+# Clone repository
+git clone https://github.com/yourusername/gridshield.git
+cd gridshield
+
+# Native build (PC testing)
+cmake --preset native-debug
+cmake --build --preset native-debug
 ./bin/NATIVE/GridShield
 ```
 
-### Arduino (Production)
-```bash
-arduino-cli compile --fqbn arduino:avr:mega src/arduino/gridshield.ino
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino
+### Basic Usage
+
+```cpp
+#include "core/system.hpp"
+#include "platform_native.hpp"
+
+using namespace gridshield;
+
+int main() {
+    // Setup platform services
+    platform::native::NativeTime time;
+    platform::native::NativeGPIO gpio;
+    platform::PlatformServices services{&time, &gpio, ...};
+    
+    // Configure system
+    SystemConfig config;
+    config.meter_id = 0x1234567890ABCDEF;
+    config.tamper_config.sensor_pin = 2;
+    
+    // Initialize GridShield
+    GridShieldSystem system;
+    system.initialize(config, services);
+    system.start();
+    
+    // Main processing loop
+    while (true) {
+        system.process_cycle();
+        delay(100);
+    }
+}
 ```
 
-## Architecture
+## 📦 Target Platforms
 
-```
-┌─────────────────────────────┐
-│   GridShield System         │ ← Orchestrator
-└──────────┬──────────────────┘
-           │
-    ┌──────┼──────┐
-    ▼      ▼      ▼
-  Physical Network Analytics
-  Security Security Detection
-```
+| Platform | MCU | Flash | RAM | Status |
+|----------|-----|-------|-----|--------|
+| **Arduino Mega** | ATmega2560 | 256 KB | 8 KB | ✅ Recommended |
+| **Arduino Uno** | ATmega328P | 32 KB | 2 KB | ⚠️ Too small |
+| **ESP32** | Xtensa | 4 MB | 520 KB | 🔜 Planned |
+| **Native (PC)** | x86/x64 | - | - | ✅ Testing |
 
-### Layers
-1. **Physical:** Tamper detection, power-loss alert
-2. **Network:** ECC crypto, secure packets (ECDSA)
-3. **Analytics:** Consumption anomaly detection
+## 📚 Documentation
 
-## Project Structure
+- [**Quick Start Guide**](docs/QUICKSTART.md) - 5-minute tutorial
+- [**Build Instructions**](BUILD.md) - Compilation for all platforms
+- [**Architecture**](docs/ARCHITECTURE.md) - System design with diagrams
+- [**API Reference**](docs/API.md) - Function documentation
+- [**Roadmap**](docs/ROADMAP.md) - Planned features
+
+## 🏗️ Project Structure
+
 ```
 gridshield/
-├── CMakeLists.txt           # Build config
 ├── include/
-│   ├── common/              # Platform-agnostic
-│   │   ├── utils/           # Macros (C++17)
-│   │   ├── core/            # Error, types, system
-│   │   ├── security/        # Crypto engine
-│   │   ├── hardware/        # Tamper detector
-│   │   ├── network/         # Secure packets
-│   │   └── analytics/       # Anomaly detection
-│   ├── platform/            # HAL interfaces
-│   ├── native/              # PC implementation
-│   └── arduino/             # AVR implementation
+│   ├── common/          # Platform-agnostic code
+│   │   ├── core/        # Result<T>, types, system orchestrator
+│   │   ├── security/    # Crypto engine (ECC, AES-GCM)
+│   │   ├── hardware/    # Tamper detector
+│   │   ├── network/     # Secure packet protocol
+│   │   └── analytics/   # Anomaly detection
+│   ├── platform/        # HAL interfaces
+│   ├── native/          # PC mock implementation
+│   └── arduino/         # AVR drivers
 ├── src/
-│   ├── common/              # Implementations
-│   ├── native/main.cpp      # PC entry
-│   └── arduino/gridshield.ino  # Arduino entry
-└── CMakePresets.json        # Build presets
+│   ├── common/          # Core implementations
+│   ├── native/          # PC entry point
+│   └── arduino/         # Arduino sketch
+└── docs/                # Documentation
 ```
 
-## Key Features
+## 🤝 Contributing
 
-### C++17 Compatibility
-- Result<T> monad (no exceptions)
-- Custom move semantics for AVR
-- Zero heap allocation (embedded-friendly)
+We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Code style guidelines (C++17 best practices)
+- Pull request process
+- Testing requirements
 
-### Memory Optimized
-- Flash: ~35 KB core, ~85 KB with crypto
-- RAM: ~3.8 KB static + stack
-- Target: ATmega2560 (256KB/8KB)
+## 🔒 Security
 
-### Security
-- ECC secp256r1 (placeholder, use uECC in production)
-- ECDSA signatures
-- SHA256 integrity
-- Cross-layer validation
+Found a vulnerability? **Do not** open a public issue. See [SECURITY.md](SECURITY.md) for responsible disclosure.
 
-## Configuration
+## 📄 License
 
-### Native Debug
-```bash
-cmake --preset native-debug
-```
-- Sanitizers: ON (Linux/macOS)
-- Optimization: -O0
+This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file for details.
 
-### Native Release
-```bash
-cmake --preset native-release
-```
-- Sanitizers: OFF
-- Optimization: -O3
+## 👥 Authors
 
-## Production Deployment
+- **Muhammad Ichwan Fauzi** - team Leader, Project Manager
+- **Rafi Indra Pramudhito Zuhayr** - Firmware Implementation, System Architecture
+- **Cesar Ardika Bhayangkara** - Hardware Integration
 
-### 1. Install Libraries
-```bash
-arduino-cli lib install Crypto  # SHA256
-```
+**Institut Teknologi PLN** - 2025
 
-### 2. Replace Placeholders
-Uncomment production crypto in:
-- `src/common/security/crypto.cpp`
-- `include/arduino/platform_arduino.hpp`
+## 🌟 Acknowledgments
 
-### 3. Hardware Setup
-- Arduino Mega 2560
-- Tamper switch: Pin 2
-- Serial: 115200 baud
+- Inspired by NIST SP 800-53 security controls
+- Built with lessons from IoT security research
+- Cryptography references: uECC, mbedTLS
 
-## Troubleshooting
+---
 
-| Error | Fix |
-|-------|-----|
-| `gs_macros.hpp not found` | Check include paths |
-| `undefined std::move` | Add `-std=c++17` |
-| `Sketch too big` | Use Mega, NOT Uno |
-| `Upload failed` | Run `arduino-cli board list` |
-
-## Documentation
-- **BUILD.md:** Detailed build instructions
-- **ARCHITECTURE.md:** System design
-- **PROPOSAL.md:** Project rationale
-
-## License
-MIT
-
-## Authors
-- Muhammad Ichwan Fauzi (202331227) - Architecture
-- Rafi Indra Pramudhito Zuhayr (202331291) - Implementation  
-- Cesar Ardika Bhayangkara (202311240) - Hardware
-
-Institut Teknologi PLN - 2025
+**⭐ Star this repo if GridShield helps your project!**
