@@ -1,6 +1,6 @@
 Role: Anda adalah Senior Technical Writer dan Web Engineer berpengalaman.
 
-Tugas: Buatkan konten dokumentasi lengkap untuk project saya dengan struktur file spesifik di bawah ini. Gunakan format Markdown profesional.
+Tugas: Buatkan konten dokumentasi lengkap untuk project saya dengan struktur file spesifik di bawah ini. Gunakan format Markdown profesional, buatkan 3 konten yang blm di buat terlebih dahulu.
 
 Informasi Project:
 - Nama Project: gridshield
@@ -59,10 +59,18 @@ Bahasa: International
 | root/LICENSE              | MIT/GPL/Apache										| ✅    |
 | root/SECURITY.md          | Cara lapor celah keamanan								| ✅    |
 | root/CONTRIBUTING.md      | Cara berkontribusi									| ✅    |
-| root/CODE_OF_CONDUCT.md   | Aturan perilaku										| ❎    |
-| root/BUILD.md             | Cara build project									| ❎    |
-| root/docs/ARCHITECTURE.md | High-level design (diagram, flow)						| ❎    |
-| root/docs/CHANGELOG.md    | History perubahan versi								| ❎    |
-| root/docs/QUICKSTART.md   | Tutorial singkat 5 menit								| ❎    |
-| root/docs/API.md          | Referensi teknis mendalam								| ❎    |
-| root/docs/ROADMAP.md      | Rencana masa depan									| ❎    |
+| root/CODE_OF_CONDUCT.md   | Aturan perilaku										| ✅    |
+| root/BUILD.md             | Cara build project									| ✅    |
+| root/docs/ARCHITECTURE.md | High-level design (diagram, flow)						| ✅    |
+| root/docs/CHANGELOG.md    | History perubahan versi								| ✅    |
+| root/docs/QUICKSTART.md   | Tutorial singkat 5 menit								| ✅    |
+| root/docs/API.md          | Referensi teknis mendalam								| ✅    |
+| root/docs/ROADMAP.md      | Rencana masa depan									| ✅    |
+
+Bapak: Hariayanto
+Ibu: Leni Riana
+Kakak1: Niken, Abdul Mutolib, Jagat, Raya, Lotus.
+Kakak2: Ajeng, Ahmad Tolib, Nabil.
+
+Niken -7-> Ajeng -1-> Eri
+Nikah di Eri 5 tahun.

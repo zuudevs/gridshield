@@ -28,6 +28,7 @@
 *.jpg
 *.jpeg
 *.gif
+/assets/
 
 # =========================
 # IDE & editor files
