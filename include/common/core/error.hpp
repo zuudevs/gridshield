@@ -2,7 +2,7 @@
  * @file error.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Type-safe error handling without exceptions (C++17)
- * @version 0.5
+ * @version 0.6
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -13,13 +13,11 @@
 
 #include "utils/gs_macros.hpp"
 
-#if PLATFORM_NATIVE
+#if GS_PLATFORM_NATIVE
     #include <cstdint>
     #include <new>
 #else
     #include <stdint.h>
-    // NEED ADOPTION: Ensure <new.h> or placement new is available
-    #include <new.h>
 #endif
 
 namespace gridshield {
@@ -85,51 +83,53 @@ struct ErrorContext {
     ErrorCode code;
     uint32_t line;
     const char* file;
-    uint32_t timestamp;
     
-    constexpr ErrorContext(ErrorCode c, uint32_t ln = 0, const char* f = nullptr) 
-        : code(c), line(ln), file(f), timestamp(0) {}
+    GS_CONSTEXPR ErrorContext(ErrorCode c, uint32_t ln = 0, const char* f = nullptr) noexcept
+        : code(c), line(ln), file(f) {}
     
-    constexpr bool is_critical() const {
+    GS_CONSTEXPR bool is_critical() const noexcept {
         uint16_t code_val = static_cast<uint16_t>(code);
         return code_val >= 200 && code_val < 400;
     }
 };
 
 // ============================================================================
-// RESULT<T> MONAD
+// RESULT<T> MONAD (C++17 compliant)
 // ============================================================================
 template<typename T>
 class Result {
 public:
     // Success constructors
-    explicit Result(const T& val) : has_value_(true), error_(ErrorCode::Success) {
+    explicit Result(const T& val) noexcept 
+        : has_value_(true), error_(ErrorCode::Success) {
         new (&storage_.value) T(val);
     }
     
-    explicit Result(T&& val) : has_value_(true), error_(ErrorCode::Success) {
-        new (&storage_.value) T(ZMOVE(val));
+    explicit Result(T&& val) noexcept
+        : has_value_(true), error_(ErrorCode::Success) {
+        new (&storage_.value) T(GS_MOVE(val));
     }
     
-    // Error constructor (implicit conversion allowed for MAKE_ERROR pattern)
-    Result(ErrorContext err) : has_value_(false), error_(err) {}
+    // Error constructor
+    /*implicit*/ Result(ErrorContext err) noexcept
+        : has_value_(false), error_(err) {}
     
     // Destructor
-    ~Result() {
+    ~Result() noexcept {
         if (has_value_) {
             storage_.value.~T();
         }
     }
     
-    // Delete copy (force explicit handling)
+    // Delete copy
     Result(const Result&) = delete;
     Result& operator=(const Result&) = delete;
     
     // Move constructor
-    Result(Result&& other) noexcept 
+    Result(Result&& other) noexcept
         : has_value_(other.has_value_), error_(other.error_) {
         if (has_value_) {
-            new (&storage_.value) T(ZMOVE(other.storage_.value));
+            new (&storage_.value) T(GS_MOVE(other.storage_.value));
         }
     }
     
@@ -142,33 +142,40 @@ public:
             has_value_ = other.has_value_;
             error_ = other.error_;
             if (has_value_) {
-                new (&storage_.value) T(ZMOVE(other.storage_.value));
+                new (&storage_.value) T(GS_MOVE(other.storage_.value));
             }
         }
         return *this;
     }
     
     // Status check
-    constexpr bool is_ok() const { return has_value_; }
-    constexpr bool is_error() const { return !has_value_; }
+    GS_NODISCARD GS_CONSTEXPR bool is_ok() const noexcept { return has_value_; }
+    GS_NODISCARD GS_CONSTEXPR bool is_error() const noexcept { return !has_value_; }
     
-    // Value access (unsafe - must check is_ok first)
-    T& value() { return storage_.value; }
-    const T& value() const { return storage_.value; }
+    // Value access (unsafe - check is_ok first)
+    GS_NODISCARD T& value() noexcept { 
+        GS_ASSERT(has_value_);
+        return storage_.value; 
+    }
     
-    // Safe value access with default
-    T value_or(const T& default_val) const {
+    GS_NODISCARD const T& value() const noexcept { 
+        GS_ASSERT(has_value_);
+        return storage_.value; 
+    }
+    
+    // Safe value access
+    GS_NODISCARD T value_or(const T& default_val) const noexcept {
         return has_value_ ? storage_.value : default_val;
     }
     
     // Error access
-    ErrorContext error() const { return error_; }
+    GS_NODISCARD ErrorContext error() const noexcept { return error_; }
     
 private:
     union Storage {
         T value;
-        Storage() {} // Empty constructor
-        ~Storage() {} // Empty destructor
+        Storage() {}
+        ~Storage() {}
     } storage_;
     
     bool has_value_;
@@ -181,42 +188,42 @@ private:
 template<>
 class Result<void> {
 public:
-    Result() : error_(ErrorCode::Success) {}
-    Result(ErrorContext err) : error_(err) {}
+    Result() noexcept : error_(ErrorCode::Success) {}
+    /*implicit*/ Result(ErrorContext err) noexcept : error_(err) {}
     
-    constexpr bool is_ok() const { 
+    GS_NODISCARD GS_CONSTEXPR bool is_ok() const noexcept { 
         return error_.code == ErrorCode::Success; 
     }
-    constexpr bool is_error() const { return !is_ok(); }
-    ErrorContext error() const { return error_; }
+    GS_NODISCARD GS_CONSTEXPR bool is_error() const noexcept { 
+        return !is_ok(); 
+    }
+    GS_NODISCARD ErrorContext error() const noexcept { return error_; }
     
 private:
     ErrorContext error_;
 };
 
 // ============================================================================
-// ERROR HANDLING MACROS
+// ERROR MACROS
 // ============================================================================
-#define MAKE_ERROR(code) \
+#define GS_MAKE_ERROR(code) \
     ::gridshield::core::ErrorContext((code), __LINE__, __FILE__)
 
-// Early return on error
-#define TRY(expr) \
+#define GS_TRY(expr) \
     do { \
-        auto _gs_result = (expr); \
-        if (GS_UNLIKELY(_gs_result.is_error())) { \
-            return _gs_result.error(); \
+        auto gs_result_ = (expr); \
+        if (GS_UNLIKELY(gs_result_.is_error())) { \
+            return gs_result_.error(); \
         } \
     } while(0)
 
-// Assign and early return on error
-#define TRY_ASSIGN(var, expr) \
+#define GS_TRY_ASSIGN(var, expr) \
     do { \
-        auto _gs_result = (expr); \
-        if (GS_UNLIKELY(_gs_result.is_error())) { \
-            return _gs_result.error(); \
+        auto gs_result_ = (expr); \
+        if (GS_UNLIKELY(gs_result_.is_error())) { \
+            return gs_result_.error(); \
         } \
-        var = ZMOVE(_gs_result.value()); \
+        var = GS_MOVE(gs_result_.value()); \
     } while(0)
 
 } // namespace core

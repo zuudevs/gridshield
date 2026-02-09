@@ -2,9 +2,13 @@
  * @file crypto.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Lightweight cryptography engine (ECC secp256r1 + AES-256-GCM)
- * @version 0.2
+ * @version 0.3
  * @date 2026-02-03
  * 
+ * Third-party dependencies (production):
+ * - uECC (micro-ecc) for ECDSA
+ * - mbedTLS or TinyCrypt for AES-GCM
+ *
  * @copyright Copyright (c) 2026
  * 
  */
@@ -15,12 +19,6 @@
 #include "core/types.hpp"
 #include "platform/platform.hpp"
 
-#if PLATFORM_NATIVE
-    #include <cstdint>
-#else
-    #include <stdint.h>
-#endif
-
 namespace gridshield {
 namespace security {
 
@@ -28,13 +26,13 @@ namespace security {
 // CRYPTO CONSTANTS
 // ============================================================================
 constexpr size_t ECC_KEY_SIZE = 32;           // 256-bit
-constexpr size_t ECC_SIGNATURE_SIZE = 64;      // r + s components
-constexpr size_t ECC_PUBLIC_KEY_SIZE = 64;     // x + y coordinates
+constexpr size_t ECC_SIGNATURE_SIZE = 64;      // r + s
+constexpr size_t ECC_PUBLIC_KEY_SIZE = 64;     // x + y
 constexpr size_t AES_KEY_SIZE = 32;            // 256-bit
 constexpr size_t AES_BLOCK_SIZE = 16;
 constexpr size_t AES_GCM_TAG_SIZE = 16;
 constexpr size_t NONCE_SIZE = 12;
-constexpr size_t SHA256_HASH_SIZE = 32;         // SHA-256 output size
+constexpr size_t SHA256_HASH_SIZE = 32;
 
 // ============================================================================
 // ECC KEY PAIR
@@ -42,17 +40,23 @@ constexpr size_t SHA256_HASH_SIZE = 32;         // SHA-256 output size
 class ECCKeyPair {
 public:
     ECCKeyPair() noexcept;
-    ~ECCKeyPair();
+    ~ECCKeyPair() noexcept;
+    
+    // Non-copyable, movable
+    ECCKeyPair(const ECCKeyPair&) = delete;
+    ECCKeyPair& operator=(const ECCKeyPair&) = delete;
+    ECCKeyPair(ECCKeyPair&& other) noexcept;
+    ECCKeyPair& operator=(ECCKeyPair&& other) noexcept;
     
     core::Result<void> generate() noexcept;
     core::Result<void> load_private_key(const uint8_t* key, size_t length) noexcept;
     core::Result<void> load_public_key(const uint8_t* key, size_t length) noexcept;
     
-    const uint8_t* get_private_key() const noexcept;
-    const uint8_t* get_public_key() const noexcept;
+    GS_NODISCARD const uint8_t* get_private_key() const noexcept;
+    GS_NODISCARD const uint8_t* get_public_key() const noexcept;
     
-    bool has_private_key() const noexcept;
-    bool has_public_key() const noexcept;
+    GS_NODISCARD bool has_private_key() const noexcept;
+    GS_NODISCARD bool has_public_key() const noexcept;
     
     void clear() noexcept;
     
@@ -68,12 +72,10 @@ private:
 // ============================================================================
 class ICryptoEngine {
 public:
-    virtual ~ICryptoEngine() = default;
+    virtual ~ICryptoEngine() noexcept = default;
     
-    // Key management
     virtual core::Result<void> generate_keypair(ECCKeyPair& keypair) noexcept = 0;
     
-    // ECDSA operations (secp256r1)
     virtual core::Result<void> sign(const ECCKeyPair& keypair,
                                    const uint8_t* message, size_t msg_len,
                                    uint8_t* signature_out) noexcept = 0;
@@ -82,13 +84,11 @@ public:
                                      const uint8_t* message, size_t msg_len,
                                      const uint8_t* signature) noexcept = 0;
     
-    // ECDH key agreement
     virtual core::Result<void> derive_shared_secret(
         const ECCKeyPair& our_keypair,
         const uint8_t* their_public_key,
         uint8_t* shared_secret_out) noexcept = 0;
     
-    // AES-256-GCM authenticated encryption
     virtual core::Result<size_t> encrypt_aes_gcm(
         const uint8_t* key,
         const uint8_t* nonce,
@@ -103,22 +103,20 @@ public:
         const uint8_t* tag,
         uint8_t* plaintext_out) noexcept = 0;
     
-    // Hash operations
     virtual core::Result<void> hash_sha256(
         const uint8_t* data, size_t length,
         uint8_t* hash_out) noexcept = 0;
     
-    // Random number generation
     virtual core::Result<void> random_bytes(uint8_t* buffer, size_t length) noexcept = 0;
 };
 
 // ============================================================================
 // CRYPTO ENGINE IMPLEMENTATION
 // ============================================================================
-class CryptoEngine : public ICryptoEngine {
+class CryptoEngine final : public ICryptoEngine {
 public:
     explicit CryptoEngine(platform::IPlatformCrypto& platform_crypto) noexcept;
-    ~CryptoEngine() override = default;
+    ~CryptoEngine() noexcept override = default;
     
     core::Result<void> generate_keypair(ECCKeyPair& keypair) noexcept override;
     

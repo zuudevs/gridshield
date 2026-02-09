@@ -1,8 +1,8 @@
 /**
  * @file tamper.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Physical tamper detection with interrupt-driven architecture
- * @version 0.3
+ * @brief Physical tamper detection with ISR support
+ * @version 0.4
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -40,7 +40,7 @@ struct TamperConfig {
     uint16_t debounce_ms;
     uint8_t sensitivity;
     
-    constexpr TamperConfig() noexcept 
+    GS_CONSTEXPR TamperConfig() noexcept
         : sensor_pin(0), backup_power_pin(0), 
           debounce_ms(50), sensitivity(128) {}
 };
@@ -50,16 +50,16 @@ struct TamperConfig {
 // ============================================================================
 class ITamperDetector {
 public:
-    virtual ~ITamperDetector() = default;
+    virtual ~ITamperDetector() noexcept = default;
     
     virtual core::Result<void> initialize(const TamperConfig& config, 
                                          platform::PlatformServices& platform) noexcept = 0;
     virtual core::Result<void> start() noexcept = 0;
     virtual core::Result<void> stop() noexcept = 0;
     
-    virtual bool is_tampered() const noexcept = 0;
-    virtual TamperType get_tamper_type() const noexcept = 0;
-    virtual core::timestamp_t get_tamper_timestamp() const noexcept = 0;
+    GS_NODISCARD virtual bool is_tampered() const noexcept = 0;
+    GS_NODISCARD virtual TamperType get_tamper_type() const noexcept = 0;
+    GS_NODISCARD virtual core::timestamp_t get_tamper_timestamp() const noexcept = 0;
     
     virtual core::Result<void> acknowledge_tamper() noexcept = 0;
     virtual core::Result<void> reset() noexcept = 0;
@@ -68,19 +68,19 @@ public:
 // ============================================================================
 // TAMPER DETECTOR IMPLEMENTATION
 // ============================================================================
-class TamperDetector : public ITamperDetector {
+class TamperDetector final : public ITamperDetector {
 public:
     TamperDetector() noexcept;
-    ~TamperDetector() override = default;
+    ~TamperDetector() noexcept override = default;
     
     core::Result<void> initialize(const TamperConfig& config, 
                                  platform::PlatformServices& platform) noexcept override;
     core::Result<void> start() noexcept override;
     core::Result<void> stop() noexcept override;
     
-    bool is_tampered() const noexcept override;
-    TamperType get_tamper_type() const noexcept override;
-    core::timestamp_t get_tamper_timestamp() const noexcept override;
+    GS_NODISCARD bool is_tampered() const noexcept override;
+    GS_NODISCARD TamperType get_tamper_type() const noexcept override;
+    GS_NODISCARD core::timestamp_t get_tamper_timestamp() const noexcept override;
     
     core::Result<void> acknowledge_tamper() noexcept override;
     core::Result<void> reset() noexcept override;

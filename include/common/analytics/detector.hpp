@@ -2,7 +2,7 @@
  * @file detector.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Consumption anomaly detection with profile learning
- * @version 0.3
+ * @version 0.4
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -17,7 +17,7 @@
 namespace gridshield {
 namespace analytics {
 
-constexpr size_t PROFILE_HISTORY_SIZE = 24; // 24 hours of hourly averages
+constexpr size_t PROFILE_HISTORY_SIZE = 24; // 24 hours
 
 // ============================================================================
 // ANOMALY CLASSIFICATION
@@ -50,7 +50,7 @@ struct ConsumptionProfile {
     uint8_t profile_confidence;
     uint8_t reserved;
     
-    constexpr ConsumptionProfile() noexcept 
+    GS_CONSTEXPR ConsumptionProfile() noexcept
         : hourly_avg_wh{}, daily_avg_wh(0), weekly_avg_wh(0),
           variance_threshold(30), profile_confidence(0), reserved(0) {}
 };
@@ -67,7 +67,7 @@ struct AnomalyReport {
     uint32_t expected_value;
     uint32_t deviation_percent;
     
-    constexpr AnomalyReport() noexcept
+    GS_CONSTEXPR AnomalyReport() noexcept
         : timestamp(0), type(AnomalyType::None), severity(AnomalySeverity::None),
           confidence(0), current_value(0), expected_value(0), deviation_percent(0) {}
 };
@@ -77,36 +77,36 @@ struct AnomalyReport {
 // ============================================================================
 class IAnomalyDetector {
 public:
-    virtual ~IAnomalyDetector() = default;
+    virtual ~IAnomalyDetector() noexcept = default;
     
     virtual core::Result<void> initialize(const ConsumptionProfile& baseline_profile) noexcept = 0;
     virtual core::Result<void> update_profile(const core::MeterReading& reading) noexcept = 0;
     
     virtual core::Result<AnomalyReport> analyze(const core::MeterReading& reading) noexcept = 0;
     
-    virtual const ConsumptionProfile& get_profile() const noexcept = 0;
+    GS_NODISCARD virtual const ConsumptionProfile& get_profile() const noexcept = 0;
     virtual core::Result<void> reset_profile() noexcept = 0;
 };
 
 // ============================================================================
 // ANOMALY DETECTOR IMPLEMENTATION
 // ============================================================================
-class AnomalyDetector : public IAnomalyDetector {
+class AnomalyDetector final : public IAnomalyDetector {
 public:
     AnomalyDetector() noexcept;
-    ~AnomalyDetector() override = default;
+    ~AnomalyDetector() noexcept override = default;
     
     core::Result<void> initialize(const ConsumptionProfile& baseline_profile) noexcept override;
     core::Result<void> update_profile(const core::MeterReading& reading) noexcept override;
     
     core::Result<AnomalyReport> analyze(const core::MeterReading& reading) noexcept override;
     
-    const ConsumptionProfile& get_profile() const noexcept override;
+    GS_NODISCARD const ConsumptionProfile& get_profile() const noexcept override;
     core::Result<void> reset_profile() noexcept override;
     
 private:
-    AnomalySeverity calculate_severity(uint32_t deviation_percent) const noexcept;
-    uint32_t calculate_expected_value(core::timestamp_t timestamp) const noexcept;
+    GS_NODISCARD AnomalySeverity calculate_severity(uint32_t deviation_percent) const noexcept;
+    GS_NODISCARD uint32_t calculate_expected_value(core::timestamp_t timestamp) const noexcept;
     
     ConsumptionProfile profile_;
     core::StaticBuffer<core::MeterReading, 100> recent_readings_;
@@ -122,18 +122,18 @@ struct CrossLayerValidation {
     bool consumption_anomaly_detected;
     core::timestamp_t validation_timestamp;
     
-    constexpr CrossLayerValidation() noexcept
+    GS_CONSTEXPR CrossLayerValidation() noexcept
         : physical_tamper_detected(false),
           network_anomaly_detected(false),
           consumption_anomaly_detected(false),
           validation_timestamp(0) {}
     
-    bool requires_investigation() const noexcept {
+    GS_NODISCARD bool requires_investigation() const noexcept {
         return (physical_tamper_detected && consumption_anomaly_detected) ||
                (network_anomaly_detected && consumption_anomaly_detected);
     }
     
-    core::Priority get_priority() const noexcept {
+    GS_NODISCARD core::Priority get_priority() const noexcept {
         if (physical_tamper_detected && consumption_anomaly_detected && 
             network_anomaly_detected) {
             return core::Priority::Emergency;

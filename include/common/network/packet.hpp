@@ -2,7 +2,7 @@
  * @file packet.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Secure packet protocol with ECDSA authentication
- * @version 0.2
+ * @version 0.3
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -41,7 +41,7 @@ enum class PacketType : uint8_t {
 };
 
 // ============================================================================
-// PACKET STRUCTURES (wire format)
+// PACKET STRUCTURES
 // ============================================================================
 #pragma pack(push, 1)
 struct PacketHeader {
@@ -55,7 +55,7 @@ struct PacketHeader {
     core::timestamp_t timestamp;
     uint32_t checksum;
     
-    PacketHeader() noexcept 
+    PacketHeader() noexcept
         : magic_header(MAGIC_HEADER), version(PROTOCOL_VERSION),
           type(PacketType::Invalid), priority(core::Priority::Normal),
           meter_id(0), sequence(0), payload_length(0), 
@@ -67,7 +67,11 @@ struct PacketFooter {
     uint8_t magic_footer;
     
     PacketFooter() noexcept : magic_footer(MAGIC_FOOTER) {
+#if GS_PLATFORM_NATIVE
+        std::memset(signature, 0, security::ECC_SIGNATURE_SIZE);
+#else
         memset(signature, 0, security::ECC_SIGNATURE_SIZE);
+#endif
     }
 };
 #pragma pack(pop)
@@ -96,11 +100,11 @@ public:
     
     core::Result<size_t> serialize(uint8_t* buffer, size_t buffer_size) const noexcept;
     
-    const PacketHeader& header() const noexcept { return header_; }
-    const uint8_t* payload() const noexcept { return payload_; }
-    uint16_t payload_length() const noexcept { return header_.payload_length; }
+    GS_NODISCARD const PacketHeader& header() const noexcept { return header_; }
+    GS_NODISCARD const uint8_t* payload() const noexcept { return payload_; }
+    GS_NODISCARD uint16_t payload_length() const noexcept { return header_.payload_length; }
     
-    bool is_valid() const noexcept { return is_valid_; }
+    GS_NODISCARD bool is_valid() const noexcept { return is_valid_; }
     
 private:
     core::Result<void> verify_integrity(security::ICryptoEngine& crypto) const noexcept;
@@ -120,7 +124,7 @@ private:
 // ============================================================================
 class IPacketTransport {
 public:
-    virtual ~IPacketTransport() = default;
+    virtual ~IPacketTransport() noexcept = default;
     
     virtual core::Result<void> send_packet(
         const SecurePacket& packet,
@@ -136,10 +140,10 @@ public:
 // ============================================================================
 // PACKET TRANSPORT IMPLEMENTATION
 // ============================================================================
-class PacketTransport : public IPacketTransport {
+class PacketTransport final : public IPacketTransport {
 public:
     explicit PacketTransport(platform::IPlatformComm& comm) noexcept;
-    ~PacketTransport() override = default;
+    ~PacketTransport() noexcept override = default;
     
     core::Result<void> send_packet(
         const SecurePacket& packet,

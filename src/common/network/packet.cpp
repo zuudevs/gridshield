@@ -2,7 +2,7 @@
  * @file packet.cpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Packet protocol implementation with cryptographic authentication
- * @version 0.4
+ * @version 0.5
  * @date 2026-02-07
  * 
  * @copyright Copyright (c) 2026
@@ -10,7 +10,7 @@
 
 #include "network/packet.hpp"
 
-#if PLATFORM_NATIVE
+#if GS_PLATFORM_NATIVE
     #include <cstring>
 #else
     #include <string.h>
@@ -21,7 +21,11 @@ namespace network {
 
 SecurePacket::SecurePacket() noexcept 
     : is_valid_(false), next_sequence_(0) {
+#if GS_PLATFORM_NATIVE
+    std::memset(payload_, 0, MAX_PAYLOAD_SIZE);
+#else
     memset(payload_, 0, MAX_PAYLOAD_SIZE);
+#endif
 }
 
 core::Result<void> SecurePacket::build(
@@ -34,11 +38,11 @@ core::Result<void> SecurePacket::build(
     const security::ECCKeyPair& keypair) noexcept {
     
     if (GS_UNLIKELY(payload_len > MAX_PAYLOAD_SIZE)) {
-        return MAKE_ERROR(core::ErrorCode::BufferOverflow);
+        return GS_MAKE_ERROR(core::ErrorCode::BufferOverflow);
     }
     
     if (GS_UNLIKELY(!keypair.has_private_key())) {
-        return MAKE_ERROR(core::ErrorCode::AuthenticationFailed);
+        return GS_MAKE_ERROR(core::ErrorCode::AuthenticationFailed);
     }
     
     // Build header
@@ -51,16 +55,24 @@ core::Result<void> SecurePacket::build(
     
     // Copy payload
     if (payload != nullptr && payload_len > 0) {
+#if GS_PLATFORM_NATIVE
+        std::memcpy(payload_, payload, payload_len);
+#else
         memcpy(payload_, payload, payload_len);
+#endif
     }
     
-    // Compute checksum (use first 4 bytes of SHA256 hash)
-    uint8_t hash[::gridshield::security::SHA256_HASH_SIZE];
-    TRY(crypto.hash_sha256(payload_, payload_len, hash));
+    // Compute checksum (first 4 bytes of SHA256)
+    uint8_t hash[security::SHA256_HASH_SIZE];
+    GS_TRY(crypto.hash_sha256(payload_, payload_len, hash));
+#if GS_PLATFORM_NATIVE
+    std::memcpy(&header_.checksum, hash, sizeof(uint32_t));
+#else
     memcpy(&header_.checksum, hash, sizeof(uint32_t));
+#endif
     
     // Sign packet
-    TRY(compute_signature(crypto, keypair));
+    GS_TRY(compute_signature(crypto, keypair));
     
     is_valid_ = true;
     return core::Result<void>();
@@ -75,48 +87,65 @@ core::Result<void> SecurePacket::parse(
     const size_t min_size = sizeof(PacketHeader) + sizeof(PacketFooter);
     
     if (GS_UNLIKELY(buffer == nullptr || buffer_len < min_size)) {
-        return MAKE_ERROR(core::ErrorCode::InvalidPacket);
+        return GS_MAKE_ERROR(core::ErrorCode::InvalidPacket);
     }
     
     // Parse header
+#if GS_PLATFORM_NATIVE
+    std::memcpy(&header_, buffer, sizeof(PacketHeader));
+#else
     memcpy(&header_, buffer, sizeof(PacketHeader));
+#endif
     
     // Verify magic numbers
     if (GS_UNLIKELY(header_.magic_header != MAGIC_HEADER)) {
-        return MAKE_ERROR(core::ErrorCode::InvalidPacket);
+        return GS_MAKE_ERROR(core::ErrorCode::InvalidPacket);
     }
     
     // Verify payload length
     if (GS_UNLIKELY(header_.payload_length > MAX_PAYLOAD_SIZE)) {
-        return MAKE_ERROR(core::ErrorCode::BufferOverflow);
+        return GS_MAKE_ERROR(core::ErrorCode::BufferOverflow);
     }
     
     const size_t expected_size = sizeof(PacketHeader) + 
                                  header_.payload_length + 
                                  sizeof(PacketFooter);
     if (GS_UNLIKELY(buffer_len < expected_size)) {
-        return MAKE_ERROR(core::ErrorCode::InvalidPacket);
+        return GS_MAKE_ERROR(core::ErrorCode::InvalidPacket);
     }
     
     // Copy payload
     const uint8_t* payload_ptr = buffer + sizeof(PacketHeader);
+#if GS_PLATFORM_NATIVE
+    std::memcpy(payload_, payload_ptr, header_.payload_length);
+#else
     memcpy(payload_, payload_ptr, header_.payload_length);
+#endif
     
     // Parse footer
     const uint8_t* footer_ptr = payload_ptr + header_.payload_length;
+#if GS_PLATFORM_NATIVE
+    std::memcpy(&footer_, footer_ptr, sizeof(PacketFooter));
+#else
     memcpy(&footer_, footer_ptr, sizeof(PacketFooter));
+#endif
     
     if (GS_UNLIKELY(footer_.magic_footer != MAGIC_FOOTER)) {
-        return MAKE_ERROR(core::ErrorCode::InvalidPacket);
+        return GS_MAKE_ERROR(core::ErrorCode::InvalidPacket);
     }
     
     // Verify integrity
-    TRY(verify_integrity(crypto));
+    GS_TRY(verify_integrity(crypto));
     
     // Verify signature
     uint8_t sign_data[sizeof(PacketHeader) + MAX_PAYLOAD_SIZE];
+#if GS_PLATFORM_NATIVE
+    std::memcpy(sign_data, &header_, sizeof(PacketHeader));
+    std::memcpy(sign_data + sizeof(PacketHeader), payload_, header_.payload_length);
+#else
     memcpy(sign_data, &header_, sizeof(PacketHeader));
     memcpy(sign_data + sizeof(PacketHeader), payload_, header_.payload_length);
+#endif
     
     auto sig_verify = crypto.verify(
         server_keypair, 
@@ -126,7 +155,7 @@ core::Result<void> SecurePacket::parse(
     );
     
     if (sig_verify.is_error() || !sig_verify.value()) {
-        return MAKE_ERROR(core::ErrorCode::SignatureInvalid);
+        return GS_MAKE_ERROR(core::ErrorCode::SignatureInvalid);
     }
     
     is_valid_ = true;
@@ -135,7 +164,7 @@ core::Result<void> SecurePacket::parse(
 
 core::Result<size_t> SecurePacket::serialize(uint8_t* buffer, size_t buffer_size) const noexcept {
     if (GS_UNLIKELY(!is_valid_)) {
-        return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidState));
+        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidState));
     }
     
     const size_t required_size = sizeof(PacketHeader) + 
@@ -143,31 +172,38 @@ core::Result<size_t> SecurePacket::serialize(uint8_t* buffer, size_t buffer_size
                                  sizeof(PacketFooter);
     
     if (GS_UNLIKELY(buffer_size < required_size)) {
-        return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::BufferOverflow));
+        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::BufferOverflow));
     }
     
     // Serialize header
+#if GS_PLATFORM_NATIVE
+    std::memcpy(buffer, &header_, sizeof(PacketHeader));
+    std::memcpy(buffer + sizeof(PacketHeader), payload_, header_.payload_length);
+    std::memcpy(buffer + sizeof(PacketHeader) + header_.payload_length, 
+           &footer_, sizeof(PacketFooter));
+#else
     memcpy(buffer, &header_, sizeof(PacketHeader));
-    
-    // Serialize payload
     memcpy(buffer + sizeof(PacketHeader), payload_, header_.payload_length);
-    
-    // Serialize footer
     memcpy(buffer + sizeof(PacketHeader) + header_.payload_length, 
            &footer_, sizeof(PacketFooter));
+#endif
     
     return core::Result<size_t>(required_size);
 }
 
 core::Result<void> SecurePacket::verify_integrity(security::ICryptoEngine& crypto) const noexcept {
     uint8_t hash[security::SHA256_HASH_SIZE];
-    TRY(crypto.hash_sha256(payload_, header_.payload_length, hash));
+    GS_TRY(crypto.hash_sha256(payload_, header_.payload_length, hash));
     
     uint32_t computed_checksum;
+#if GS_PLATFORM_NATIVE
+    std::memcpy(&computed_checksum, hash, sizeof(uint32_t));
+#else
     memcpy(&computed_checksum, hash, sizeof(uint32_t));
+#endif
     
     if (GS_UNLIKELY(computed_checksum != header_.checksum)) {
-        return MAKE_ERROR(core::ErrorCode::IntegrityViolation);
+        return GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation);
     }
     
     return core::Result<void>();
@@ -180,8 +216,13 @@ core::Result<void> SecurePacket::compute_signature(
     uint8_t sign_data[sizeof(PacketHeader) + MAX_PAYLOAD_SIZE];
     
     // Combine header and payload
+#if GS_PLATFORM_NATIVE
+    std::memcpy(sign_data, &header_, sizeof(PacketHeader));
+    std::memcpy(sign_data + sizeof(PacketHeader), payload_, header_.payload_length);
+#else
     memcpy(sign_data, &header_, sizeof(PacketHeader));
     memcpy(sign_data + sizeof(PacketHeader), payload_, header_.payload_length);
+#endif
     
     return crypto.sign(
         keypair, 
@@ -204,7 +245,7 @@ core::Result<void> PacketTransport::send_packet(
     const security::ECCKeyPair& /*keypair*/) noexcept {
     
     if (GS_UNLIKELY(!packet.is_valid())) {
-        return MAKE_ERROR(core::ErrorCode::InvalidState);
+        return GS_MAKE_ERROR(core::ErrorCode::InvalidState);
     }
     
     uint8_t buffer[sizeof(PacketHeader) + MAX_PAYLOAD_SIZE + sizeof(PacketFooter)];
@@ -222,7 +263,7 @@ core::Result<void> PacketTransport::send_packet(
     }
     
     if (GS_UNLIKELY(send_result.value() != packet_size)) {
-        return MAKE_ERROR(core::ErrorCode::TransmissionFailed);
+        return GS_MAKE_ERROR(core::ErrorCode::TransmissionFailed);
     }
     
     return core::Result<void>();
@@ -244,7 +285,7 @@ core::Result<SecurePacket> PacketTransport::receive_packet(
     const size_t min_size = sizeof(PacketHeader) + sizeof(PacketFooter);
     
     if (GS_UNLIKELY(received_bytes < min_size)) {
-        return core::Result<SecurePacket>(MAKE_ERROR(core::ErrorCode::InvalidPacket));
+        return core::Result<SecurePacket>(GS_MAKE_ERROR(core::ErrorCode::InvalidPacket));
     }
     
     SecurePacket packet;
@@ -254,7 +295,7 @@ core::Result<SecurePacket> PacketTransport::receive_packet(
         return core::Result<SecurePacket>(parse_result.error());
     }
     
-    return core::Result<SecurePacket>(ZMOVE(packet));
+    return core::Result<SecurePacket>(GS_MOVE(packet));
 }
 
 } // namespace network

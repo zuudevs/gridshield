@@ -1,8 +1,8 @@
 /**
  * @file gs_macros.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Platform-agnostic macros for C++17 embedded systems
- * @version 0.3
+ * @brief Platform-agnostic macros for C++17
+ * @version 0.4
  * @date 2026-02-07
  * 
  * @copyright Copyright (c) 2026
@@ -14,21 +14,43 @@
 // PLATFORM DETECTION
 // ============================================================================
 #if defined(ARDUINO) || defined(__AVR__)
-    #define PLATFORM_AVR 1
-    #define PLATFORM_NATIVE 0
+    #define GS_PLATFORM_ARDUINO 1
+    #define GS_PLATFORM_NATIVE 0
 #else
-    #define PLATFORM_AVR 0
-    #define PLATFORM_NATIVE 1
+    #define GS_PLATFORM_ARDUINO 0
+    #define GS_PLATFORM_NATIVE 1
+#endif
+
+// ============================================================================
+// COMPILER DETECTION
+// ============================================================================
+#if defined(__clang__)
+    #define GS_COMPILER_CLANG 1
+    #define GS_COMPILER_GCC 0
+    #define GS_COMPILER_MSVC 0
+#elif defined(__GNUC__)
+    #define GS_COMPILER_CLANG 0
+    #define GS_COMPILER_GCC 1
+    #define GS_COMPILER_MSVC 0
+#elif defined(_MSC_VER)
+    #define GS_COMPILER_CLANG 0
+    #define GS_COMPILER_GCC 0
+    #define GS_COMPILER_MSVC 1
+#else
+    #define GS_COMPILER_CLANG 0
+    #define GS_COMPILER_GCC 0
+    #define GS_COMPILER_MSVC 0
 #endif
 
 // ============================================================================
 // MOVE SEMANTICS (C++17 compatible)
 // ============================================================================
-#if PLATFORM_NATIVE
+#if GS_PLATFORM_NATIVE
     #include <utility>
-    #define ZMOVE(x) ::std::move(x)
+    #define GS_MOVE(x) ::std::move(x)
+    #define GS_FORWARD(x) ::std::forward<decltype(x)>(x)
 #else
-    // Manual move implementation for AVR
+    // Manual move for AVR
     namespace gridshield {
     namespace detail {
         template<typename T>
@@ -45,69 +67,80 @@
         move_impl(T&& arg) noexcept {
             return static_cast<typename remove_reference<T>::type&&>(arg);
         }
-    } // namespace detail
-    } // namespace gridshield
-    
-    #define ZMOVE(x) ::gridshield::detail::move_impl(x)
+    }
+    }
+    #define GS_MOVE(x) ::gridshield::detail::move_impl(x)
+    #define GS_FORWARD(x) static_cast<decltype(x)&&>(x)
 #endif
 
 // ============================================================================
 // COMPILER HINTS
 // ============================================================================
-#if defined(__GNUC__) || defined(__clang__)
+#if GS_COMPILER_GCC || GS_COMPILER_CLANG
     #define GS_LIKELY(x)   __builtin_expect(!!(x), 1)
     #define GS_UNLIKELY(x) __builtin_expect(!!(x), 0)
     #define GS_INLINE      inline __attribute__((always_inline))
     #define GS_NOINLINE    __attribute__((noinline))
-#elif defined(_MSC_VER)
+    #define GS_PACKED      __attribute__((packed))
+    #define GS_ALIGN(n)    __attribute__((aligned(n)))
+#elif GS_COMPILER_MSVC
     #define GS_LIKELY(x)   (x)
     #define GS_UNLIKELY(x) (x)
     #define GS_INLINE      __forceinline
     #define GS_NOINLINE    __declspec(noinline)
+    #define GS_PACKED
+    #define GS_ALIGN(n)    __declspec(align(n))
 #else
     #define GS_LIKELY(x)   (x)
     #define GS_UNLIKELY(x) (x)
     #define GS_INLINE      inline
     #define GS_NOINLINE
-#endif
-
-// Legacy aliases (deprecated, use GS_ prefix)
-#define LIKELY(x)   GS_LIKELY(x)
-#define UNLIKELY(x) GS_UNLIKELY(x)
-
-// ============================================================================
-// CONSTEXPR COMPATIBILITY
-// ============================================================================
-// C++17 has constexpr by default, no need for CONSTEXPR14 macro
-#define CONSTEXPR14 constexpr
-
-// ============================================================================
-// NODISCARD
-// ============================================================================
-#if __cplusplus >= 201703L
-    #define NODISCARD [[nodiscard]]
-#else
-    #define NODISCARD
-#endif
-
-// ============================================================================
-// MEMORY ALIGNMENT
-// ============================================================================
-#if defined(__GNUC__) || defined(__clang__)
-    #define GS_ALIGN(n) __attribute__((aligned(n)))
-#elif defined(_MSC_VER)
-    #define GS_ALIGN(n) __declspec(align(n))
-#else
+    #define GS_PACKED
     #define GS_ALIGN(n)
 #endif
 
 // ============================================================================
-// SECTION PLACEMENT (for critical code in flash/RAM)
+// ATTRIBUTES
 // ============================================================================
-#if PLATFORM_AVR
-    #define GS_SECTION_FLASH   __attribute__((section(".progmem.data")))
-    #define GS_SECTION_NOINIT  __attribute__((section(".noinit")))
+#if __cplusplus >= 201703L
+    #define GS_NODISCARD [[nodiscard]]
+    #define GS_FALLTHROUGH [[fallthrough]]
+    #define GS_MAYBE_UNUSED [[maybe_unused]]
 #else
-    #define GS_SECTION_FLASH
-    #define GS_SECTION_NOINIT
+    #define GS_NODISCARD
+    #define GS_FALLTHROUGH
+    #define GS_MAYBE_UNUSED
 #endif
+
+// ============================================================================
+// CONSTEXPR
+// ============================================================================
+#define GS_CONSTEXPR constexpr
+
+// ============================================================================
+// SECTION PLACEMENT (Arduino only)
+// ============================================================================
+#if GS_PLATFORM_ARDUINO
+    #define GS_PROGMEM   __attribute__((section(".progmem.data")))
+    #define GS_NOINIT    __attribute__((section(".noinit")))
+#else
+    #define GS_PROGMEM
+    #define GS_NOINIT
+#endif
+
+// ============================================================================
+// ASSERTIONS
+// ============================================================================
+#if GS_PLATFORM_NATIVE
+    #include <cassert>
+    #define GS_ASSERT(expr) assert(expr)
+#else
+    #define GS_ASSERT(expr) ((void)0)
+#endif
+
+// ============================================================================
+// STATIC ASSERT
+// ============================================================================
+#define GS_STATIC_ASSERT(expr, msg) static_assert(expr, msg)
+
+#endif // GS_MACROS_HPP

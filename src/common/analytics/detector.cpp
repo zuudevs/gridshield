@@ -2,7 +2,7 @@
  * @file detector.cpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Anomaly detection implementation with profile learning
- * @version 0.2
+ * @version 0.3
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -21,7 +21,7 @@ core::Result<void> AnomalyDetector::initialize(
     const ConsumptionProfile& baseline_profile) noexcept {
     
     if (initialized_) {
-        return MAKE_ERROR(core::ErrorCode::SystemAlreadyInitialized);
+        return GS_MAKE_ERROR(core::ErrorCode::SystemAlreadyInitialized);
     }
     
     profile_ = baseline_profile;
@@ -35,7 +35,7 @@ core::Result<void> AnomalyDetector::update_profile(
     const core::MeterReading& reading) noexcept {
     
     if (!initialized_) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
+        return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
     // Add to recent readings buffer (FIFO)
@@ -45,7 +45,7 @@ core::Result<void> AnomalyDetector::update_profile(
     }
     recent_readings_.push(reading);
     
-    // Update hourly averages (use rolling window)
+    // Update hourly averages (rolling window)
     if (recent_readings_.size() >= 10) {
         uint64_t sum = 0;
         for (size_t i = 0; i < recent_readings_.size(); ++i) {
@@ -56,7 +56,7 @@ core::Result<void> AnomalyDetector::update_profile(
         profile_.hourly_avg_wh[hour_index] = 
             static_cast<uint32_t>(sum / recent_readings_.size());
         
-        // Update daily average (sum all hourly averages)
+        // Update daily average
         sum = 0;
         for (size_t i = 0; i < PROFILE_HISTORY_SIZE; ++i) {
             sum += profile_.hourly_avg_wh[i];
@@ -77,7 +77,7 @@ core::Result<AnomalyReport> AnomalyDetector::analyze(
     
     if (!initialized_) {
         return core::Result<AnomalyReport>(
-            MAKE_ERROR(core::ErrorCode::SystemNotInitialized)
+            GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)
         );
     }
     
@@ -92,7 +92,7 @@ core::Result<AnomalyReport> AnomalyDetector::analyze(
         report.severity = AnomalySeverity::Critical;
         report.confidence = 95;
         report.deviation_percent = 100;
-        return core::Result<AnomalyReport>(report);
+        return core::Result<AnomalyReport>(GS_MOVE(report));
     }
     
     // Calculate deviation percentage
@@ -100,7 +100,6 @@ core::Result<AnomalyReport> AnomalyDetector::analyze(
         int32_t diff = static_cast<int32_t>(reading.energy_wh) - 
                       static_cast<int32_t>(report.expected_value);
         
-        // Use absolute difference for deviation calculation
         uint32_t abs_diff = (diff < 0) ? static_cast<uint32_t>(-diff) : 
                                          static_cast<uint32_t>(diff);
         
@@ -131,7 +130,7 @@ core::Result<AnomalyReport> AnomalyDetector::analyze(
         report.confidence = 0;
     }
     
-    return core::Result<AnomalyReport>(report);
+    return core::Result<AnomalyReport>(GS_MOVE(report));
 }
 
 const ConsumptionProfile& AnomalyDetector::get_profile() const noexcept {
@@ -140,7 +139,7 @@ const ConsumptionProfile& AnomalyDetector::get_profile() const noexcept {
 
 core::Result<void> AnomalyDetector::reset_profile() noexcept {
     if (!initialized_) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
+        return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
     profile_ = ConsumptionProfile();
@@ -167,7 +166,7 @@ AnomalySeverity AnomalyDetector::calculate_severity(
 uint32_t AnomalyDetector::calculate_expected_value(
     core::timestamp_t timestamp) const noexcept {
     
-    // Use hourly profile for expected value
+    // Use hourly profile
     size_t hour_index = (timestamp / 3600000) % PROFILE_HISTORY_SIZE;
     uint32_t hourly_expected = profile_.hourly_avg_wh[hour_index];
     
@@ -175,7 +174,7 @@ uint32_t AnomalyDetector::calculate_expected_value(
         return hourly_expected;
     }
     
-    // Fallback to daily average if hourly not available
+    // Fallback to daily average
     return profile_.daily_avg_wh;
 }
 

@@ -1,8 +1,8 @@
 /**
  * @file tamper.cpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Tamper detection implementation with interrupt handling
- * @version 0.3
+ * @brief Tamper detection implementation with ISR handling
+ * @version 0.4
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -26,27 +26,27 @@ core::Result<void> TamperDetector::initialize(
     platform::PlatformServices& platform) noexcept {
     
     if (GS_UNLIKELY(initialized_)) {
-        return MAKE_ERROR(core::ErrorCode::SystemAlreadyInitialized);
+        return GS_MAKE_ERROR(core::ErrorCode::SystemAlreadyInitialized);
     }
     
     if (GS_UNLIKELY(!platform.is_valid())) {
-        return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+        return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
     config_ = config;
     platform_ = &platform;
     
     // Configure sensor pin
-    TRY(platform_->gpio->configure(
+    GS_TRY(platform_->gpio->configure(
         config_.sensor_pin, 
-        platform::IPlatformGPIO::PinMode::InputPullup
+        platform::PinMode::InputPullup
     ));
     
     // Configure backup power monitoring
     if (config_.backup_power_pin > 0) {
-        TRY(platform_->gpio->configure(
+        GS_TRY(platform_->gpio->configure(
             config_.backup_power_pin,
-            platform::IPlatformGPIO::PinMode::Input
+            platform::PinMode::Input
         ));
     }
     
@@ -56,13 +56,13 @@ core::Result<void> TamperDetector::initialize(
 
 core::Result<void> TamperDetector::start() noexcept {
     if (GS_UNLIKELY(!initialized_)) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
+        return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
     // Attach interrupt
-    TRY(platform_->interrupt->attach(
+    GS_TRY(platform_->interrupt->attach(
         config_.sensor_pin,
-        platform::IPlatformInterrupt::TriggerMode::Falling,
+        platform::TriggerMode::Falling,
         &TamperDetector::interrupt_handler,
         this
     ));
@@ -72,10 +72,10 @@ core::Result<void> TamperDetector::start() noexcept {
 
 core::Result<void> TamperDetector::stop() noexcept {
     if (GS_UNLIKELY(!initialized_)) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
+        return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
-    TRY(platform_->interrupt->disable(config_.sensor_pin));
+    GS_TRY(platform_->interrupt->disable(config_.sensor_pin));
     return platform_->interrupt->detach(config_.sensor_pin);
 }
 
@@ -98,7 +98,7 @@ core::Result<void> TamperDetector::acknowledge_tamper() noexcept {
 
 core::Result<void> TamperDetector::reset() noexcept {
     if (GS_UNLIKELY(!initialized_)) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
+        return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
     is_tampered_ = false;

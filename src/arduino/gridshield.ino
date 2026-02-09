@@ -1,27 +1,23 @@
 /**
  * @file gridshield.ino
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Arduino sketch entry point
- * @version 0.3
- * @date 2026-02-08
+ * @brief Arduino entry point for GridShield
+ * @version 0.0.4
+ * @date 2026-02-09
  * 
- * @copyright Copyright (c) 2026
- *
- * This file bridges Arduino IDE/CLI to the C++ implementation.
- * All logic is in include/ and src/ directories.
- * 
- * HARDWARE REQUIREMENTS:
+ * Hardware Requirements:
  * - Arduino Mega 2560 (recommended) or Uno
  * - Tamper switch on digital pin 2
- * - Serial communication at 115200 baud
+ * - Serial @ 115200 baud
  * 
- * LIBRARY DEPENDENCIES (optional for production):
+ * Optional Libraries:
  * - Crypto by Rhys Weatherley (for real SHA256)
- * - EEPROM (built-in for storage)
+ * 
+ * @copyright Copyright (c) 2026
  */
 
 #include "core/system.hpp"
-#include "platform/arduino/platform_arduino.hpp"
+#include "platform_arduino.hpp"
 
 using namespace gridshield;
 
@@ -30,10 +26,9 @@ using namespace gridshield;
 // ============================================================================
 static platform::arduino::ArduinoTime arduino_time;
 static platform::arduino::ArduinoGPIO arduino_gpio;
-static platform::arduino::ArduinoInterruptStub arduino_interrupt;
-static platform::arduino::ArduinoSimpleCrypto arduino_crypto;
-static platform::arduino::ArduinoStorageStub arduino_storage;
-static platform::arduino::ArduinoSerialComm arduino_serial;
+static platform::arduino::ArduinoInterrupt arduino_interrupt;
+static platform::arduino::ArduinoCrypto arduino_crypto;
+static platform::arduino::ArduinoSerial arduino_serial;
 
 static platform::PlatformServices services;
 static GridShieldSystem* system_ptr = nullptr;
@@ -71,7 +66,7 @@ void setup() {
     services.gpio = &arduino_gpio;
     services.interrupt = &arduino_interrupt;
     services.crypto = &arduino_crypto;
-    services.storage = &arduino_storage;
+    services.storage = nullptr;
     services.comm = &arduino_serial;
     
     // Initialize serial
@@ -79,7 +74,7 @@ void setup() {
     if (init_result.is_error()) {
         // Blink LED to indicate error
         pinMode(LED_BUILTIN, OUTPUT);
-        while (1) {
+        while (true) {
             digitalWrite(LED_BUILTIN, HIGH);
             delay(100);
             digitalWrite(LED_BUILTIN, LOW);
@@ -94,7 +89,7 @@ void setup() {
     system_ptr = new GridShieldSystem();
     if (system_ptr == nullptr) {
         Serial.println(F("ERROR: Out of memory"));
-        while (1);
+        while (true);
     }
     
     // Initialize system
@@ -103,7 +98,7 @@ void setup() {
     if (result.is_error()) {
         Serial.print(F("ERROR: Init failed, code "));
         Serial.println(static_cast<int>(result.error().code));
-        while (1);
+        while (true);
     }
     Serial.println(F("Initializing... OK"));
     
@@ -112,7 +107,7 @@ void setup() {
     if (result.is_error()) {
         Serial.print(F("ERROR: Start failed, code "));
         Serial.println(static_cast<int>(result.error().code));
-        while (1);
+        while (true);
     }
     Serial.println(F("Starting... OK"));
     Serial.println(F("System running."));

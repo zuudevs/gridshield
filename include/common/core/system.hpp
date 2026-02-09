@@ -2,7 +2,7 @@
  * @file system.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Main system orchestrator coordinating all security layers
- * @version 0.2
+ * @version 0.3
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -31,7 +31,7 @@ struct SystemConfig {
     uint32_t heartbeat_interval_ms;
     uint32_t reading_interval_ms;
     
-    constexpr SystemConfig() noexcept
+    GS_CONSTEXPR SystemConfig() noexcept
         : meter_id(0), heartbeat_interval_ms(60000), reading_interval_ms(5000) {}
 };
 
@@ -51,7 +51,13 @@ enum class OperationMode : uint8_t {
 class GridShieldSystem {
 public:
     GridShieldSystem() noexcept;
-    ~GridShieldSystem();
+    ~GridShieldSystem() noexcept;
+    
+    // Non-copyable, non-movable
+    GridShieldSystem(const GridShieldSystem&) = delete;
+    GridShieldSystem& operator=(const GridShieldSystem&) = delete;
+    GridShieldSystem(GridShieldSystem&&) = delete;
+    GridShieldSystem& operator=(GridShieldSystem&&) = delete;
     
     // Lifecycle management
     core::Result<void> initialize(const SystemConfig& config,
@@ -65,8 +71,8 @@ public:
     core::Result<void> process_cycle() noexcept;
     
     // State queries
-    core::SystemState get_state() const noexcept { return state_; }
-    OperationMode get_mode() const noexcept { return mode_; }
+    GS_NODISCARD core::SystemState get_state() const noexcept { return state_; }
+    GS_NODISCARD OperationMode get_mode() const noexcept { return mode_; }
     
     // Operations
     core::Result<void> send_meter_reading(const core::MeterReading& reading) noexcept;

@@ -2,7 +2,7 @@
  * @file system.cpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief System orchestrator implementation
- * @version 0.2
+ * @version 0.3
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -11,11 +11,8 @@
 
 #include "core/system.hpp"
 
-#if PLATFORM_NATIVE
+#if GS_PLATFORM_NATIVE
     #include <new>
-#else
-    // NEED ADOPTION: Ensure placement new is available
-    #include <new.h>
 #endif
 
 namespace gridshield {
@@ -30,7 +27,7 @@ GridShieldSystem::GridShieldSystem() noexcept
       last_heartbeat_(0),
       last_reading_(0) {}
 
-GridShieldSystem::~GridShieldSystem() {
+GridShieldSystem::~GridShieldSystem() noexcept {
     if (crypto_engine_ != nullptr) {
         delete crypto_engine_;
         crypto_engine_ = nullptr;
@@ -47,11 +44,11 @@ core::Result<void> GridShieldSystem::initialize(
     platform::PlatformServices& platform) noexcept {
     
     if (initialized_) {
-        return MAKE_ERROR(core::ErrorCode::SystemAlreadyInitialized);
+        return GS_MAKE_ERROR(core::ErrorCode::SystemAlreadyInitialized);
     }
     
     if (!platform.is_valid()) {
-        return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+        return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
     config_ = config;
@@ -60,24 +57,28 @@ core::Result<void> GridShieldSystem::initialize(
     transition_state(core::SystemState::Initializing);
     
     // Initialize hardware layer
-    TRY(tamper_detector_.initialize(config_.tamper_config, platform));
+    GS_TRY(tamper_detector_.initialize(config_.tamper_config, platform));
     
     // Initialize security layer
-    TRY(initialize_crypto());
+    GS_TRY(initialize_crypto());
     
     // Initialize network layer
     if (platform_->comm != nullptr) {
+#if GS_PLATFORM_NATIVE
         packet_transport_ = new (std::nothrow) network::PacketTransport(*platform_->comm);
+#else
+        packet_transport_ = new network::PacketTransport(*platform_->comm);
+#endif
         if (packet_transport_ == nullptr) {
             transition_state(core::SystemState::Error);
-            return MAKE_ERROR(core::ErrorCode::ResourceExhausted);
+            return GS_MAKE_ERROR(core::ErrorCode::ResourceExhausted);
         }
         
-        TRY(platform_->comm->init());
+        GS_TRY(platform_->comm->init());
     }
     
     // Initialize analytics layer
-    TRY(anomaly_detector_.initialize(config_.baseline_profile));
+    GS_TRY(anomaly_detector_.initialize(config_.baseline_profile));
     
     initialized_ = true;
     transition_state(core::SystemState::Ready);
@@ -87,11 +88,11 @@ core::Result<void> GridShieldSystem::initialize(
 
 core::Result<void> GridShieldSystem::start() noexcept {
     if (!initialized_ || state_ != core::SystemState::Ready) {
-        return MAKE_ERROR(core::ErrorCode::InvalidState);
+        return GS_MAKE_ERROR(core::ErrorCode::InvalidState);
     }
     
     // Start tamper monitoring
-    TRY(tamper_detector_.start());
+    GS_TRY(tamper_detector_.start());
     
     transition_state(core::SystemState::Operating);
     last_heartbeat_ = platform_->time->get_timestamp_ms();
@@ -102,10 +103,10 @@ core::Result<void> GridShieldSystem::start() noexcept {
 
 core::Result<void> GridShieldSystem::stop() noexcept {
     if (state_ != core::SystemState::Operating) {
-        return MAKE_ERROR(core::ErrorCode::InvalidState);
+        return GS_MAKE_ERROR(core::ErrorCode::InvalidState);
     }
     
-    TRY(tamper_detector_.stop());
+    GS_TRY(tamper_detector_.stop());
     
     transition_state(core::SystemState::Ready);
     
@@ -121,7 +122,7 @@ core::Result<void> GridShieldSystem::shutdown() noexcept {
     }
     
     if (platform_ != nullptr && platform_->comm != nullptr) {
-        TRY(platform_->comm->shutdown());
+        GS_TRY(platform_->comm->shutdown());
     }
     
     device_keypair_.clear();
@@ -136,7 +137,7 @@ core::Result<void> GridShieldSystem::shutdown() noexcept {
 core::Result<void> GridShieldSystem::process_cycle() noexcept {
     if (state_ != core::SystemState::Operating && 
         state_ != core::SystemState::Tampered) {
-        return MAKE_ERROR(core::ErrorCode::InvalidState);
+        return GS_MAKE_ERROR(core::ErrorCode::InvalidState);
     }
     
     core::timestamp_t current_time = platform_->time->get_timestamp_ms();
@@ -165,7 +166,7 @@ core::Result<void> GridShieldSystem::process_cycle() noexcept {
         reading.energy_wh = 1000; // Placeholder
         reading.voltage_mv = 220000; // 220V
         reading.current_ma = 4545; // ~1kW at 220V
-        reading.power_factor = 95; // 0.95
+        reading.power_factor = 950; // 0.95
         
         auto result = send_meter_reading(reading);
         // Non-critical error
@@ -185,7 +186,7 @@ core::Result<void> GridShieldSystem::send_meter_reading(
     const core::MeterReading& reading) noexcept {
     
     if (!initialized_ || crypto_engine_ == nullptr || packet_transport_ == nullptr) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
+        return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
     // Analyze for anomalies first
@@ -198,11 +199,11 @@ core::Result<void> GridShieldSystem::send_meter_reading(
     }
     
     // Update consumption profile
-    TRY(anomaly_detector_.update_profile(reading));
+    GS_TRY(anomaly_detector_.update_profile(reading));
     
     // Build packet
     network::SecurePacket packet;
-    TRY(packet.build(
+    GS_TRY(packet.build(
         network::PacketType::MeterData,
         config_.meter_id,
         core::Priority::Normal,
@@ -218,7 +219,7 @@ core::Result<void> GridShieldSystem::send_meter_reading(
 
 core::Result<void> GridShieldSystem::send_tamper_alert() noexcept {
     if (!initialized_ || crypto_engine_ == nullptr || packet_transport_ == nullptr) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
+        return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
     core::TamperEvent event;
@@ -228,7 +229,7 @@ core::Result<void> GridShieldSystem::send_tamper_alert() noexcept {
     event.sensor_id = config_.tamper_config.sensor_pin;
     
     network::SecurePacket packet;
-    TRY(packet.build(
+    GS_TRY(packet.build(
         network::PacketType::TamperAlert,
         config_.meter_id,
         core::Priority::Emergency,
@@ -243,7 +244,7 @@ core::Result<void> GridShieldSystem::send_tamper_alert() noexcept {
 
 core::Result<void> GridShieldSystem::send_heartbeat() noexcept {
     if (!initialized_ || crypto_engine_ == nullptr || packet_transport_ == nullptr) {
-        return MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
+        return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
     uint8_t heartbeat_data[8];
@@ -255,7 +256,7 @@ core::Result<void> GridShieldSystem::send_heartbeat() noexcept {
     }
     
     network::SecurePacket packet;
-    TRY(packet.build(
+    GS_TRY(packet.build(
         network::PacketType::Heartbeat,
         config_.meter_id,
         core::Priority::Low,
@@ -270,20 +271,24 @@ core::Result<void> GridShieldSystem::send_heartbeat() noexcept {
 
 core::Result<void> GridShieldSystem::initialize_crypto() noexcept {
     if (platform_->crypto == nullptr) {
-        return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+        return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
+#if GS_PLATFORM_NATIVE
     crypto_engine_ = new (std::nothrow) security::CryptoEngine(*platform_->crypto);
+#else
+    crypto_engine_ = new security::CryptoEngine(*platform_->crypto);
+#endif
     if (crypto_engine_ == nullptr) {
-        return MAKE_ERROR(core::ErrorCode::ResourceExhausted);
+        return GS_MAKE_ERROR(core::ErrorCode::ResourceExhausted);
     }
     
     // Generate device keypair
-    TRY(crypto_engine_->generate_keypair(device_keypair_));
+    GS_TRY(crypto_engine_->generate_keypair(device_keypair_));
     
     // In production: Load server public key from secure storage
     // For now: Generate placeholder
-    TRY(crypto_engine_->generate_keypair(server_public_key_));
+    GS_TRY(crypto_engine_->generate_keypair(server_public_key_));
     
     return core::Result<void>();
 }

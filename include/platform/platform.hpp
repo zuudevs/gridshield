@@ -2,7 +2,7 @@
  * @file platform.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Hardware Abstraction Layer (HAL) interfaces
- * @version 0.2
+ * @version 0.3
  * @date 2026-02-03
  * 
  * @copyright Copyright (c) 2026
@@ -22,7 +22,8 @@ namespace platform {
 // ============================================================================
 class IPlatformTime {
 public:
-    virtual ~IPlatformTime();
+    virtual ~IPlatformTime() noexcept = default;
+    
     virtual core::timestamp_t get_timestamp_ms() noexcept = 0;
     virtual void delay_ms(uint32_t ms) noexcept = 0;
 };
@@ -32,7 +33,7 @@ public:
 // ============================================================================
 class IPlatformGPIO {
 public:
-    virtual ~IPlatformGPIO();
+    virtual ~IPlatformGPIO() noexcept = default;
     
     enum class PinMode : uint8_t {
         Input = 0,
@@ -46,12 +47,14 @@ public:
     virtual core::Result<void> write(uint8_t pin, bool value) noexcept = 0;
 };
 
+using PinMode = IPlatformGPIO::PinMode;
+
 // ============================================================================
 // INTERRUPT INTERFACE
 // ============================================================================
 class IPlatformInterrupt {
 public:
-    virtual ~IPlatformInterrupt();
+    virtual ~IPlatformInterrupt() noexcept = default;
     
     enum class TriggerMode : uint8_t {
         Rising = 0,
@@ -61,7 +64,7 @@ public:
         High = 4
     };
     
-    using InterruptCallback = void (*)(void* context);
+    using InterruptCallback = void (*)(void* context) noexcept;
     
     virtual core::Result<void> attach(uint8_t pin, TriggerMode mode, 
                                      InterruptCallback callback, 
@@ -71,12 +74,15 @@ public:
     virtual core::Result<void> disable(uint8_t pin) noexcept = 0;
 };
 
+using TriggerMode = IPlatformInterrupt::TriggerMode;
+using InterruptCallback = IPlatformInterrupt::InterruptCallback;
+
 // ============================================================================
 // CRYPTO INTERFACE
 // ============================================================================
 class IPlatformCrypto {
 public:
-    virtual ~IPlatformCrypto();
+    virtual ~IPlatformCrypto() noexcept = default;
     
     virtual core::Result<void> random_bytes(uint8_t* buffer, size_t length) noexcept = 0;
     virtual core::Result<uint32_t> crc32(const uint8_t* data, size_t length) noexcept = 0;
@@ -89,7 +95,7 @@ public:
 // ============================================================================
 class IPlatformStorage {
 public:
-    virtual ~IPlatformStorage();
+    virtual ~IPlatformStorage() noexcept = default;
     
     virtual core::Result<size_t> read(uint32_t address, uint8_t* buffer, 
                                      size_t length) noexcept = 0;
@@ -103,7 +109,7 @@ public:
 // ============================================================================
 class IPlatformComm {
 public:
-    virtual ~IPlatformComm();
+    virtual ~IPlatformComm() noexcept = default;
     
     virtual core::Result<void> init() noexcept = 0;
     virtual core::Result<void> shutdown() noexcept = 0;
@@ -124,11 +130,11 @@ struct PlatformServices {
     IPlatformStorage* storage;
     IPlatformComm* comm;
     
-    constexpr PlatformServices() noexcept 
+    GS_CONSTEXPR PlatformServices() noexcept
         : time(nullptr), gpio(nullptr), interrupt(nullptr),
           crypto(nullptr), storage(nullptr), comm(nullptr) {}
     
-    constexpr bool is_valid() const noexcept {
+    GS_NODISCARD GS_CONSTEXPR bool is_valid() const noexcept {
         return time != nullptr && gpio != nullptr && 
                interrupt != nullptr && crypto != nullptr;
     }
