@@ -28,8 +28,7 @@
 *.jpg
 *.jpeg
 *.gif
-/assets/
-generate_documentation.md
+assets/
 
 # =========================
 # IDE & editor files
