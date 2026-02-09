@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "platform/platform.hpp"
+#include "../platform/platform.hpp"
 
 #if GS_PLATFORM_NATIVE
 

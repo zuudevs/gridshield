@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2026
  */
 
-#include "platform/platform.hpp"
+#include "../platform/platform.hpp"
 
 namespace gridshield {
 namespace platform {

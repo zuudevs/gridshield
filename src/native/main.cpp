@@ -37,7 +37,7 @@ static void setup_utf8_console() noexcept {
 
 static void print_header(const char* title) {
     std::cout << "\n[" << title << "]\n";
-    std::cout << std::string(50, '─') << "\n";
+    std::wcout << std::wstring(50, L'─') << "\n";
 }
 
 static void print_error(const core::ErrorContext& error) {
