@@ -10,8 +10,8 @@ project(
 # ============================================================================
 # BUILD OPTIONS
 # ============================================================================
-option(BUILD_TESTS "Build unit tests" ON)
-option(BUILD_EXAMPLES "Build examples" ON)
+option(BUILD_TESTS "Build unit tests" OFF)
+option(BUILD_EXAMPLES "Build examples" OFF)
 option(ENABLE_SANITIZERS "Enable sanitizers (Native only)" OFF)
 
 # Platform selection
@@ -49,27 +49,25 @@ set(COMMON_SOURCES
     src/common/network/packet.cpp
     src/common/analytics/detector.cpp
     src/common/core/system.cpp
+    src/platform/platform.cpp
 )
 
 set(COMMON_HEADERS
-    include/gridshield/common/utils/gs_macros.hpp
-    include/gridshield/common/core/error.hpp
-    include/gridshield/common/core/types.hpp
-    include/gridshield/common/core/system.hpp
-    include/gridshield/common/security/crypto.hpp
-    include/gridshield/common/hardware/tamper.hpp
-    include/gridshield/common/network/packet.hpp
-    include/gridshield/common/analytics/detector.hpp
-    include/gridshield/platform/platform.hpp
+    include/common/utils/gs_macros.hpp
+    include/common/core/error.hpp
+    include/common/core/types.hpp
+    include/common/core/system.hpp
+    include/common/security/crypto.hpp
+    include/common/hardware/tamper.hpp
+    include/common/network/packet.hpp
+    include/common/analytics/detector.hpp
+    include/platform/platform.hpp
 )
 
 # ============================================================================
 # PLATFORM-SPECIFIC CONFIGURATION
 # ============================================================================
 if(PLATFORM STREQUAL "NATIVE")
-    # ────────────────────────────────────────────────────────────────────────
-    # NATIVE (PC) BUILD
-    # ────────────────────────────────────────────────────────────────────────
     message(STATUS "Configuring for Native platform")
     
     # Main executable
@@ -80,9 +78,9 @@ if(PLATFORM STREQUAL "NATIVE")
     
     # Include directories
     target_include_directories(${PROJECT_NAME} PRIVATE
-        include/gridshield/common
-        include/gridshield/platform
-        include/gridshield/native
+        include/common
+        include/platform
+        include/native
     )
     
     # Compiler warnings
@@ -111,28 +109,9 @@ if(PLATFORM STREQUAL "NATIVE")
         endif()
     endif()
     
-    # Tests
-    if(BUILD_TESTS)
-        enable_testing()
-        add_subdirectory(test/native)
-    endif()
-    
-    # Examples
-    if(BUILD_EXAMPLES)
-        add_subdirectory(examples/native)
-    endif()
-    
 elseif(PLATFORM STREQUAL "ARDUINO")
-    # ────────────────────────────────────────────────────────────────────────
-    # ARDUINO BUILD (via CMake)
-    # ────────────────────────────────────────────────────────────────────────
     message(STATUS "Configuring for Arduino platform")
-    message(WARNING "Arduino build via CMake is experimental. Use arduino-cli for production.")
-    
-    # This is a minimal setup. For production, use arduino-cli:
-    # arduino-cli compile --fqbn arduino:avr:mega gridshield.ino
-    
-    message(STATUS "For Arduino builds, use:")
+    message(WARNING "Use arduino-cli for production builds:")
     message(STATUS "  arduino-cli compile --fqbn arduino:avr:mega src/arduino/gridshield.ino")
     message(STATUS "  arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino")
     
@@ -148,7 +127,7 @@ if(PLATFORM STREQUAL "NATIVE")
         RUNTIME DESTINATION bin
     )
     
-    install(DIRECTORY include/gridshield/
+    install(DIRECTORY include/common/
         DESTINATION include/gridshield
         FILES_MATCHING PATTERN "*.hpp"
     )

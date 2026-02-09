@@ -1,124 +1,189 @@
-# GridShield Build & Upload Guide
+# GridShield Build Guide (C++17)
 
 ## Prerequisites
 
 ### For Native Development (PC Testing)
 - CMake ≥ 3.20
-- C++17 compiler (GCC/Clang/MSVC)
+- C++17 compiler:
+  - GCC ≥ 7.0
+  - Clang ≥ 5.0
+  - MSVC 2017+
 
 ### For Arduino/AVR Deployment
 - Arduino CLI ≥ 1.4.1
-- AVR toolchain (installed via Arduino)
+- AVR toolchain (via Arduino)
 
 ---
 
-## Build Methods
+## Quick Start
 
-### 1. Native Build (Development/Testing)
+### Native (Development)
 
 ```bash
-# Linux/macOS
+# Configure
+cmake --preset native-debug
+
+# Build
+cmake --build --preset native-debug
+
+# Run
+./bin/NATIVE/GridShield
+```
+
+### Arduino (Production)
+
+```bash
+# Install core
+arduino-cli core install arduino:avr
+
+# Compile
+arduino-cli compile --fqbn arduino:avr:mega src/arduino/gridshield.ino
+
+# Upload
+arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino
+```
+
+---
+
+## Configuration Profiles
+
+### native-debug
+- Platform: x86/x64
+- Optimization: -O0
+- Sanitizers: ON (Linux/macOS)
+- Use: Development, debugging
+
+### native-release
+- Platform: x86/x64
+- Optimization: -O3
+- Sanitizers: OFF
+- Use: Performance testing
+
+### Arduino Mega (Recommended)
+- MCU: ATmega2560
+- Flash: 256 KB
+- RAM: 8 KB
+- Use: Production deployment
+
+### Arduino Uno (Limited)
+- MCU: ATmega328P
+- Flash: 32 KB (NOT ENOUGH)
+- RAM: 2 KB (NOT ENOUGH)
+- Use: NOT RECOMMENDED
+
+---
+
+## Manual Build
+
+### Linux/macOS
+```bash
 mkdir build && cd build
 cmake -DPLATFORM=NATIVE -DCMAKE_BUILD_TYPE=Debug ..
 make -j$(nproc)
+```
 
-# Windows (PowerShell)
+### Windows (PowerShell)
+```powershell
 mkdir build; cd build
 cmake -DPLATFORM=NATIVE -DCMAKE_BUILD_TYPE=Debug ..
 cmake --build . -j8
 ```
 
-**Output:** `bin/NATIVE/GridShield` (executable for PC)
-
 ---
 
-### 2. Arduino Build via CMake (Advanced)
+## Production Libraries
+
+Install via arduino-cli:
 
 ```bash
-mkdir build-avr && cd build-avr
-cmake -DPLATFORM=AVR -DCMAKE_BUILD_TYPE=Release ..
-make
+# SHA256 (optional, improves security)
+arduino-cli lib install Crypto
 ```
 
-**Output:** `bin/AVR/GridShield.hex` (ready to upload)
-
-**Upload:**
-```bash
-avrdude -p atmega328p -c arduino -P COM3 -b 115200 \
-        -U flash:w:bin/AVR/GridShield.hex:i
-```
-
----
-
-### 3. Arduino CLI Build (Recommended for Beginners)
-
-#### Setup
-```bash
-# Install AVR core
-arduino-cli core install arduino:avr
-
-# Install required libraries
-arduino-cli lib install "Crypto" # For SHA256 (optional)
-```
-
-#### Compile
-```bash
-arduino-cli compile --fqbn arduino:avr:uno gridshield.ino
-```
-
-#### Upload
-```bash
-arduino-cli upload -p COM3 --fqbn arduino:avr:uno gridshield.ino
-```
-
----
-
-## Required Third-Party Libraries
-
-### For Production Cryptography (Optional)
-
-Replace placeholder crypto in `platform_arduino.hpp`:
-
-1. **SHA256 Hash:**
-   - Library: `Crypto` by Rhys Weatherley
-   - Install: `arduino-cli lib install Crypto`
-   - Usage: Uncomment lines marked `// NEED ADOPTION`
-
-2. **ECC Signatures (Advanced):**
-   - Library: `uECC` (micro-ecc)
-   - Manual integration required (not Arduino Library Manager)
+Replace placeholders in code:
+- `src/common/security/crypto.cpp`: Uncomment uECC integration
+- `include/arduino/platform_arduino.hpp`: Uncomment SHA256
 
 ---
 
 ## Memory Optimization
 
-### Flash Usage
-- Core firmware: ~35 KB
-- With Crypto lib: ~85 KB
-- **Target MCU:** ATmega328P (32 KB Flash) - **too small!**
-- **Recommended:** ATmega2560 (256 KB) or ESP32
+### Firmware Size (Estimated)
+```
+Core logic:        ~35 KB
++ Crypto (real):   ~50 KB
+Total:             ~85 KB
+```
+
+**Target:** ATmega2560 (256 KB Flash)
 
 ### RAM Usage
-- Static: ~1.3 KB
-- Stack: ~2.5 KB
-- **Target MCU:** ATmega328P (2 KB RAM) - **marginal!**
-- **Recommended:** ESP32 (520 KB RAM)
+```
+Static:   ~1.3 KB
+Stack:    ~2.5 KB
+Total:    ~3.8 KB
+```
+
+**Target:** ATmega2560 (8 KB RAM)
 
 ### Optimization Flags (Already Applied)
-- `-Os` - Optimize for size
-- `-flto` - Link-time optimization
-- `-ffunction-sections` - Dead code elimination
+- `-Os`: Size optimization
+- `-flto`: Link-time optimization
+- `-ffunction-sections`: Dead code elimination
 
 ---
 
-## Debugging
+## Troubleshooting
 
-### Serial Monitor
-```bash
-arduino-cli monitor -p COM3 -b 115200
+### "Cannot find gs_macros.hpp"
+**Fix:** Ensure include paths:
+```cmake
+include_directories(include/common include/platform)
 ```
 
-### Expected Output
+### "undefined reference to std::move"
+**Fix:** Add `-std=c++17` flag:
+```bash
+g++ -std=c++17 ...
+```
+
+### "Sketch too big"
+**Fix:** Use Arduino Mega, NOT Uno
+
+### Upload fails
+**Fix:** Check port:
+```bash
+arduino-cli board list
+```
+
+---
+
+## CMake Presets
+
+List available:
+```bash
+cmake --list-presets
+```
+
+Output:
+```
+native-debug   - PC Development + sanitizers
+native-release - PC Performance testing
+```
+
+---
+
+## Serial Monitor
+
+```bash
+# Arduino CLI
+arduino-cli monitor -p COM3 -b 115200
+
+# Screen (Linux)
+screen /dev/ttyUSB0 115200
+```
+
+Expected output:
 ```
 === GridShield v1.0 ===
 Booting...
@@ -129,37 +194,28 @@ System running.
 
 ---
 
-## Common Errors
+## Production Deployment
 
-### 1. "ZMOVE not defined"
-**Fix:** Include `utils/gs_macros.hpp` in all headers using move semantics.
+### 1. Hardware Integration
+Replace mock drivers in `platform_arduino.hpp` with actual:
+- SPI/I2C for secure element (ATECC608)
+- LoRa/NB-IoT communication
+- Real sensor inputs
 
-### 2. "Cannot find Arduino.h"
-**Fix:** Ensure AVR core is installed:
-```bash
-arduino-cli core list
+### 2. Cryptography
+Integrate production libraries:
+```cpp
+// crypto.cpp
+#include <uECC.h>
+const struct uECC_Curve_t* curve = uECC_secp256r1();
 ```
 
-### 3. "Sketch too big"
-**Fix:** Use larger MCU (ESP32) or disable unused modules.
-
-### 4. Upload fails
-**Fix:** Check port and baud rate:
-```bash
-arduino-cli board list
-```
-
----
-
-## Production Deployment Checklist
-
-- [ ] Replace mock crypto with mbedTLS/uECC
-- [ ] Enable hardware random number generator
+### 3. Security Hardening
+- [ ] Enable watchdog timer
+- [ ] Implement secure boot
+- [ ] Add OTA updates
 - [ ] Store keys in EEPROM/Secure Element
-- [ ] Implement watchdog timer
-- [ ] Add OTA update capability
-- [ ] Enable encryption for serial communication
-- [ ] Test tamper detection with real hardware
+- [ ] Enable stack canaries
 
 ---
 
@@ -167,31 +223,26 @@ arduino-cli board list
 
 ```
 gridshield/
+├── CMakeLists.txt              # Root build config
 ├── include/
-│   ├── utils/gs_macros.hpp          # Platform macros
-│   ├── core/
-│   │   ├── error.hpp                # Result<T> monad
-│   │   ├── types.hpp                # Domain types
-│   │   └── system.hpp               # Main orchestrator
-│   ├── platform/
-│   │   ├── platform.hpp             # HAL interfaces
-│   │   ├── mock_platform.hpp        # PC mock
-│   │   └── arduino/
-│   │       ├── gpio_arduino.hpp     # AVR GPIO
-│   │       └── platform_arduino.hpp # AVR drivers
-│   ├── hardware/tamper.hpp
-│   ├── security/crypto.hpp
-│   ├── network/packet.hpp
-│   └── analytics/detector.hpp
+│   ├── common/                 # Platform-agnostic code
+│   │   ├── utils/gs_macros.hpp # Platform macros (C++17)
+│   │   ├── core/
+│   │   │   ├── error.hpp       # Result<T> monad
+│   │   │   ├── types.hpp       # Domain types
+│   │   │   └── system.hpp      # Main orchestrator
+│   │   ├── security/crypto.hpp # Crypto engine
+│   │   ├── hardware/tamper.hpp # Tamper detection
+│   │   ├── network/packet.hpp  # Secure packets
+│   │   └── analytics/detector.hpp # Anomaly detection
+│   ├── platform/platform.hpp   # HAL interfaces
+│   ├── native/platform_native.hpp # PC mock
+│   └── arduino/platform_arduino.hpp # AVR drivers
 ├── src/
-│   ├── main.cpp                     # Arduino entry point
-│   ├── core/system.cpp
-│   ├── hardware/tamper.cpp
-│   ├── security/crypto.cpp
-│   ├── network/packet.cpp
-│   └── analytics/detector.cpp
-├── CMakeLists.txt                   # Build configuration
-└── gridshield.ino                   # Arduino wrapper
+│   ├── common/                 # Implementation
+│   ├── native/main.cpp         # PC entry point
+│   └── arduino/gridshield.ino  # Arduino entry point
+└── CMakePresets.json           # Build presets
 ```
 
 ---

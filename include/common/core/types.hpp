@@ -1,12 +1,11 @@
 /**
  * @file types.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Core domain types with optimized memory layout
- * @version 0.4
- * @date 2026-02-03
+ * @brief Core domain types with optimized memory layout (C++17)
+ * @version 0.5
+ * @date 2026-02-09
  * 
  * @copyright Copyright (c) 2026
- * 
  */
 
 #pragma once
@@ -16,6 +15,7 @@
 #if GS_PLATFORM_NATIVE
     #include <cstdint>
     #include <cstring>
+    #include <type_traits>
 #else
     #include <stdint.h>
     #include <string.h>
@@ -74,7 +74,7 @@ struct GS_ALIGN(8) MeterReading {
     uint8_t phase;            // 1 byte
     uint8_t reserved[3];      // 3 bytes padding
     
-    GS_CONSTEXPR MeterReading() noexcept
+    constexpr MeterReading() noexcept
         : timestamp(0), energy_wh(0), voltage_mv(0),
           current_ma(0), power_factor(0), phase(0), reserved{0} {}
 };
@@ -90,7 +90,7 @@ struct GS_ALIGN(8) TamperEvent {
     uint8_t event_type;     // 1 byte
     uint8_t severity;       // 1 byte
     
-    GS_CONSTEXPR TamperEvent() noexcept
+    constexpr TamperEvent() noexcept
         : timestamp(0), metadata(0), sensor_id(0),
           event_type(0), severity(0) {}
 };
@@ -102,32 +102,68 @@ GS_STATIC_ASSERT(sizeof(TamperEvent) == 16, "TamperEvent must be 16 bytes");
 template<typename T, size_t N>
 class StaticBuffer {
 public:
-    GS_CONSTEXPR StaticBuffer() noexcept : size_(0) {}
+    constexpr StaticBuffer() noexcept : size_(0) {}
     
-    GS_NODISCARD GS_INLINE bool push(const T& item) noexcept {
+    ~StaticBuffer() noexcept {
+        clear();
+    }
+    
+    // Delete copy
+    StaticBuffer(const StaticBuffer&) = delete;
+    StaticBuffer& operator=(const StaticBuffer&) = delete;
+    
+    // Move constructor
+    StaticBuffer(StaticBuffer&& other) noexcept(std::is_nothrow_move_constructible<T>::value)
+        : size_(other.size_) {
+        for (size_t i = 0; i < size_; ++i) {
+            new (&data_[i]) T(GS_MOVE(other.data_[i]));
+        }
+        other.size_ = 0;
+    }
+    
+    // Move assignment
+    StaticBuffer& operator=(StaticBuffer&& other) noexcept(std::is_nothrow_move_constructible<T>::value) {
+        if (this != &other) {
+            clear();
+            size_ = other.size_;
+            for (size_t i = 0; i < size_; ++i) {
+                new (&data_[i]) T(GS_MOVE(other.data_[i]));
+            }
+            other.size_ = 0;
+        }
+        return *this;
+    }
+    
+    GS_NODISCARD inline bool push(const T& item) noexcept(std::is_nothrow_copy_constructible<T>::value) {
         if (GS_UNLIKELY(size_ >= N)) return false;
-        data_[size_++] = item;
+        new (&data_[size_++]) T(item);
         return true;
     }
     
-    GS_NODISCARD GS_INLINE bool push(T&& item) noexcept {
+    GS_NODISCARD inline bool push(T&& item) noexcept(std::is_nothrow_move_constructible<T>::value) {
         if (GS_UNLIKELY(size_ >= N)) return false;
-        data_[size_++] = GS_MOVE(item);
+        new (&data_[size_++]) T(GS_MOVE(item));
         return true;
     }
     
-    GS_NODISCARD GS_INLINE bool pop(T& item) noexcept {
+    GS_NODISCARD inline bool pop(T& item) noexcept(std::is_nothrow_move_assignable<T>::value) {
         if (GS_UNLIKELY(size_ == 0)) return false;
         item = GS_MOVE(data_[--size_]);
+        data_[size_].~T();
         return true;
     }
     
-    void clear() noexcept { size_ = 0; }
+    void clear() noexcept {
+        for (size_t i = 0; i < size_; ++i) {
+            data_[i].~T();
+        }
+        size_ = 0;
+    }
     
-    GS_NODISCARD GS_CONSTEXPR size_t size() const noexcept { return size_; }
-    GS_NODISCARD GS_CONSTEXPR size_t capacity() const noexcept { return N; }
-    GS_NODISCARD GS_CONSTEXPR bool empty() const noexcept { return size_ == 0; }
-    GS_NODISCARD GS_CONSTEXPR bool full() const noexcept { return size_ == N; }
+    GS_NODISCARD constexpr size_t size() const noexcept { return size_; }
+    GS_NODISCARD constexpr size_t capacity() const noexcept { return N; }
+    GS_NODISCARD constexpr bool empty() const noexcept { return size_ == 0; }
+    GS_NODISCARD constexpr bool full() const noexcept { return size_ == N; }
     
     GS_NODISCARD T& operator[](size_t idx) noexcept { 
         GS_ASSERT(idx < size_);
@@ -139,17 +175,17 @@ public:
         return data_[idx]; 
     }
     
-    GS_NODISCARD T* data() noexcept { return data_; }
-    GS_NODISCARD const T* data() const noexcept { return data_; }
+    GS_NODISCARD T* data() noexcept { return reinterpret_cast<T*>(data_); }
+    GS_NODISCARD const T* data() const noexcept { return reinterpret_cast<const T*>(data_); }
     
     // Iterators
-    GS_NODISCARD T* begin() noexcept { return data_; }
-    GS_NODISCARD T* end() noexcept { return data_ + size_; }
-    GS_NODISCARD const T* begin() const noexcept { return data_; }
-    GS_NODISCARD const T* end() const noexcept { return data_ + size_; }
+    GS_NODISCARD T* begin() noexcept { return data(); }
+    GS_NODISCARD T* end() noexcept { return data() + size_; }
+    GS_NODISCARD const T* begin() const noexcept { return data(); }
+    GS_NODISCARD const T* end() const noexcept { return data() + size_; }
     
 private:
-    T data_[N];
+    typename std::aligned_storage<sizeof(T), alignof(T)>::type data_[N];
     size_t size_;
 };
 
@@ -160,23 +196,35 @@ template<size_t N>
 class ByteArray {
 public:
     ByteArray() noexcept : size_(0) {
+#if GS_PLATFORM_NATIVE
+        std::memset(data_, 0, N);
+#else
         memset(data_, 0, N);
+#endif
     }
     
     void clear() noexcept {
         size_ = 0;
+#if GS_PLATFORM_NATIVE
+        std::memset(data_, 0, N);
+#else
         memset(data_, 0, N);
+#endif
     }
     
-    GS_NODISCARD GS_INLINE bool append(const uint8_t* data, size_t len) noexcept {
+    GS_NODISCARD inline bool append(const uint8_t* data, size_t len) noexcept {
         if (GS_UNLIKELY(size_ + len > N)) return false;
+#if GS_PLATFORM_NATIVE
+        std::memcpy(data_ + size_, data, len);
+#else
         memcpy(data_ + size_, data, len);
+#endif
         size_ += len;
         return true;
     }
     
-    GS_NODISCARD GS_CONSTEXPR size_t size() const noexcept { return size_; }
-    GS_NODISCARD GS_CONSTEXPR size_t capacity() const noexcept { return N; }
+    GS_NODISCARD constexpr size_t size() const noexcept { return size_; }
+    GS_NODISCARD constexpr size_t capacity() const noexcept { return N; }
     
     GS_NODISCARD uint8_t* data() noexcept { return data_; }
     GS_NODISCARD const uint8_t* data() const noexcept { return data_; }

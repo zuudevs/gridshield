@@ -1,228 +1,137 @@
-# GridShield - Multi-Layer AMI Security System
+# GridShield - AMI Security System
 
-## Architecture Overview
+Multi-layer security for Advanced Metering Infrastructure (AMI).
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    GridShield System                        │
-│                  (Core Orchestrator)                        │
-└─────────────────────────────────────────────────────────────┘
-                           │
-        ┌──────────────────┼──────────────────┐
-        │                  │                  │
-        ▼                  ▼                  ▼
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│   Physical   │  │   Network    │  │  Analytics   │
-│    Layer     │  │    Layer     │  │    Layer     │
-│              │  │              │  │              │
-│ - Tamper     │  │ - ECC Crypto │  │ - Anomaly    │
-│   Detection  │  │ - Secure     │  │   Detection  │
-│ - Power Loss │  │   Packets    │  │ - Profile    │
-│   Alert      │  │ - Signature  │  │   Learning   │
-└──────────────┘  └──────────────┘  └──────────────┘
-        │                  │                  │
-        └──────────────────┼──────────────────┘
-                           │
-                           ▼
-                ┌──────────────────┐
-                │  Platform Layer  │
-                │   (Abstraction)  │
-                │                  │
-                │ - GPIO/ISR       │
-                │ - Time/Crypto    │
-                │ - Communication  │
-                └──────────────────┘
+## Tech Stack
+- **Language:** C++17
+- **Build:** CMake 3.20+
+- **Platforms:** Native (x86/x64), Arduino AVR
+
+## Quick Build
+
+### Native (Development)
+```bash
+cmake --preset native-debug && cmake --build --preset native-debug
+./bin/NATIVE/GridShield
 ```
 
-## Module Structure
+### Arduino (Production)
+```bash
+arduino-cli compile --fqbn arduino:avr:mega src/arduino/gridshield.ino
+arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino
+```
 
-### Core (`core/`)
-- **error.hpp**: Result-based error handling with compile-time safety
-- **types.hpp**: Domain-specific types (MeterReading, TamperEvent, etc.)
-- **system.hpp**: Main orchestrator coordinating all layers
+## Architecture
 
-### Platform (`platform/`)
-- **platform.hpp**: Hardware abstraction interfaces
-- **mock_platform.hpp**: Mock implementation for testing
+```
+┌─────────────────────────────┐
+│   GridShield System         │ ← Orchestrator
+└──────────┬──────────────────┘
+           │
+    ┌──────┼──────┐
+    ▼      ▼      ▼
+  Physical Network Analytics
+  Security Security Detection
+```
 
-### Hardware (`hardware/`)
-- **tamper.hpp/cpp**: Physical tamper detection with ISR support
+### Layers
+1. **Physical:** Tamper detection, power-loss alert
+2. **Network:** ECC crypto, secure packets (ECDSA)
+3. **Analytics:** Consumption anomaly detection
 
-### Security (`security/`)
-- **crypto.hpp/cpp**: ECC (secp256r1) cryptography engine
-  - Key generation and management
-  - ECDSA signing/verification
-  - ECDH key agreement
-  - AES-256-GCM encryption
-
-### Network (`network/`)
-- **packet.hpp/cpp**: Secure packet protocol
-  - Integrity verification (checksum)
-  - Authentication (ECDSA signature)
-  - Priority-based transmission
-
-### Analytics (`analytics/`)
-- **detector.hpp/cpp**: Consumption anomaly detection
-  - Profile learning
-  - Real-time deviation analysis
-  - Cross-layer validation
+## Project Structure
+```
+gridshield/
+├── CMakeLists.txt           # Build config
+├── include/
+│   ├── common/              # Platform-agnostic
+│   │   ├── utils/           # Macros (C++17)
+│   │   ├── core/            # Error, types, system
+│   │   ├── security/        # Crypto engine
+│   │   ├── hardware/        # Tamper detector
+│   │   ├── network/         # Secure packets
+│   │   └── analytics/       # Anomaly detection
+│   ├── platform/            # HAL interfaces
+│   ├── native/              # PC implementation
+│   └── arduino/             # AVR implementation
+├── src/
+│   ├── common/              # Implementations
+│   ├── native/main.cpp      # PC entry
+│   └── arduino/gridshield.ino  # Arduino entry
+└── CMakePresets.json        # Build presets
+```
 
 ## Key Features
 
-### 1. Defense-in-Depth Architecture
-Three independent security layers provide redundancy:
-- Physical tampering detection
-- Cryptographic authentication
-- Statistical anomaly analysis
+### C++17 Compatibility
+- Result<T> monad (no exceptions)
+- Custom move semantics for AVR
+- Zero heap allocation (embedded-friendly)
 
-### 2. Resource-Optimized Design
-- Zero-allocation error handling (Result<T>)
-- Static buffers for predictable memory usage
-- Lightweight cryptography suitable for MCU
+### Memory Optimized
+- Flash: ~35 KB core, ~85 KB with crypto
+- RAM: ~3.8 KB static + stack
+- Target: ATmega2560 (256KB/8KB)
 
-### 3. ISR-Safe Implementation
-- Volatile state in interrupt handlers
-- Lock-free communication patterns
-- Debouncing and edge detection
+### Security
+- ECC secp256r1 (placeholder, use uECC in production)
+- ECDSA signatures
+- SHA256 integrity
+- Cross-layer validation
 
-### 4. Platform Portability
-- Clean abstraction layer
-- Easy to port to ESP32, STM32, or other MCUs
-- Mock platform for PC-based testing
+## Configuration
 
-### 5. Cross-Layer Validation
-System correlates signals from multiple layers:
-```
-Physical Tamper + Consumption Drop + Network Anomaly
-    → Emergency Priority Alert
-```
-
-## Build Instructions
-
-### Prerequisites
-- CMake ≥ 3.20
-- C++23 compiler (GCC ≥ 13, Clang ≥ 17, MSVC 2022+)
-
-### Quick Build
+### Native Debug
 ```bash
-./build.sh          # Release build
-./build.sh Debug    # Debug build
+cmake --preset native-debug
 ```
+- Sanitizers: ON (Linux/macOS)
+- Optimization: -O0
 
-### Manual Build
+### Native Release
 ```bash
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . -j$(nproc)
+cmake --preset native-release
 ```
-
-### Run
-```bash
-./bin/gridshield
-```
-
-## Example Output
-
-```
-═══════════════════════════════════════════════════════════════════
-  GridShield AMI Security System v1.0.0
-  Multi-Layer Protection for Advanced Metering Infrastructure
-═══════════════════════════════════════════════════════════════════
-
-[Initialization]
-─────────────────────────────────────────
-Meter ID: 0x1234567890ABCDEF
-Initializing GridShield system...
-✓ System initialized successfully
-System State: READY
-
-[Phase 1] Normal Operation Mode
-─────────────────────────────────────
-Cycle 1: ✓ Processing complete
-Cycle 2: ✓ Processing complete
-...
-
-[Phase 2] Tamper Detection Test
-─────────────────────────────────────
-Simulating physical tamper event...
-✓ Tamper event processed
-System State: ⚠️  TAMPERED (CRITICAL)
-
-[Phase 3] Consumption Anomaly Detection
-─────────────────────────────────────
-Sending normal consumption readings...
-  Reading 1: 1000 Wh ✓
-  Reading 2: 1010 Wh ✓
-Simulating anomalous consumption drop...
-  Anomalous reading: 100 Wh ⚠️
-  Analytics layer flagged potential manipulation
-```
+- Sanitizers: OFF
+- Optimization: -O3
 
 ## Production Deployment
 
-### Hardware Integration
-Replace mock platform with actual drivers:
-```cpp
-// Instead of MockGPIO:
-class ESP32GPIO : public IPlatformGPIO {
-    core::Result<void> configure(uint8_t pin, PinMode mode) noexcept override {
-        // Call ESP32 SDK
-        gpio_set_direction((gpio_num_t)pin, mode == PinMode::Output ? 
-                          GPIO_MODE_OUTPUT : GPIO_MODE_INPUT);
-        return core::Result<void>();
-    }
-    // ...
-};
+### 1. Install Libraries
+```bash
+arduino-cli lib install Crypto  # SHA256
 ```
 
-### Cryptography
-Integrate real ECC library (e.g., mbedTLS):
-```cpp
-core::Result<void> CryptoEngine::sign(...) noexcept {
-    mbedtls_ecdsa_context ctx;
-    // Use actual secp256r1 implementation
-    return core::Result<void>();
-}
-```
+### 2. Replace Placeholders
+Uncomment production crypto in:
+- `src/common/security/crypto.cpp`
+- `include/arduino/platform_arduino.hpp`
 
-### Communication
-Implement with LoRa/NB-IoT/WiFi:
-```cpp
-class LoRaComm : public IPlatformComm {
-    core::Result<size_t> send(const uint8_t* data, size_t length) noexcept override {
-        // Use LoRa radio
-        return core::Result<size_t>(lora_send(data, length));
-    }
-};
-```
+### 3. Hardware Setup
+- Arduino Mega 2560
+- Tamper switch: Pin 2
+- Serial: 115200 baud
 
-## Security Considerations
+## Troubleshooting
 
-1. **Key Storage**: Use secure element (ATECC608) for private keys
-2. **Firmware Protection**: Enable read protection on MCU
-3. **Secure Boot**: Verify firmware signature on startup
-4. **Time Synchronization**: Use authenticated NTP for timestamps
-5. **Firmware Updates**: Implement secure OTA with rollback
+| Error | Fix |
+|-------|-----|
+| `gs_macros.hpp not found` | Check include paths |
+| `undefined std::move` | Add `-std=c++17` |
+| `Sketch too big` | Use Mega, NOT Uno |
+| `Upload failed` | Run `arduino-cli board list` |
 
-## Performance Metrics
-
-### Memory Footprint (Estimated)
-- Flash: ~64 KB (without crypto library)
-- RAM: ~12 KB (static + stack)
-- Packet overhead: ~130 bytes/packet
-
-### Timing (ESP32 @ 240MHz)
-- Tamper detection: <5ms (ISR-driven)
-- Packet encryption: ~50ms
-- Anomaly analysis: <10ms
-- Full cycle: <100ms
+## Documentation
+- **BUILD.md:** Detailed build instructions
+- **ARCHITECTURE.md:** System design
+- **PROPOSAL.md:** Project rationale
 
 ## License
-
-See LICENSE.md
+MIT
 
 ## Authors
+- Muhammad Ichwan Fauzi (202331227) - Architecture
+- Rafi Indra Pramudhito Zuhayr (202331291) - Implementation  
+- Cesar Ardika Bhayangkara (202311240) - Hardware
 
-- Muhammad Ichwan Fauzi (202331227) - Architecture & Security
-- Rafi Indra Pramudhito Zuhayr (202331291) - Firmware & Implementation
-- Cesar Ardika Bhayangkara (202311240) - Hardware Integration
+Institut Teknologi PLN - 2025

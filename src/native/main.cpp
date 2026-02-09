@@ -1,9 +1,9 @@
 /**
  * @file main.cpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Native platform entry point for development/testing
- * @version 0.4
- * @date 2026-02-08
+ * @brief Native platform entry point for development/testing (C++17)
+ * @version 0.5
+ * @date 2026-02-09
  * 
  * @copyright Copyright (c) 2026
  */
@@ -55,8 +55,8 @@ static SystemConfig create_config() {
     SystemConfig config;
     
     config.meter_id = 0x1234567890ABCDEF;
-    config.heartbeat_interval_ms = 60000;  // 1 minute
-    config.reading_interval_ms = 5000;     // 5 seconds
+    config.heartbeat_interval_ms = 60000;
+    config.reading_interval_ms = 5000;
     
     config.tamper_config.sensor_pin = 2;
     config.tamper_config.debounce_ms = 50;

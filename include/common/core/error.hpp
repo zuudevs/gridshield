@@ -2,11 +2,10 @@
  * @file error.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Type-safe error handling without exceptions (C++17)
- * @version 0.6
- * @date 2026-02-03
+ * @version 0.7
+ * @date 2026-02-09
  * 
  * @copyright Copyright (c) 2026
- * 
  */
 
 #pragma once
@@ -16,6 +15,7 @@
 #if GS_PLATFORM_NATIVE
     #include <cstdint>
     #include <new>
+    #include <type_traits>
 #else
     #include <stdint.h>
 #endif
@@ -84,10 +84,10 @@ struct ErrorContext {
     uint32_t line;
     const char* file;
     
-    GS_CONSTEXPR ErrorContext(ErrorCode c, uint32_t ln = 0, const char* f = nullptr) noexcept
+    constexpr ErrorContext(ErrorCode c, uint32_t ln = 0, const char* f = nullptr) noexcept
         : code(c), line(ln), file(f) {}
     
-    GS_CONSTEXPR bool is_critical() const noexcept {
+    constexpr bool is_critical() const noexcept {
         uint16_t code_val = static_cast<uint16_t>(code);
         return code_val >= 200 && code_val < 400;
     }
@@ -100,12 +100,12 @@ template<typename T>
 class Result {
 public:
     // Success constructors
-    explicit Result(const T& val) noexcept 
+    explicit Result(const T& val) noexcept(std::is_nothrow_copy_constructible<T>::value)
         : has_value_(true), error_(ErrorCode::Success) {
         new (&storage_.value) T(val);
     }
     
-    explicit Result(T&& val) noexcept
+    explicit Result(T&& val) noexcept(std::is_nothrow_move_constructible<T>::value)
         : has_value_(true), error_(ErrorCode::Success) {
         new (&storage_.value) T(GS_MOVE(val));
     }
@@ -126,15 +126,17 @@ public:
     Result& operator=(const Result&) = delete;
     
     // Move constructor
-    Result(Result&& other) noexcept
+    Result(Result&& other) noexcept(std::is_nothrow_move_constructible<T>::value)
         : has_value_(other.has_value_), error_(other.error_) {
         if (has_value_) {
             new (&storage_.value) T(GS_MOVE(other.storage_.value));
+            other.has_value_ = false;
         }
     }
     
     // Move assignment
-    Result& operator=(Result&& other) noexcept {
+    Result& operator=(Result&& other) noexcept(std::is_nothrow_move_constructible<T>::value &&
+                                               std::is_nothrow_move_assignable<T>::value) {
         if (this != &other) {
             if (has_value_) {
                 storage_.value.~T();
@@ -143,14 +145,15 @@ public:
             error_ = other.error_;
             if (has_value_) {
                 new (&storage_.value) T(GS_MOVE(other.storage_.value));
+                other.has_value_ = false;
             }
         }
         return *this;
     }
     
     // Status check
-    GS_NODISCARD GS_CONSTEXPR bool is_ok() const noexcept { return has_value_; }
-    GS_NODISCARD GS_CONSTEXPR bool is_error() const noexcept { return !has_value_; }
+    GS_NODISCARD constexpr bool is_ok() const noexcept { return has_value_; }
+    GS_NODISCARD constexpr bool is_error() const noexcept { return !has_value_; }
     
     // Value access (unsafe - check is_ok first)
     GS_NODISCARD T& value() noexcept { 
@@ -164,7 +167,7 @@ public:
     }
     
     // Safe value access
-    GS_NODISCARD T value_or(const T& default_val) const noexcept {
+    GS_NODISCARD T value_or(const T& default_val) const noexcept(std::is_nothrow_copy_constructible<T>::value) {
         return has_value_ ? storage_.value : default_val;
     }
     
@@ -191,10 +194,10 @@ public:
     Result() noexcept : error_(ErrorCode::Success) {}
     /*implicit*/ Result(ErrorContext err) noexcept : error_(err) {}
     
-    GS_NODISCARD GS_CONSTEXPR bool is_ok() const noexcept { 
+    GS_NODISCARD constexpr bool is_ok() const noexcept { 
         return error_.code == ErrorCode::Success; 
     }
-    GS_NODISCARD GS_CONSTEXPR bool is_error() const noexcept { 
+    GS_NODISCARD constexpr bool is_error() const noexcept { 
         return !is_ok(); 
     }
     GS_NODISCARD ErrorContext error() const noexcept { return error_; }

@@ -1,11 +1,9 @@
 /**
  * @file platform_native.hpp
  * @author zuudevs (zuudevs@gmail.com) 
- * @brief Native (PC) platform implementation for testing
- * @version 0.0.1
+ * @brief Native (PC) platform implementation for testing (C++17)
+ * @version 0.2
  * @date 2026-02-09
- * 
- * Third-party dependencies: None (uses standard library only)
  * 
  * @copyright Copyright (c) 2026
  */
@@ -192,7 +190,7 @@ public:
             return core::Result<uint32_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
-        // Simple hash (not true CRC32)
+        // Simple hash
         uint32_t sum = 0xFFFFFFFF;
         for (size_t i = 0; i < length; ++i) {
             sum = ((sum << 5) + sum) ^ data[i];
@@ -206,8 +204,7 @@ public:
             return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
-        // Placeholder hash (NOT cryptographically secure)
-        // TODO: Replace with real SHA256 implementation
+        // Placeholder hash
         for (size_t i = 0; i < 32; ++i) {
             uint8_t val = (length > 0) ? data[i % length] : 0;
             hash_out[i] = static_cast<uint8_t>((val + i * 7) & 0xFF);

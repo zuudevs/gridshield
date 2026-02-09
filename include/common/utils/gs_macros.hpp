@@ -48,9 +48,9 @@
 #if GS_PLATFORM_NATIVE
     #include <utility>
     #define GS_MOVE(x) ::std::move(x)
-    #define GS_FORWARD(x) ::std::forward<decltype(x)>(x)
+    #define GS_FORWARD(T, x) ::std::forward<T>(x)
 #else
-    // Manual move for AVR
+    // Manual move for AVR (C++17 compliant)
     namespace gridshield {
     namespace detail {
         template<typename T>
@@ -63,14 +63,25 @@
         struct remove_reference<T&&> { using type = T; };
         
         template<typename T>
-        constexpr typename remove_reference<T>::type&& 
+        inline typename remove_reference<T>::type&& 
         move_impl(T&& arg) noexcept {
             return static_cast<typename remove_reference<T>::type&&>(arg);
         }
-    }
-    }
+        
+        template<typename T>
+        inline T&& forward_impl(typename remove_reference<T>::type& arg) noexcept {
+            return static_cast<T&&>(arg);
+        }
+        
+        template<typename T>
+        inline T&& forward_impl(typename remove_reference<T>::type&& arg) noexcept {
+            return static_cast<T&&>(arg);
+        }
+    } // namespace detail
+    } // namespace gridshield
+    
     #define GS_MOVE(x) ::gridshield::detail::move_impl(x)
-    #define GS_FORWARD(x) static_cast<decltype(x)&&>(x)
+    #define GS_FORWARD(T, x) ::gridshield::detail::forward_impl<T>(x)
 #endif
 
 // ============================================================================
@@ -100,7 +111,7 @@
 #endif
 
 // ============================================================================
-// ATTRIBUTES
+// ATTRIBUTES (C++17)
 // ============================================================================
 #if __cplusplus >= 201703L
     #define GS_NODISCARD [[nodiscard]]
@@ -142,5 +153,3 @@
 // STATIC ASSERT
 // ============================================================================
 #define GS_STATIC_ASSERT(expr, msg) static_assert(expr, msg)
-
-#endif // GS_MACROS_HPP

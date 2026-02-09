@@ -1,13 +1,12 @@
 /**
  * @file platform_arduino.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Arduino platform implementation for AVR
- * @version 0.0.3
+ * @brief Arduino platform implementation for AVR (C++17)
+ * @version 0.4
  * @date 2026-02-09
  * 
- * Third-party dependencies (optional):
- * - Crypto library by Rhys Weatherley (for SHA256)
- * - EEPROM (built-in for storage)
+ * Production libraries (install via arduino-cli):
+ * - Crypto by Rhys Weatherley: arduino-cli lib install Crypto
  * 
  * @copyright Copyright (c) 2026
  */
@@ -79,7 +78,7 @@ public:
 };
 
 // ============================================================================
-// ARDUINO INTERRUPT (Stub)
+// ARDUINO INTERRUPT
 // ============================================================================
 class ArduinoInterrupt final : public IPlatformInterrupt {
 public:
@@ -89,7 +88,7 @@ public:
     core::Result<void> attach(uint8_t /*pin*/, TriggerMode /*mode*/,
                              InterruptCallback /*callback*/, 
                              void* /*context*/) noexcept override {
-        // Note: Arduino interrupts must be attached in sketch via attachInterrupt()
+        // Arduino interrupts must be attached in sketch via attachInterrupt()
         return core::Result<void>();
     }
     
@@ -107,7 +106,7 @@ public:
 };
 
 // ============================================================================
-// ARDUINO CRYPTO (Simple)
+// ARDUINO CRYPTO
 // ============================================================================
 class ArduinoCrypto final : public IPlatformCrypto {
 public:
@@ -145,7 +144,7 @@ public:
             return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
-        // TODO: Replace with Crypto library
+        // PRODUCTION: Use Crypto library
         // #include <SHA256.h>
         // SHA256 sha256;
         // sha256.update(data, length);

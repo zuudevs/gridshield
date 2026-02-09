@@ -1,12 +1,11 @@
 /**
  * @file system.cpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief System orchestrator implementation
- * @version 0.3
- * @date 2026-02-03
+ * @brief System orchestrator implementation (C++17)
+ * @version 0.4
+ * @date 2026-02-09
  * 
  * @copyright Copyright (c) 2026
- * 
  */
 
 #include "core/system.hpp"
@@ -160,13 +159,13 @@ core::Result<void> GridShieldSystem::process_cycle() noexcept {
     
     // Process periodic reading
     if (current_time - last_reading_ >= config_.reading_interval_ms) {
-        // In production: Read actual meter hardware
+        // PRODUCTION: Read actual meter hardware
         core::MeterReading reading;
         reading.timestamp = current_time;
-        reading.energy_wh = 1000; // Placeholder
-        reading.voltage_mv = 220000; // 220V
-        reading.current_ma = 4545; // ~1kW at 220V
-        reading.power_factor = 950; // 0.95
+        reading.energy_wh = 1000;
+        reading.voltage_mv = 220000;
+        reading.current_ma = 4545;
+        reading.power_factor = 950;
         
         auto result = send_meter_reading(reading);
         // Non-critical error
@@ -176,7 +175,6 @@ core::Result<void> GridShieldSystem::process_cycle() noexcept {
     
     // Perform cross-layer validation periodically
     auto validation_result = perform_cross_layer_validation();
-    // Log error but continue operation
     (void)validation_result;
     
     return core::Result<void>();
@@ -286,7 +284,7 @@ core::Result<void> GridShieldSystem::initialize_crypto() noexcept {
     // Generate device keypair
     GS_TRY(crypto_engine_->generate_keypair(device_keypair_));
     
-    // In production: Load server public key from secure storage
+    // PRODUCTION: Load server public key from secure storage
     // For now: Generate placeholder
     GS_TRY(crypto_engine_->generate_keypair(server_public_key_));
     
@@ -303,7 +301,6 @@ core::Result<void> GridShieldSystem::handle_tamper_event() noexcept {
     // Send immediate tamper alert
     auto result = send_tamper_alert();
     if (result.is_error()) {
-        // Even if send fails, record the tamper locally
         return result.error();
     }
     
@@ -316,13 +313,12 @@ core::Result<void> GridShieldSystem::perform_cross_layer_validation() noexcept {
     // Check physical layer
     validation_state_.physical_tamper_detected = tamper_detector_.is_tampered();
     
-    // Network anomaly detection (placeholder - implement in production)
+    // Network anomaly detection (placeholder)
     validation_state_.network_anomaly_detected = false;
     
     // If multiple layers indicate attack, escalate priority
     if (validation_state_.requires_investigation()) {
-        // Log high-priority security event
-        // In production: Trigger additional security measures
+        // PRODUCTION: Trigger additional security measures
     }
     
     return core::Result<void>();

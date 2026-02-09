@@ -1,8 +1,8 @@
 /**
  * @file crypto.cpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Crypto engine implementation
- * @version 0.0.4
+ * @brief Crypto engine implementation (C++17)
+ * @version 0.5
  * @date 2026-02-09
  * 
  * @copyright Copyright (c) 2026
@@ -12,6 +12,7 @@
 
 #if GS_PLATFORM_NATIVE
     #include <cstring>
+    #include <type_traits>
 #else
     #include <string.h>
 #endif
@@ -33,16 +34,26 @@ ECCKeyPair::~ECCKeyPair() noexcept {
 
 ECCKeyPair::ECCKeyPair(ECCKeyPair&& other) noexcept
     : has_private_(other.has_private_), has_public_(other.has_public_) {
+#if GS_PLATFORM_NATIVE
     std::memcpy(private_key_, other.private_key_, ECC_KEY_SIZE);
     std::memcpy(public_key_, other.public_key_, ECC_PUBLIC_KEY_SIZE);
+#else
+    memcpy(private_key_, other.private_key_, ECC_KEY_SIZE);
+    memcpy(public_key_, other.public_key_, ECC_PUBLIC_KEY_SIZE);
+#endif
     other.clear();
 }
 
 ECCKeyPair& ECCKeyPair::operator=(ECCKeyPair&& other) noexcept {
     if (this != &other) {
         clear();
+#if GS_PLATFORM_NATIVE
         std::memcpy(private_key_, other.private_key_, ECC_KEY_SIZE);
         std::memcpy(public_key_, other.public_key_, ECC_PUBLIC_KEY_SIZE);
+#else
+        memcpy(private_key_, other.private_key_, ECC_KEY_SIZE);
+        memcpy(public_key_, other.public_key_, ECC_PUBLIC_KEY_SIZE);
+#endif
         has_private_ = other.has_private_;
         has_public_ = other.has_public_;
         other.clear();
@@ -51,8 +62,8 @@ ECCKeyPair& ECCKeyPair::operator=(ECCKeyPair&& other) noexcept {
 }
 
 core::Result<void> ECCKeyPair::generate() noexcept {
-    // TODO: Integrate uECC library
-    // Example:
+    // PRODUCTION: Integrate uECC library
+    // #include <uECC.h>
     // const struct uECC_Curve_t* curve = uECC_secp256r1();
     // if (!uECC_make_key(public_key_, private_key_, curve)) {
     //     return GS_MAKE_ERROR(core::ErrorCode::KeyGenerationFailed);
@@ -68,7 +79,11 @@ core::Result<void> ECCKeyPair::load_private_key(const uint8_t* key, size_t lengt
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
+#if GS_PLATFORM_NATIVE
     std::memcpy(private_key_, key, ECC_KEY_SIZE);
+#else
+    memcpy(private_key_, key, ECC_KEY_SIZE);
+#endif
     has_private_ = true;
     
     return core::Result<void>();
@@ -79,7 +94,11 @@ core::Result<void> ECCKeyPair::load_public_key(const uint8_t* key, size_t length
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
+#if GS_PLATFORM_NATIVE
     std::memcpy(public_key_, key, ECC_PUBLIC_KEY_SIZE);
+#else
+    memcpy(public_key_, key, ECC_PUBLIC_KEY_SIZE);
+#endif
     has_public_ = true;
     
     return core::Result<void>();
@@ -149,7 +168,8 @@ core::Result<void> CryptoEngine::sign(
     uint8_t hash[SHA256_HASH_SIZE];
     GS_TRY(hash_sha256(message, msg_len, hash));
     
-    // TODO: Replace with uECC signing
+    // PRODUCTION: Use uECC signing
+    // #include <uECC.h>
     // const struct uECC_Curve_t* curve = uECC_secp256r1();
     // if (!uECC_sign(keypair.get_private_key(), hash, SHA256_HASH_SIZE, 
     //                signature_out, curve)) {
@@ -178,7 +198,8 @@ core::Result<bool> CryptoEngine::verify(
         return core::Result<bool>(result.error());
     }
     
-    // TODO: Replace with uECC verification
+    // PRODUCTION: Use uECC verification
+    // #include <uECC.h>
     // const struct uECC_Curve_t* curve = uECC_secp256r1();
     // int valid = uECC_verify(keypair.get_public_key(), hash, SHA256_HASH_SIZE, 
     //                         signature, curve);
@@ -198,7 +219,8 @@ core::Result<void> CryptoEngine::derive_shared_secret(
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
-    // TODO: Replace with uECC ECDH
+    // PRODUCTION: Use uECC ECDH
+    // #include <uECC.h>
     // const struct uECC_Curve_t* curve = uECC_secp256r1();
     // if (!uECC_shared_secret(their_public_key, our_keypair.get_private_key(), 
     //                         shared_secret_out, curve)) {
@@ -226,7 +248,7 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(
         return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
     }
     
-    // TODO: Replace with mbedTLS AES-GCM
+    // PRODUCTION: Use mbedTLS or Crypto library AES-GCM
     
     // Placeholder: XOR cipher
     for (size_t i = 0; i < pt_len; ++i) {
@@ -253,7 +275,7 @@ core::Result<size_t> CryptoEngine::decrypt_aes_gcm(
         return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
     }
     
-    // TODO: Replace with mbedTLS AES-GCM
+    // PRODUCTION: Use mbedTLS or Crypto library AES-GCM
     
     // Placeholder: XOR cipher
     for (size_t i = 0; i < ct_len; ++i) {

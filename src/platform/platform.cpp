@@ -1,9 +1,9 @@
 /**
  * @file platform.cpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Virtual destructor implementations for platform interfaces
- * @version 0.2
- * @date 2026-02-08
+ * @brief Virtual destructor implementations (C++17)
+ * @version 0.3
+ * @date 2026-02-09
  * 
  * @copyright Copyright (c) 2026
  */

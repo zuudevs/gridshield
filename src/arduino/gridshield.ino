@@ -1,8 +1,8 @@
 /**
  * @file gridshield.ino
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Arduino entry point for GridShield
- * @version 0.0.4
+ * @brief Arduino entry point for GridShield (C++17)
+ * @version 0.5
  * @date 2026-02-09
  * 
  * Hardware Requirements:
@@ -10,8 +10,8 @@
  * - Tamper switch on digital pin 2
  * - Serial @ 115200 baud
  * 
- * Optional Libraries:
- * - Crypto by Rhys Weatherley (for real SHA256)
+ * Optional Libraries (install via arduino-cli):
+ * - Crypto by Rhys Weatherley: arduino-cli lib install Crypto
  * 
  * @copyright Copyright (c) 2026
  */
