@@ -2,10 +2,11 @@
  * @file types.hpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Core domain types with optimized memory layout (C++17)
- * @version 0.5
+ * @version 0.6
  * @date 2026-02-09
  * 
  * @copyright Copyright (c) 2026
+ *
  */
 
 #pragma once
@@ -16,9 +17,11 @@
     #include <cstdint>
     #include <cstring>
     #include <type_traits>
+    #include <new> // Required for placement new
 #else
     #include <stdint.h>
     #include <string.h>
+    #include <new.h> // Arduino placement new
 #endif
 
 namespace gridshield {
@@ -116,7 +119,7 @@ public:
     StaticBuffer(StaticBuffer&& other) noexcept(std::is_nothrow_move_constructible<T>::value)
         : size_(other.size_) {
         for (size_t i = 0; i < size_; ++i) {
-            new (&data_[i]) T(GS_MOVE(other.data_[i]));
+            new (&data_[i]) T(GS_MOVE(*reinterpret_cast<T*>(&other.data_[i])));
         }
         other.size_ = 0;
     }
@@ -127,7 +130,7 @@ public:
             clear();
             size_ = other.size_;
             for (size_t i = 0; i < size_; ++i) {
-                new (&data_[i]) T(GS_MOVE(other.data_[i]));
+                new (&data_[i]) T(GS_MOVE(*reinterpret_cast<T*>(&other.data_[i])));
             }
             other.size_ = 0;
         }
@@ -148,14 +151,20 @@ public:
     
     GS_NODISCARD inline bool pop(T& item) noexcept(std::is_nothrow_move_assignable<T>::value) {
         if (GS_UNLIKELY(size_ == 0)) return false;
-        item = GS_MOVE(data_[--size_]);
-        data_[size_].~T();
+        
+        // ZUU FIX: Access through pointer cast, not directly on storage
+        T* ptr = reinterpret_cast<T*>(&data_[size_ - 1]);
+        item = GS_MOVE(*ptr);
+        ptr->~T();
+        
+        size_--;
         return true;
     }
     
     void clear() noexcept {
         for (size_t i = 0; i < size_; ++i) {
-            data_[i].~T();
+            // ZUU FIX: Explicit destructor call via pointer cast
+            reinterpret_cast<T*>(&data_[i])->~T();
         }
         size_ = 0;
     }
@@ -167,12 +176,12 @@ public:
     
     GS_NODISCARD T& operator[](size_t idx) noexcept { 
         GS_ASSERT(idx < size_);
-        return data_[idx]; 
+        return *reinterpret_cast<T*>(&data_[idx]); 
     }
     
     GS_NODISCARD const T& operator[](size_t idx) const noexcept { 
         GS_ASSERT(idx < size_);
-        return data_[idx]; 
+        return *reinterpret_cast<const T*>(&data_[idx]); 
     }
     
     GS_NODISCARD T* data() noexcept { return reinterpret_cast<T*>(data_); }

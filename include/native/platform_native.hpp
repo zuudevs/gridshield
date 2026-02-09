@@ -2,7 +2,7 @@
  * @file platform_native.hpp
  * @author zuudevs (zuudevs@gmail.com) 
  * @brief Native (PC) platform implementation for testing (C++17)
- * @version 0.2
+ * @version 0.3
  * @date 2026-02-09
  * 
  * @copyright Copyright (c) 2026
@@ -19,6 +19,7 @@
 #include <thread>
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 
 namespace gridshield {
 namespace platform {
@@ -61,24 +62,16 @@ public:
     ~NativeGPIO() noexcept override = default;
     
     core::Result<void> configure(uint8_t pin, PinMode mode) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
-        }
+        // uint8_t checks for >= 256 are tautological, removed.
         pin_modes_[pin] = mode;
         return core::Result<void>();
     }
     
     core::Result<bool> read(uint8_t pin) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
-        }
         return core::Result<bool>(pin_states_[pin]);
     }
     
     core::Result<void> write(uint8_t pin, bool value) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
-        }
         if (GS_UNLIKELY(pin_modes_[pin] != PinMode::Output)) {
             return GS_MAKE_ERROR(core::ErrorCode::InvalidState);
         }
@@ -88,9 +81,7 @@ public:
     
     // Test helper
     void simulate_trigger(uint8_t pin, bool state) noexcept {
-        if (pin < 256) {
-            pin_states_[pin] = state;
-        }
+        pin_states_[pin] = state;
     }
     
 private:
@@ -114,7 +105,7 @@ public:
     core::Result<void> attach(uint8_t pin, TriggerMode /*mode*/, 
                              InterruptCallback callback, 
                              void* context) noexcept override {
-        if (GS_UNLIKELY(pin >= 256 || callback == nullptr)) {
+        if (GS_UNLIKELY(callback == nullptr)) {
             return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         callbacks_[pin] = callback;
@@ -123,33 +114,24 @@ public:
     }
     
     core::Result<void> detach(uint8_t pin) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
-        }
         callbacks_[pin] = nullptr;
         contexts_[pin] = nullptr;
         return core::Result<void>();
     }
     
     core::Result<void> enable(uint8_t pin) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
-        }
         enabled_[pin] = true;
         return core::Result<void>();
     }
     
     core::Result<void> disable(uint8_t pin) noexcept override {
-        if (GS_UNLIKELY(pin >= 256)) {
-            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
-        }
         enabled_[pin] = false;
         return core::Result<void>();
     }
     
     // Test helper
     void simulate_interrupt(uint8_t pin) noexcept {
-        if (pin < 256 && enabled_[pin] && callbacks_[pin] != nullptr) {
+        if (enabled_[pin] && callbacks_[pin] != nullptr) {
             callbacks_[pin](contexts_[pin]);
         }
     }
@@ -256,8 +238,10 @@ public:
         
         size_t sent = 0;
         for (size_t i = 0; i < length && !tx_buffer_.full(); ++i) {
-            tx_buffer_.push(data[i]);
-            ++sent;
+            // Check return value to satisfy nodiscard
+            if (tx_buffer_.push(data[i])) {
+                ++sent;
+            }
         }
         
         return core::Result<size_t>(sent);
@@ -299,7 +283,8 @@ public:
     
     void inject_rx_data(const uint8_t* data, size_t len) noexcept {
         for (size_t i = 0; i < len && !rx_buffer_.full(); ++i) {
-            rx_buffer_.push(data[i]);
+            // Ignore result for test injection
+            (void)rx_buffer_.push(data[i]);
         }
     }
     

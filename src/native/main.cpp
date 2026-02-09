@@ -2,7 +2,7 @@
  * @file main.cpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Native platform entry point for development/testing (C++17)
- * @version 0.5
+ * @version 0.6
  * @date 2026-02-09
  * 
  * @copyright Copyright (c) 2026
@@ -31,13 +31,18 @@ static void setup_utf8_console() noexcept {
 #if defined(_WIN32)
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
-    std::setvbuf(stdout, nullptr, _IOFBF, 1024);
+    // ZUU FIX: Use _IONBF (No Buffering) instead of _IOFBF
+    // Full buffering holds output until 1024 bytes, causing empty console on small outputs
+    // Also ensures crash logs appear immediately
+    std::setvbuf(stdout, nullptr, _IONBF, 0);
 #endif
 }
 
 static void print_header(const char* title) {
     std::cout << "\n[" << title << "]\n";
-    std::wcout << std::wstring(50, L'─') << "\n";
+    // ZUU FIX: Don't mix cout and wcout. Use UTF-8 string literal for the line.
+    // 50 chars of ─
+    std::cout << "──────────────────────────────────────────────────\n";
 }
 
 static void print_error(const core::ErrorContext& error) {

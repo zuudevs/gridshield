@@ -2,8 +2,8 @@
  * @file detector.cpp
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Anomaly detection implementation with profile learning
- * @version 0.3
- * @date 2026-02-03
+ * @version 0.4
+ * @date 2026-02-09
  * 
  * @copyright Copyright (c) 2026
  * 
@@ -41,9 +41,11 @@ core::Result<void> AnomalyDetector::update_profile(
     // Add to recent readings buffer (FIFO)
     if (recent_readings_.full()) {
         core::MeterReading temp;
-        recent_readings_.pop(temp); // Remove oldest
+        // Suppress nodiscard warning - we intentionally drop the oldest
+        (void)recent_readings_.pop(temp); 
     }
-    recent_readings_.push(reading);
+    // Suppress nodiscard warning
+    (void)recent_readings_.push(reading);
     
     // Update hourly averages (rolling window)
     if (recent_readings_.size() >= 10) {
