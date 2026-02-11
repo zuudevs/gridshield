@@ -13,7 +13,7 @@
 
 #include "core/error.hpp"
 #include "core/types.hpp"
-#include "../platform/platform.hpp"
+#include "platform/platform.hpp"
 
 namespace gridshield {
 namespace hardware {
