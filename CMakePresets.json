@@ -45,7 +45,7 @@
       "toolchainFile": "${sourceDir}/cmake/toolchain-avr.cmake",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "MinSizeRel",
-        "PLATFORM": "AVR",
+        "PLATFORM": "ARDUINO",
         "AVR_MCU": "atmega328p",
         "AVR_F_CPU": "16000000UL",
         "AVR_UPLOAD_BAUD": "115200"
@@ -59,7 +59,7 @@
       "toolchainFile": "${sourceDir}/cmake/toolchain-avr.cmake",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "MinSizeRel",
-        "PLATFORM": "AVR",
+        "PLATFORM": "ARDUINO",
         "AVR_MCU": "atmega2560",
         "AVR_F_CPU": "16000000UL",
         "AVR_UPLOAD_BAUD": "115200"

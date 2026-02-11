@@ -28,7 +28,7 @@
 *.jpg
 *.jpeg
 *.gif
-assets/
+docs/PROMPT
 
 # =========================
 # IDE & editor files
@@ -85,6 +85,7 @@ ehthumbs.db
 *.zip
 *.tar.gz
 *.rar
+/libs/
 
 # =========================
 # Backup files

@@ -1,12 +1,17 @@
 /**
  * @file platform_arduino.hpp
  * @author zuudevs (zuudevs@gmail.com)
- * @brief Arduino platform implementation for AVR (C++17)
- * @version 0.4
- * @date 2026-02-09
+ * @brief Arduino platform implementation with production crypto (C++17)
+ * @version 0.5
+ * @date 2026-02-10
  * 
- * Production libraries (install via arduino-cli):
- * - Crypto by Rhys Weatherley: arduino-cli lib install Crypto
+ * Required libraries (install via arduino-cli):
+ * 1. Crypto by Rhys Weatherley (INSTALLED)
+ *    arduino-cli lib install Crypto
+ * 
+ * 2. micro-ecc (for ECDSA - MANUAL INSTALL REQUIRED)
+ *    Download: https://github.com/kmackay/micro-ecc
+ *    Extract to: Arduino/libraries/micro-ecc/
  * 
  * @copyright Copyright (c) 2026
  */
@@ -18,6 +23,12 @@
 #if GS_PLATFORM_ARDUINO
 
 #include <Arduino.h>
+
+// Crypto library for SHA-256 (PRODUCTION)
+#include <SHA256.h>
+
+// uECC for ECDSA (uncomment when installed)
+// #include <uECC.h>
 
 namespace gridshield {
 namespace platform {
@@ -106,11 +117,15 @@ public:
 };
 
 // ============================================================================
-// ARDUINO CRYPTO
+// ARDUINO CRYPTO (PRODUCTION)
 // ============================================================================
 class ArduinoCrypto final : public IPlatformCrypto {
 public:
-    ArduinoCrypto() noexcept = default;
+    ArduinoCrypto() noexcept {
+        // Seed RNG with analog noise
+        randomSeed(analogRead(0) ^ analogRead(1) ^ analogRead(2));
+    }
+    
     ~ArduinoCrypto() noexcept override = default;
     
     core::Result<void> random_bytes(uint8_t* buffer, size_t length) noexcept override {
@@ -118,6 +133,7 @@ public:
             return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
+        // Use Arduino's hardware RNG seeded with analog noise
         for (size_t i = 0; i < length; ++i) {
             buffer[i] = static_cast<uint8_t>(random(256));
         }
@@ -130,12 +146,14 @@ public:
             return core::Result<uint32_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
-        // Simple hash
-        uint32_t sum = 0xFFFFFFFF;
+        // FNV-1a hash (lightweight checksum)
+        uint32_t hash = 2166136261UL;
         for (size_t i = 0; i < length; ++i) {
-            sum = ((sum << 5) + sum) ^ data[i];
+            hash ^= data[i];
+            hash *= 16777619UL;
         }
-        return core::Result<uint32_t>(~sum);
+        
+        return core::Result<uint32_t>(hash);
     }
     
     core::Result<void> sha256(const uint8_t* data, size_t length,
@@ -144,18 +162,11 @@ public:
             return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
-        // PRODUCTION: Use Crypto library
-        // #include <SHA256.h>
-        // SHA256 sha256;
-        // sha256.update(data, length);
-        // sha256.finalize(hash_out, 32);
-        
-        // Placeholder
-        for (size_t i = 0; i < 32; ++i) {
-            hash_out[i] = (length > 0) ? 
-                static_cast<uint8_t>((data[i % length] + i * 7) & 0xFF) : 
-                static_cast<uint8_t>(i);
-        }
+        // PRODUCTION: Use Crypto library SHA-256
+        SHA256 sha256;
+        sha256.reset();
+        sha256.update(data, length);
+        sha256.finalize(hash_out, 32);
         
         return core::Result<void>();
     }
@@ -177,7 +188,7 @@ public:
     core::Result<void> init() noexcept override {
         if (!initialized_) {
             Serial.begin(115200);
-            while (!Serial) { 
+            while (!Serial && millis() < 5000) { 
                 delay(10); 
             }
             initialized_ = true;
@@ -187,6 +198,7 @@ public:
     
     core::Result<void> shutdown() noexcept override {
         if (initialized_) {
+            Serial.flush();
             Serial.end();
             initialized_ = false;
         }

@@ -2,15 +2,24 @@
  * @file platform_native.hpp
  * @author zuudevs (zuudevs@gmail.com) 
  * @brief Native (PC) platform implementation for testing (C++17)
- * @version 0.3
+ * @version 0.4
  * @date 2026-02-09
+ * 
+ * Required: OpenSSL 1.1.1+ or 3.0+
+ * 
+ * Installation:
+ * - Windows: https://slproweb.com/products/Win32OpenSSL.html
+ * - Linux: sudo apt install libssl-dev
+ * - macOS: brew install openssl
+ * 
+ * CMake: link against OpenSSL::SSL and OpenSSL::Crypto
  * 
  * @copyright Copyright (c) 2026
  */
 
 #pragma once
 
-#include "../platform/platform.hpp"
+#include "platform/platform.hpp"
 
 #if GS_PLATFORM_NATIVE
 
@@ -20,6 +29,10 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+
+#include <openssl/sha.h>
+#include <openssl/rand.h>
+#define USE_OPENSSL 1
 
 namespace gridshield {
 namespace platform {
@@ -62,7 +75,6 @@ public:
     ~NativeGPIO() noexcept override = default;
     
     core::Result<void> configure(uint8_t pin, PinMode mode) noexcept override {
-        // uint8_t checks for >= 256 are tautological, removed.
         pin_modes_[pin] = mode;
         return core::Result<void>();
     }
@@ -143,13 +155,16 @@ private:
 };
 
 // ============================================================================
-// NATIVE CRYPTO
+// NATIVE CRYPTO (OpenSSL)
 // ============================================================================
 class NativeCrypto final : public IPlatformCrypto {
 public:
     NativeCrypto() noexcept {
+#ifndef USE_OPENSSL
+        // Fallback to C++ RNG when OpenSSL not available
         std::random_device rd;
         rng_ = std::mt19937(rd());
+#endif
     }
     
     ~NativeCrypto() noexcept override = default;
@@ -159,10 +174,19 @@ public:
             return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
+#ifdef USE_OPENSSL
+        // OpenSSL cryptographically secure RNG
+        if (RAND_bytes(buffer, static_cast<int>(length)) != 1) {
+            return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
+        }
+        
+#else
+        // Fallback: C++ pseudo-random (NOT cryptographically secure)
         std::uniform_int_distribution<int> dist(0, 255);
         for (size_t i = 0; i < length; ++i) {
             buffer[i] = static_cast<uint8_t>(dist(rng_));
         }
+#endif
         
         return core::Result<void>();
     }
@@ -172,12 +196,14 @@ public:
             return core::Result<uint32_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
-        // Simple hash
-        uint32_t sum = 0xFFFFFFFF;
+        // FNV-1a hash (lightweight checksum)
+        uint32_t hash = 2166136261UL;
         for (size_t i = 0; i < length; ++i) {
-            sum = ((sum << 5) + sum) ^ data[i];
+            hash ^= data[i];
+            hash *= 16777619UL;
         }
-        return core::Result<uint32_t>(~sum);
+        
+        return core::Result<uint32_t>(hash);
     }
     
     core::Result<void> sha256(const uint8_t* data, size_t length, 
@@ -186,17 +212,36 @@ public:
             return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
-        // Placeholder hash
+#ifdef USE_OPENSSL
+        // OpenSSL SHA-256 (PRODUCTION)
+        SHA256_CTX ctx;
+        if (SHA256_Init(&ctx) != 1) {
+            return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
+        }
+        
+        if (SHA256_Update(&ctx, data, length) != 1) {
+            return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
+        }
+        
+        if (SHA256_Final(hash_out, &ctx) != 1) {
+            return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
+        }
+        
+#else
+        // Fallback: Simple hash (NOT cryptographically secure)
         for (size_t i = 0; i < 32; ++i) {
             uint8_t val = (length > 0) ? data[i % length] : 0;
             hash_out[i] = static_cast<uint8_t>((val + i * 7) & 0xFF);
         }
+#endif
         
         return core::Result<void>();
     }
     
 private:
+#ifndef USE_OPENSSL
     std::mt19937 rng_;
+#endif
 };
 
 // ============================================================================
@@ -238,7 +283,6 @@ public:
         
         size_t sent = 0;
         for (size_t i = 0; i < length && !tx_buffer_.full(); ++i) {
-            // Check return value to satisfy nodiscard
             if (tx_buffer_.push(data[i])) {
                 ++sent;
             }
@@ -283,7 +327,6 @@ public:
     
     void inject_rx_data(const uint8_t* data, size_t len) noexcept {
         for (size_t i = 0; i < len && !rx_buffer_.full(); ++i) {
-            // Ignore result for test injection
             (void)rx_buffer_.push(data[i]);
         }
     }

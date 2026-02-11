@@ -35,10 +35,24 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ============================================================================
+# GLOBAL INCLUDE DIRECTORIES
+# ============================================================================
+# 1. Folder include utama proyek
+include_directories(include)
+
+# 2. Folder library eksternal (Project-Local)
+if(EXISTS "${CMAKE_SOURCE_DIR}/libs/micro-ecc")
+    include_directories(libs/micro-ecc)
+    message(STATUS "Library: micro-ecc found.")
+else()
+    message(WARNING "Library: micro-ecc NOT found in libs/micro-ecc. Crypto might fail.")
+endif()
+
 # Output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${PLATFORM}")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${PLATFORM}")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${PLATFORM}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/libs/${PLATFORM}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/libs/${PLATFORM}")
 
 # ============================================================================
 # COMMON SOURCES
@@ -51,6 +65,11 @@ set(COMMON_SOURCES
     src/common/core/system.cpp
     src/platform/platform.cpp
 )
+
+# Tambahkan source library eksternal jika ada
+if(EXISTS "${CMAKE_SOURCE_DIR}/libs/micro-ecc/uECC.c")
+    list(APPEND COMMON_SOURCES "libs/micro-ecc/uECC.c")
+endif()
 
 set(COMMON_HEADERS
     include/common/utils/gs_macros.hpp
@@ -69,6 +88,36 @@ set(COMMON_HEADERS
 # ============================================================================
 if(PLATFORM STREQUAL "NATIVE")
     message(STATUS "Configuring for Native platform")
+
+    # --- OPENSSL CONFIGURATION (PRECISE MANUAL LINKING) ---
+    # Path dasar instalasi
+    set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64")
+    set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/include")
+    
+    # Path spesifik library berdasarkan info dari Rara
+    # "C:\Program Files\OpenSSL-Win64\lib\VC\x64\MD\libssl.lib"
+    set(OPENSSL_LIB_DIR "${OPENSSL_ROOT_DIR}/lib/VC/x64/MD")
+
+    # Kita set variabel library secara eksplisit
+    set(OPENSSL_CRYPTO_LIB "${OPENSSL_LIB_DIR}/libcrypto.lib")
+    set(OPENSSL_SSL_LIB "${OPENSSL_LIB_DIR}/libssl.lib")
+
+    # Verifikasi keberadaan file
+    if(EXISTS "${OPENSSL_CRYPTO_LIB}" AND EXISTS "${OPENSSL_SSL_LIB}")
+        message(STATUS "OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
+        message(STATUS "OpenSSL Crypto Lib: ${OPENSSL_CRYPTO_LIB}")
+        message(STATUS "OpenSSL SSL Lib: ${OPENSSL_SSL_LIB}")
+
+        include_directories(${OPENSSL_INCLUDE_DIR})
+        # Gabungkan untuk linking
+        set(OPENSSL_LIBRARIES "${OPENSSL_SSL_LIB}" "${OPENSSL_CRYPTO_LIB}")
+        
+        # Tambahkan definisi preprocessor agar header OpenSSL tidak bingung
+        add_definitions(-DOPENSSL_API_COMPAT=10100) 
+    else()
+        message(FATAL_ERROR "OpenSSL libraries not found at ${OPENSSL_LIB_DIR}. Please check the path carefully!")
+    endif()
+    # -------------------------------------------
     
     # Main executable
     add_executable(${PROJECT_NAME} 
@@ -76,12 +125,16 @@ if(PLATFORM STREQUAL "NATIVE")
         src/native/main.cpp
     )
     
-    # Include directories
+    # Include directories (Target specific)
     target_include_directories(${PROJECT_NAME} PRIVATE
         include/common
         include/platform
         include/native
     )
+
+    # Link OpenSSL libraries (Pakai variabel manual tadi)
+    target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES} Ws2_32 Crypt32)
+    # Catatan: Ws2_32 dan Crypt32 sering dibutuhkan OpenSSL di Windows
     
     # Compiler warnings
     if(MSVC)
@@ -112,7 +165,8 @@ if(PLATFORM STREQUAL "NATIVE")
 elseif(PLATFORM STREQUAL "ARDUINO")
     message(STATUS "Configuring for Arduino platform")
     message(WARNING "Use arduino-cli for production builds:")
-    message(STATUS "  arduino-cli compile --fqbn arduino:avr:mega src/arduino/gridshield.ino")
+    
+    message(STATUS "  arduino-cli compile --libraries ./libs --fqbn arduino:avr:mega src/arduino/gridshield.ino")
     message(STATUS "  arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino")
     
 else()
