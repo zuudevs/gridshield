@@ -5,6 +5,7 @@
 /build/
 /build-*/
 /.cache/
+.pio
 
 # =========================
 # Compiled object & binaries

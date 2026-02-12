@@ -17,6 +17,8 @@
  * @copyright Copyright (c) 2026
  */
 
+#if GS_PLATFORM_ARDUINO
+
 #include "core/system.hpp"
 #include "platform_arduino.hpp"
 
@@ -104,3 +106,5 @@ void loop() {
     
     delay(100);
 }
+
+#endif // GS_PLATFORM_ARDUINO

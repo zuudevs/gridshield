@@ -116,7 +116,7 @@ public:
     StaticBuffer& operator=(const StaticBuffer&) = delete;
     
     // Move constructor
-    StaticBuffer(StaticBuffer&& other) noexcept(std::is_nothrow_move_constructible<T>::value)
+    StaticBuffer(StaticBuffer&& other) noexcept
         : size_(other.size_) {
         for (size_t i = 0; i < size_; ++i) {
             new (&data_[i]) T(GS_MOVE(*reinterpret_cast<T*>(&other.data_[i])));
@@ -125,7 +125,7 @@ public:
     }
     
     // Move assignment
-    StaticBuffer& operator=(StaticBuffer&& other) noexcept(std::is_nothrow_move_constructible<T>::value) {
+    StaticBuffer& operator=(StaticBuffer&& other) noexcept {
         if (this != &other) {
             clear();
             size_ = other.size_;
@@ -137,19 +137,19 @@ public:
         return *this;
     }
     
-    GS_NODISCARD inline bool push(const T& item) noexcept(std::is_nothrow_copy_constructible<T>::value) {
+    GS_NODISCARD inline bool push(const T& item) noexcept {
         if (GS_UNLIKELY(size_ >= N)) return false;
         new (&data_[size_++]) T(item);
         return true;
     }
     
-    GS_NODISCARD inline bool push(T&& item) noexcept(std::is_nothrow_move_constructible<T>::value) {
+    GS_NODISCARD inline bool push(T&& item) noexcept {
         if (GS_UNLIKELY(size_ >= N)) return false;
         new (&data_[size_++]) T(GS_MOVE(item));
         return true;
     }
     
-    GS_NODISCARD inline bool pop(T& item) noexcept(std::is_nothrow_move_assignable<T>::value) {
+    GS_NODISCARD inline bool pop(T& item) noexcept {
         if (GS_UNLIKELY(size_ == 0)) return false;
         
         // ZUU FIX: Access through pointer cast, not directly on storage
@@ -163,7 +163,6 @@ public:
     
     void clear() noexcept {
         for (size_t i = 0; i < size_; ++i) {
-            // ZUU FIX: Explicit destructor call via pointer cast
             reinterpret_cast<T*>(&data_[i])->~T();
         }
         size_ = 0;
@@ -194,7 +193,9 @@ public:
     GS_NODISCARD const T* end() const noexcept { return data() + size_; }
     
 private:
-    typename std::aligned_storage<sizeof(T), alignof(T)>::type data_[N];
+	struct alignas(T) Element {
+        uint8_t bytes[sizeof(T)];
+    } data_[N];
     size_t size_;
 };
 
