@@ -27,6 +27,14 @@
     // micro-ecc for ECDSA on Arduino
     #include <uECC.h>
     #define CRYPTO_ENABLED 1
+
+	static gridshield::platform::IPlatformCrypto* g_crypto_ptr = nullptr;
+    static int uecc_rng_adapter(uint8_t *dest, unsigned size) {
+        if (g_crypto_ptr) {
+            return g_crypto_ptr->random_bytes(dest, size).is_ok() ? 1 : 0;
+        }
+        return 0;
+    }
     
 #elif GS_PLATFORM_NATIVE
     // OpenSSL for full crypto on Native
@@ -208,7 +216,12 @@ void ECCKeyPair::clear() noexcept {
 // CRYPTO ENGINE
 // ============================================================================
 CryptoEngine::CryptoEngine(platform::IPlatformCrypto& platform_crypto) noexcept
-    : platform_crypto_(platform_crypto) {}
+    : platform_crypto_(platform_crypto) {
+#if GS_PLATFORM_ARDUINO && defined(CRYPTO_ENABLED)
+    g_crypto_ptr = &platform_crypto_;
+    uECC_set_rng(uecc_rng_adapter);
+#endif
+	}
 
 core::Result<void> CryptoEngine::generate_keypair(ECCKeyPair& keypair) noexcept {
     return keypair.generate();

@@ -5,16 +5,17 @@
   "parts": [
     { "type": "wokwi-arduino-mega", "id": "mega", "top": 0, "left": 0, "attrs": {} },
     {
-      "type": "wokwi-pushbutton",
-      "id": "btn_tamper",
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr_tamper",
       "top": 100,
-      "left": 300,
-      "attrs": { "color": "red", "label": "Tamper Switch" }
+      "left": 350,
+      "attrs": {}
     }
   ],
   "connections": [
-    [ "mega:2", "btn_tamper:1.l", "green", [ "v0" ] ],
-    [ "mega:GND.1", "btn_tamper:2.l", "black", [ "v0" ] ]
+    [ "mega:5V", "ldr_tamper:VCC", "red", [ "v0" ] ],
+    [ "mega:GND.1", "ldr_tamper:GND", "black", [ "v0" ] ],
+    [ "mega:2", "ldr_tamper:DO", "green", [ "v0" ] ]
   ],
   "dependencies": {}
 }
