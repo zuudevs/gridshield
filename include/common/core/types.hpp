@@ -105,97 +105,92 @@ GS_STATIC_ASSERT(sizeof(TamperEvent) == 16, "TamperEvent must be 16 bytes");
 template<typename T, size_t N>
 class StaticBuffer {
 public:
-    constexpr StaticBuffer() noexcept : size_(0) {}
+    StaticBuffer() : size_(0) {
+        // Zero-initialize storage (optional, untuk keamanan)
+        for (size_t i = 0; i < N * sizeof(T); ++i) {
+            storage_[i] = 0;
+        }
+    }
     
-    ~StaticBuffer() noexcept {
+    ~StaticBuffer() {
         clear();
     }
     
-    // Delete copy
     StaticBuffer(const StaticBuffer&) = delete;
     StaticBuffer& operator=(const StaticBuffer&) = delete;
     
-    // Move constructor
-    StaticBuffer(StaticBuffer&& other) noexcept
-        : size_(other.size_) {
+    StaticBuffer(StaticBuffer&& other) : size_(other.size_) {
         for (size_t i = 0; i < size_; ++i) {
-            new (&data_[i]) T(GS_MOVE(*reinterpret_cast<T*>(&other.data_[i])));
+            T* src = reinterpret_cast<T*>(&other.storage_[i * sizeof(T)]);
+            T* dst = reinterpret_cast<T*>(&storage_[i * sizeof(T)]);
+            new (dst) T(GS_MOVE(*src));
         }
         other.size_ = 0;
     }
     
-    // Move assignment
-    StaticBuffer& operator=(StaticBuffer&& other) noexcept {
+    StaticBuffer& operator=(StaticBuffer&& other) {
         if (this != &other) {
             clear();
             size_ = other.size_;
             for (size_t i = 0; i < size_; ++i) {
-                new (&data_[i]) T(GS_MOVE(*reinterpret_cast<T*>(&other.data_[i])));
+                T* src = reinterpret_cast<T*>(&other.storage_[i * sizeof(T)]);
+                T* dst = reinterpret_cast<T*>(&storage_[i * sizeof(T)]);
+                new (dst) T(GS_MOVE(*src));
             }
             other.size_ = 0;
         }
         return *this;
     }
     
-    GS_NODISCARD inline bool push(const T& item) noexcept {
-        if (GS_UNLIKELY(size_ >= N)) return false;
-        new (&data_[size_++]) T(item);
+    bool push(const T& item) {
+        if (size_ >= N) return false;
+        T* ptr = reinterpret_cast<T*>(&storage_[size_ * sizeof(T)]);
+        new (ptr) T(item);
+        ++size_;
         return true;
     }
     
-    GS_NODISCARD inline bool push(T&& item) noexcept {
-        if (GS_UNLIKELY(size_ >= N)) return false;
-        new (&data_[size_++]) T(GS_MOVE(item));
+    bool push(T&& item) {
+        if (size_ >= N) return false;
+        T* ptr = reinterpret_cast<T*>(&storage_[size_ * sizeof(T)]);
+        new (ptr) T(GS_MOVE(item));
+        ++size_;
         return true;
     }
     
-    GS_NODISCARD inline bool pop(T& item) noexcept {
-        if (GS_UNLIKELY(size_ == 0)) return false;
-        
-        // ZUU FIX: Access through pointer cast, not directly on storage
-        T* ptr = reinterpret_cast<T*>(&data_[size_ - 1]);
+    bool pop(T& item) {
+        if (size_ == 0) return false;
+        T* ptr = reinterpret_cast<T*>(&storage_[(size_ - 1) * sizeof(T)]);
         item = GS_MOVE(*ptr);
         ptr->~T();
-        
-        size_--;
+        --size_;
         return true;
     }
     
-    void clear() noexcept {
+    void clear() {
         for (size_t i = 0; i < size_; ++i) {
-            reinterpret_cast<T*>(&data_[i])->~T();
+            T* ptr = reinterpret_cast<T*>(&storage_[i * sizeof(T)]);
+            ptr->~T();
         }
         size_ = 0;
     }
     
-    GS_NODISCARD constexpr size_t size() const noexcept { return size_; }
-    GS_NODISCARD constexpr size_t capacity() const noexcept { return N; }
-    GS_NODISCARD constexpr bool empty() const noexcept { return size_ == 0; }
-    GS_NODISCARD constexpr bool full() const noexcept { return size_ == N; }
+    size_t size() const { return size_; }
+    size_t capacity() const { return N; }
+    bool empty() const { return size_ == 0; }
+    bool full() const { return size_ == N; }
     
-    GS_NODISCARD T& operator[](size_t idx) noexcept { 
-        GS_ASSERT(idx < size_);
-        return *reinterpret_cast<T*>(&data_[idx]); 
+    T& operator[](size_t idx) {
+        return *reinterpret_cast<T*>(&storage_[idx * sizeof(T)]);
     }
     
-    GS_NODISCARD const T& operator[](size_t idx) const noexcept { 
-        GS_ASSERT(idx < size_);
-        return *reinterpret_cast<const T*>(&data_[idx]); 
+    const T& operator[](size_t idx) const {
+        return *reinterpret_cast<const T*>(&storage_[idx * sizeof(T)]);
     }
-    
-    GS_NODISCARD T* data() noexcept { return reinterpret_cast<T*>(data_); }
-    GS_NODISCARD const T* data() const noexcept { return reinterpret_cast<const T*>(data_); }
-    
-    // Iterators
-    GS_NODISCARD T* begin() noexcept { return data(); }
-    GS_NODISCARD T* end() noexcept { return data() + size_; }
-    GS_NODISCARD const T* begin() const noexcept { return data(); }
-    GS_NODISCARD const T* end() const noexcept { return data() + size_; }
     
 private:
-	struct alignas(T) Element {
-        uint8_t bytes[sizeof(T)];
-    } data_[N];
+    // Raw char storage - no union, no alignment issues
+    char storage_[N * sizeof(T)];
     size_t size_;
 };
 
