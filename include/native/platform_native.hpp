@@ -5,14 +5,13 @@
  * @version 0.4
  * @date 2026-02-09
  * 
- * Required: OpenSSL 1.1.1+ or 3.0+
+ * Required: PlatformIO 'Crypto' library
  * 
  * Installation:
- * - Windows: https://slproweb.com/products/Win32OpenSSL.html
- * - Linux: sudo apt install libssl-dev
- * - macOS: brew install openssl
+ * - Run `platformio lib install` in the project root
  * 
- * CMake: link against OpenSSL::SSL and OpenSSL::Crypto
+ * CMake: link against embedded Crypto library
+ *
  * 
  * @copyright Copyright (c) 2026
  */
@@ -30,9 +29,7 @@
 #include <cstring>
 #include <iostream>
 
-#include <openssl/sha.h>
-#include <openssl/rand.h>
-#define USE_OPENSSL 1
+#include <SHA256.h>
 
 namespace gridshield {
 namespace platform {
@@ -154,17 +151,17 @@ private:
     bool enabled_[256];
 };
 
+// ... [Time, GPIO, Interrupt classes unchanged] ...
+
 // ============================================================================
-// NATIVE CRYPTO (OpenSSL)
+// NATIVE CRYPTO (Embedded Libs)
 // ============================================================================
 class NativeCrypto final : public IPlatformCrypto {
 public:
     NativeCrypto() noexcept {
-#ifndef USE_OPENSSL
-        // Fallback to C++ RNG when OpenSSL not available
+        // Seed standard RNG
         std::random_device rd;
         rng_ = std::mt19937(rd());
-#endif
     }
     
     ~NativeCrypto() noexcept override = default;
@@ -174,19 +171,11 @@ public:
             return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
-#ifdef USE_OPENSSL
-        // OpenSSL cryptographically secure RNG
-        if (RAND_bytes(buffer, static_cast<int>(length)) != 1) {
-            return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
-        }
-        
-#else
-        // Fallback: C++ pseudo-random (NOT cryptographically secure)
+        // Use C++ standard RNG for testing
         std::uniform_int_distribution<int> dist(0, 255);
         for (size_t i = 0; i < length; ++i) {
             buffer[i] = static_cast<uint8_t>(dist(rng_));
         }
-#endif
         
         return core::Result<void>();
     }
@@ -196,7 +185,6 @@ public:
             return core::Result<uint32_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
-        // FNV-1a hash (lightweight checksum)
         uint32_t hash = 2166136261UL;
         for (size_t i = 0; i < length; ++i) {
             hash ^= data[i];
@@ -212,36 +200,69 @@ public:
             return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
-#ifdef USE_OPENSSL
-        // OpenSSL SHA-256 (PRODUCTION)
-        SHA256_CTX ctx;
-        if (SHA256_Init(&ctx) != 1) {
-            return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
-        }
-        
-        if (SHA256_Update(&ctx, data, length) != 1) {
-            return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
-        }
-        
-        if (SHA256_Final(hash_out, &ctx) != 1) {
-            return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
-        }
-        
-#else
-        // Fallback: Simple hash (NOT cryptographically secure)
-        for (size_t i = 0; i < 32; ++i) {
-            uint8_t val = (length > 0) ? data[i % length] : 0;
-            hash_out[i] = static_cast<uint8_t>((val + i * 7) & 0xFF);
-        }
-#endif
+        // Use Crypto library SHA-256
+        SHA256 sha;
+        sha.reset();
+        sha.update(data, length);
+        sha.finalize(hash_out, 32);
         
         return core::Result<void>();
     }
     
 private:
-#ifndef USE_OPENSSL
     std::mt19937 rng_;
-#endif
+};
+
+// ============================================================================
+// NATIVE STORAGE (In-Memory Mock)
+// ============================================================================
+class NativeStorage final : public IPlatformStorage {
+public:
+    NativeStorage() noexcept {
+        std::memset(memory_, 0xFF, sizeof(memory_)); // Erased state
+    }
+    
+    ~NativeStorage() noexcept override = default;
+    
+    core::Result<size_t> read(uint32_t address, uint8_t* buffer, 
+                             size_t length) noexcept override {
+        if (GS_UNLIKELY(buffer == nullptr || length == 0)) {
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        }
+        
+        if (address + length > sizeof(memory_)) {
+             return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::BufferOverflow));
+        }
+        
+        std::memcpy(buffer, &memory_[address], length);
+        return core::Result<size_t>(length);
+    }
+    
+    core::Result<size_t> write(uint32_t address, const uint8_t* data, 
+                              size_t length) noexcept override {
+         if (GS_UNLIKELY(data == nullptr || length == 0)) {
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        }
+
+        if (address + length > sizeof(memory_)) {
+             return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::BufferOverflow));
+        }
+        
+        std::memcpy(&memory_[address], data, length);
+        return core::Result<size_t>(length);
+    }
+    
+    core::Result<void> erase(uint32_t address, size_t length) noexcept override {
+         if (address + length > sizeof(memory_)) {
+             return GS_MAKE_ERROR(core::ErrorCode::BufferOverflow);
+        }
+        
+        std::memset(&memory_[address], 0xFF, length);
+        return core::Result<void>();
+    }
+    
+private:
+    uint8_t memory_[4096]; // 4KB simulated EEPROM
 };
 
 // ============================================================================

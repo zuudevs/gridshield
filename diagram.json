@@ -3,19 +3,55 @@
   "author": "GridShield Team",
   "editor": "wokwi",
   "parts": [
-    { "type": "wokwi-arduino-mega", "id": "mega", "top": 0, "left": 0, "attrs": {} },
+    {
+      "type": "wokwi-arduino-mega",
+      "id": "mega",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
     {
       "type": "wokwi-photoresistor-sensor",
       "id": "ldr_tamper",
       "top": 100,
       "left": 350,
       "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lbl_entropy",
+      "top": -50,
+      "left": 100,
+      "attrs": {
+        "text": "A0: Entropy Source (Floating)"
+      }
     }
   ],
   "connections": [
-    [ "mega:5V", "ldr_tamper:VCC", "red", [ "v0" ] ],
-    [ "mega:GND.1", "ldr_tamper:GND", "black", [ "v0" ] ],
-    [ "mega:2", "ldr_tamper:DO", "green", [ "v0" ] ]
+    [
+      "mega:5V",
+      "ldr_tamper:VCC",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "mega:GND.1",
+      "ldr_tamper:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "mega:2",
+      "ldr_tamper:DO",
+      "green",
+      [
+        "v0"
+      ]
+    ]
   ],
   "dependencies": {}
 }

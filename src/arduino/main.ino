@@ -28,6 +28,7 @@ static platform::arduino::ArduinoTime arduino_time;
 static platform::arduino::ArduinoGPIO arduino_gpio;
 static platform::arduino::ArduinoInterrupt arduino_interrupt;
 static platform::arduino::ArduinoCrypto arduino_crypto;
+static platform::arduino::ArduinoStorage arduino_storage;
 static platform::arduino::ArduinoSerial arduino_serial;
 
 static platform::PlatformServices services;
@@ -55,7 +56,7 @@ void setup() {
     services.gpio = &arduino_gpio;
     services.interrupt = &arduino_interrupt;
     services.crypto = &arduino_crypto;
-    services.storage = nullptr;
+    services.storage = &arduino_storage;
     services.comm = &arduino_serial;
     
     auto init_result = arduino_serial.init();

@@ -12,6 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration of physical tamper sensors (Hall/Limit Switch).
 - Backend anomaly detection engine (Python/Go).
 
+## [1.1.0] - 2026-02-20
+
+### Changed
+- **Embedded Crypto Standardization**:
+  - Removed **OpenSSL** dependency from Native build.
+  - Native platform now uses the **same** `rweather/Crypto` and `micro-ecc` libraries as Arduino.
+  - Ensured cryptographic consistency (1:1 behavior) between Native verification and Production-ready code.
+- **Build System**:
+  - Updated `CMakeLists.txt` to link against PlatformIO managed libraries.
+  - Added `platformio lib install` requirement for Native builds.
+  - Added `ctest` support with `gridshield_test` target.
+
+### Fixed
+- **AES-GCM Implementation**: Refactored `crypto.cpp` to use `GCM<AES256>` from `rweather/Crypto` on all platforms.
+- **Documentation**: Updated `BUILD.md` and `README.md` to reflect new build process and file structure.
+
 ## [1.0.1] - 2026-02-20
 
 ### Fixed
@@ -32,6 +48,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **StaticBuffer Alignment** (`include/common/core/types.hpp`):
   Added `alignas(T)` to raw storage array in `StaticBuffer<T, N>` to
   prevent undefined behavior with aligned types like `MeterReading`.
+
+### Added
+- **Arduino Interrupt Implementation** (`include/arduino/platform_arduino.hpp`):
+  Replaced no-op `ArduinoInterrupt` with full implementation using static
+  trampoline ISRs for Arduino Mega 2560 (6 interrupt-capable pins). Bridges
+  Arduino's `void(*)()` ISR to the HAL's `void(*)(void*)` callback pattern.
+- **StaticBuffer::pop_front()** (`include/common/core/types.hpp`):
+  Added FIFO removal method. `AnomalyDetector::update_profile()` now
+  correctly drops the oldest reading instead of the newest when the
+  buffer is full.
 
 ## [0.1.0] - 2026-02-09
 

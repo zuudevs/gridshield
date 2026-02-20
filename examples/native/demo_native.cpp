@@ -72,6 +72,7 @@ int main() {
     platform::native::NativeGPIO gpio;
     platform::native::NativeInterrupt interrupt;
     platform::native::NativeCrypto crypto;
+    platform::native::NativeStorage storage;
     platform::native::NativeComm comm;
     
     platform::PlatformServices services;
@@ -80,7 +81,7 @@ int main() {
     services.interrupt = &interrupt;
     services.crypto = &crypto;
     services.comm = &comm;
-    services.storage = nullptr;
+    services.storage = &storage;
     
     auto init_result = comm.init();
     if (init_result.is_error()) {

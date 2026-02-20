@@ -41,8 +41,8 @@ core::Result<void> AnomalyDetector::update_profile(
     // Add to recent readings buffer (FIFO)
     if (recent_readings_.full()) {
         core::MeterReading temp;
-        // Suppress nodiscard warning - we intentionally drop the oldest
-        (void)recent_readings_.pop(temp); 
+        // Drop the oldest reading (FIFO) — pop_front removes from front
+        (void)recent_readings_.pop_front(temp); 
     }
     // Suppress nodiscard warning
     (void)recent_readings_.push(reading);

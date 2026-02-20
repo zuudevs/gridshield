@@ -23,7 +23,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "PLATFORM": "NATIVE",
-        "ENABLE_SANITIZERS": "ON"
+        "ENABLE_SANITIZERS": "ON",
+        "BUILD_TESTS": "ON"
       }
     },
     {

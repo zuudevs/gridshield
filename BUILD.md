@@ -42,6 +42,13 @@ brew install cmake ninja
 choco install cmake ninja visualstudio2022buildtools
 ```
 
+**Using PlatformIO Libraries (Native):**
+The native build now relies on embedded libraries managed by PlatformIO. You **MUST** run this once before building with CMake:
+
+```bash
+platformio lib install
+```
+
 ### For Arduino/AVR Deployment
 
 **Required:**
@@ -97,7 +104,7 @@ Compile and upload to Arduino Mega:
 
 ```bash
 # Compile
-arduino-cli compile --fqbn arduino:avr:mega src/arduino/gridshield.ino
+arduino-cli compile --fqbn arduino:avr:mega src/arduino/main.ino
 
 # Upload (adjust COM port)
 arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino
@@ -130,9 +137,12 @@ cmake --build --preset native-debug
 # Release build (optimized)
 cmake --preset native-release
 cmake --build --preset native-release
+
+# Run Tests
+ctest --preset native-debug
 ```
 
-**Output:** `bin/NATIVE/GridShield`
+**Output:** `bin/NATIVE/GridShield` (and `gridshield_test`)
 
 ### 2. Arduino Mega 2560 - Production Platform ✅ RECOMMENDED
 
@@ -154,8 +164,8 @@ cmake --build --preset avr-mega
 **Build via Arduino CLI (Recommended):**
 
 ```bash
-arduino-cli compile --fqbn arduino:avr:mega src/arduino/gridshield.ino
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino
+arduino-cli compile --fqbn arduino:avr:mega src/arduino/main.ino
+arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/main.ino
 ```
 
 **Output:** `bin/AVR/GridShield.hex`
@@ -413,7 +423,7 @@ class ArduinoLoRaComm : public IPlatformComm {
 arduino-cli board list
 
 # Upload with verification
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino --verify
+arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/main.ino --verify
 
 # Monitor serial output
 arduino-cli monitor -p COM3 -b 115200
@@ -479,7 +489,7 @@ Global variables use 3845 bytes (187%) of dynamic memory.
 **Fix:** Use Arduino Mega 2560 instead:
 
 ```bash
-arduino-cli compile --fqbn arduino:avr:mega src/arduino/gridshield.ino
+arduino-cli compile --fqbn arduino:avr:mega src/arduino/main.ino
 ```
 
 ### Issue: Upload fails with "Permission denied"
@@ -601,8 +611,9 @@ gridshield/
 │   └── arduino/                # AVR implementation
 ├── src/
 │   ├── common/                 # Core implementations
-│   ├── native/main.cpp         # PC entry point
-│   └── arduino/gridshield.ino  # Arduino entry point
+│   ├── native/          # PC entry point
+│   └── arduino/         # Arduino sketch (main.ino)
+└── docs/                # Documentation
 └── bin/                        # Build outputs
     ├── NATIVE/
     └── AVR/

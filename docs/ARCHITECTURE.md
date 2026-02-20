@@ -36,6 +36,7 @@ GridShield is a production-grade, multi-layer security system designed for Advan
 - **Platform Support:** Native (PC testing) + Arduino AVR (production)
 - **Security:** ECC-based authentication, AES-GCM encryption, SHA-256 integrity
 - **Architecture:** Layered design with Hardware Abstraction Layer (HAL)
+- **Dependencies:** `rweather/Crypto` & `micro-ecc` (embedded on all platforms)
 
 ---
 
@@ -454,8 +455,8 @@ class IPlatformCrypto {
 ```
 
 **Implementations:**
-- **Native:** `platform_native.hpp` - Uses STL, std::chrono, std::random
-- **Arduino:** `platform_arduino.hpp` - Uses Arduino API, millis(), random()
+- **Native:** `platform_native.hpp` - Uses `rweather/Crypto` & C++ STL
+- **Arduino:** `platform_arduino.hpp` - Uses `rweather/Crypto` & Arduino API
 
 **Benefits:**
 - Platform-agnostic core logic

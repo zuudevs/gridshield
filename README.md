@@ -118,8 +118,8 @@ gridshield/
 │   └── arduino/         # AVR drivers
 ├── src/
 │   ├── common/          # Core implementations
-│   ├── native/          # PC entry point
-│   └── arduino/         # Arduino sketch
+│   ├── native/main.cpp         # PC entry point
+│   └── arduino/main.ino        # Arduino entry point
 └── docs/                # Documentation
 ```
 

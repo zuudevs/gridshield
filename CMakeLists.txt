@@ -85,23 +85,20 @@ set(COMMON_HEADERS
 if(PLATFORM STREQUAL "NATIVE")
     message(STATUS "Configuring for Native platform")
 
-    # OpenSSL Configuration
-    set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64")
-    set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/include")
-    set(OPENSSL_LIB_DIR "${OPENSSL_ROOT_DIR}/lib/VC/x64/MD")
-    set(OPENSSL_CRYPTO_LIB "${OPENSSL_LIB_DIR}/libcrypto.lib")
-    set(OPENSSL_SSL_LIB "${OPENSSL_LIB_DIR}/libssl.lib")
-
-    if(EXISTS "${OPENSSL_CRYPTO_LIB}" AND EXISTS "${OPENSSL_SSL_LIB}")
-        message(STATUS "OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
-        message(STATUS "OpenSSL Crypto: ${OPENSSL_CRYPTO_LIB}")
-        message(STATUS "OpenSSL SSL: ${OPENSSL_SSL_LIB}")
+    # Crypto Library Configuration (Embedded)
+    set(CRYPTO_LIB_DIR "${CMAKE_SOURCE_DIR}/.pio/libdeps/native/Crypto")
+    
+    if(EXISTS "${CRYPTO_LIB_DIR}")
+        message(STATUS "Crypto Library: ${CRYPTO_LIB_DIR}")
+        include_directories("${CRYPTO_LIB_DIR}")
         
-        include_directories(${OPENSSL_INCLUDE_DIR})
-        set(OPENSSL_LIBRARIES "${OPENSSL_SSL_LIB}" "${OPENSSL_CRYPTO_LIB}")
-        add_definitions(-DOPENSSL_API_COMPAT=10100)
+        # Add Crypto source files
+        file(GLOB CRYPTO_SOURCES "${CRYPTO_LIB_DIR}/*.cpp")
+        list(APPEND COMMON_SOURCES ${CRYPTO_SOURCES})
+        
+        add_definitions(-DGS_PLATFORM_NATIVE=1)
     else()
-        message(FATAL_ERROR "OpenSSL libraries not found at ${OPENSSL_LIB_DIR}")
+        message(FATAL_ERROR "Crypto library not found at ${CRYPTO_LIB_DIR}. Run 'platformio lib install' first.")
     endif()
     
     # Main executable (production)
@@ -116,7 +113,10 @@ if(PLATFORM STREQUAL "NATIVE")
         include/native
     )
 
-    target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES} Ws2_32 Crypt32)
+    # Link standard libraries (no OpenSSL)
+    if(WIN32)
+        target_link_libraries(${PROJECT_NAME} Ws2_32)
+    endif()
     
     # Compiler warnings
     if(MSVC)
@@ -147,7 +147,7 @@ if(PLATFORM STREQUAL "NATIVE")
         message(STATUS "Building examples")
         
         add_executable(demo_native 
-            examples/demo_native.cpp
+            examples/native/demo_native.cpp
             ${COMMON_SOURCES}
         )
         
@@ -155,14 +155,61 @@ if(PLATFORM STREQUAL "NATIVE")
             include/common
             include/platform
             include/native
+            "${CRYPTO_LIB_DIR}"
         )
         
-        target_link_libraries(demo_native ${OPENSSL_LIBRARIES} Ws2_32 Crypt32)
+        target_compile_definitions(demo_native PRIVATE GS_PLATFORM_NATIVE=1)
+        
+        if(WIN32)
+            target_link_libraries(demo_native Ws2_32)
+        endif()
         
         set_target_properties(demo_native PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${PLATFORM}"
         )
     endif()
+
+    # Build tests if requested
+    if(BUILD_TESTS)
+        message(STATUS "Configuring Test Suite")
+        
+        set(UNITY_LIB_DIR "${CMAKE_SOURCE_DIR}/.pio/libdeps/native/Unity/src")
+        if(EXISTS "${UNITY_LIB_DIR}/unity.c")
+            include_directories("${UNITY_LIB_DIR}")
+            
+            add_executable(gridshield_test
+                test/native/test_security_hardening.cpp
+                test/native/test_key_storage.cpp
+                "${UNITY_LIB_DIR}/unity.c"
+                ${COMMON_SOURCES}
+            )
+            
+            target_compile_definitions(gridshield_test PRIVATE GS_PLATFORM_NATIVE=1)
+            
+            target_include_directories(gridshield_test PRIVATE
+                include/common
+                include/platform
+                include/native
+                "${CRYPTO_LIB_DIR}"
+                "${UNITY_LIB_DIR}"
+            )
+            
+            if(WIN32)
+                target_link_libraries(gridshield_test Ws2_32)
+            endif()
+            
+            set_target_properties(gridshield_test PROPERTIES
+                RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${PLATFORM}"
+            )
+            
+            add_test(NAME gridshield_test COMMAND gridshield_test)
+            
+        else()
+            message(WARNING "Unity library not found at ${UNITY_LIB_DIR}")
+        endif()
+    endif()
+
+    enable_testing()
     
 elseif(PLATFORM STREQUAL "ARDUINO")
     message(STATUS "Configuring for Arduino platform")

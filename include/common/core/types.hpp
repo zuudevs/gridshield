@@ -167,6 +167,24 @@ public:
         return true;
     }
     
+    // FIFO removal: remove oldest element (front) and shift remaining
+    bool pop_front(T& item) {
+        if (size_ == 0) return false;
+        T* front = reinterpret_cast<T*>(&storage_[0]);
+        item = GS_MOVE(*front);
+        front->~T();
+        
+        // Shift all elements left by one position
+        for (size_t i = 1; i < size_; ++i) {
+            T* src = reinterpret_cast<T*>(&storage_[i * sizeof(T)]);
+            T* dst = reinterpret_cast<T*>(&storage_[(i - 1) * sizeof(T)]);
+            new (dst) T(GS_MOVE(*src));
+            src->~T();
+        }
+        --size_;
+        return true;
+    }
+    
     void clear() {
         for (size_t i = 0; i < size_; ++i) {
             T* ptr = reinterpret_cast<T*>(&storage_[i * sizeof(T)]);
@@ -189,8 +207,12 @@ public:
     }
     
 private:
-    // Raw storage with proper alignment for type T
+    // Raw storage (alignment optional on AVR to avoid 'over-aligned' errors)
+#if GS_PLATFORM_NATIVE
     alignas(T) char storage_[N * sizeof(T)];
+#else
+    char storage_[N * sizeof(T)];
+#endif
     size_t size_;
 };
 

@@ -51,9 +51,9 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ### 🚧 In Progress
 
-- [ ] Production crypto library integration (uECC, mbedTLS)
-- [ ] Unit test suite (GTest)
-- [ ] Arduino Crypto library integration (SHA-256)
+- [x] Production crypto library integration (uECC, mbedTLS/Crypto)
+- [x] Arduino Crypto library integration (SHA-256/AES)
+- [ ] Unit test suite (GTest/Unity) - *Partial (Native only)*
 - [ ] Example projects
 - [ ] CI/CD pipeline
 
@@ -67,10 +67,11 @@ GridShield aims to become the **industry-standard open-source security framework
 
 #### High Priority
 
-- [ ] **Production Cryptography**
-  - [ ] Integrate micro-ecc (uECC) for ECDSA
-  - [ ] Integrate Arduino Crypto library for SHA-256
-  - [ ] Implement AES-256-GCM encryption
+- [x] **Production Cryptography**
+  - [x] Integrate micro-ecc (uECC) for ECDSA
+  - [x] Integrate Arduino Crypto library for SHA-256
+  - [x] Implement AES-256-GCM encryption
+  - [x] Native Build System Standardization (PlatformIO deps)
   - [ ] Hardware RNG integration (TRNG)
   - [ ] Secure key derivation (PBKDF2/HKDF)
 

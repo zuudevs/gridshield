@@ -21,29 +21,23 @@
 #endif
 
 // ============================================================================
-// PRODUCTION LIBRARIES
+// PRODUCTION LIBRARIES (Standardized on embedded libs for portability)
 // ============================================================================
-#if GS_PLATFORM_ARDUINO
-    // micro-ecc for ECDSA on Arduino
+#if defined(GS_PLATFORM_ARDUINO) || defined(GS_PLATFORM_NATIVE)
+    // micro-ecc for ECDSA
     #include <uECC.h>
-    #define CRYPTO_ENABLED 1
+    // Crypto library for AES-256-GCM
+    #include <AES.h>
+    #include <GCM.h>
+    #define USE_EMBEDDED_CRYPTO 1
 
-	static gridshield::platform::IPlatformCrypto* g_crypto_ptr = nullptr;
+    static gridshield::platform::IPlatformCrypto* g_crypto_ptr = nullptr;
     static int uecc_rng_adapter(uint8_t *dest, unsigned size) {
         if (g_crypto_ptr) {
             return g_crypto_ptr->random_bytes(dest, size).is_ok() ? 1 : 0;
         }
         return 0;
     }
-    
-#elif GS_PLATFORM_NATIVE
-    // OpenSSL for full crypto on Native
-    #include <openssl/ec.h>
-    #include <openssl/ecdsa.h>
-    #include <openssl/ecdh.h>
-    #include <openssl/obj_mac.h>
-    #include <openssl/evp.h>
-    #define CRYPTO_ENABLED 1
 #endif
 
 namespace gridshield {
@@ -91,58 +85,13 @@ ECCKeyPair& ECCKeyPair::operator=(ECCKeyPair&& other) noexcept {
 }
 
 core::Result<void> ECCKeyPair::generate() noexcept {
-#if GS_PLATFORM_ARDUINO && defined(CRYPTO_ENABLED)
-    // Arduino: micro-ecc secp256r1
+#if defined(USE_EMBEDDED_CRYPTO)
+    // micro-ecc secp256r1
     const struct uECC_Curve_t* curve = uECC_secp256r1();
     
     if (!uECC_make_key(public_key_, private_key_, curve)) {
         return GS_MAKE_ERROR(core::ErrorCode::KeyGenerationFailed);
     }
-    
-    has_private_ = true;
-    has_public_ = true;
-    return core::Result<void>();
-    
-#elif GS_PLATFORM_NATIVE && defined(CRYPTO_ENABLED)
-    // Native: OpenSSL EC_KEY
-    EC_KEY* key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-    if (!key) {
-        return GS_MAKE_ERROR(core::ErrorCode::KeyGenerationFailed);
-    }
-    
-    if (!EC_KEY_generate_key(key)) {
-        EC_KEY_free(key);
-        return GS_MAKE_ERROR(core::ErrorCode::KeyGenerationFailed);
-    }
-    
-    // Extract private key
-    const BIGNUM* priv_bn = EC_KEY_get0_private_key(key);
-    int len = BN_bn2bin(priv_bn, private_key_);
-    if (len != ECC_KEY_SIZE) {
-        // Pad with zeros if needed
-        if (len < static_cast<int>(ECC_KEY_SIZE)) {
-            std::memmove(private_key_ + (ECC_KEY_SIZE - len), private_key_, len);
-            std::memset(private_key_, 0, ECC_KEY_SIZE - len);
-        }
-    }
-    
-    // Extract public key (uncompressed: 0x04 || x || y)
-    const EC_POINT* pub_point = EC_KEY_get0_public_key(key);
-    const EC_GROUP* group = EC_KEY_get0_group(key);
-    
-    uint8_t pub_buf[65]; // 1 (prefix) + 64 (x+y)
-    size_t pub_len = EC_POINT_point2oct(group, pub_point, 
-        POINT_CONVERSION_UNCOMPRESSED, pub_buf, sizeof(pub_buf), nullptr);
-    
-    if (pub_len != 65) {
-        EC_KEY_free(key);
-        return GS_MAKE_ERROR(core::ErrorCode::KeyGenerationFailed);
-    }
-    
-    // Skip 0x04 prefix, copy x and y
-    std::memcpy(public_key_, pub_buf + 1, ECC_PUBLIC_KEY_SIZE);
-    
-    EC_KEY_free(key);
     
     has_private_ = true;
     has_public_ = true;
@@ -217,7 +166,7 @@ void ECCKeyPair::clear() noexcept {
 // ============================================================================
 CryptoEngine::CryptoEngine(platform::IPlatformCrypto& platform_crypto) noexcept
     : platform_crypto_(platform_crypto) {
-#if GS_PLATFORM_ARDUINO && defined(CRYPTO_ENABLED)
+#if defined(USE_EMBEDDED_CRYPTO)
     g_crypto_ptr = &platform_crypto_;
     uECC_set_rng(uecc_rng_adapter);
 #endif
@@ -241,8 +190,8 @@ core::Result<void> CryptoEngine::sign(
     uint8_t hash[SHA256_HASH_SIZE];
     GS_TRY(hash_sha256(message, msg_len, hash));
     
-#if GS_PLATFORM_ARDUINO && defined(CRYPTO_ENABLED)
-    // Arduino: micro-ecc ECDSA
+#if defined(USE_EMBEDDED_CRYPTO)
+    // micro-ecc ECDSA
     const struct uECC_Curve_t* curve = uECC_secp256r1();
     
     if (!uECC_sign(keypair.get_private_key(), hash, SHA256_HASH_SIZE, 
@@ -251,45 +200,7 @@ core::Result<void> CryptoEngine::sign(
     }
     
     return core::Result<void>();
-    
-#elif GS_PLATFORM_NATIVE && defined(CRYPTO_ENABLED)
-    // Native: OpenSSL ECDSA — sign and convert DER to raw (r || s)
-    EC_KEY* key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-    if (!key) {
-        return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
-    }
-    
-    BIGNUM* priv_bn = BN_bin2bn(keypair.get_private_key(), ECC_KEY_SIZE, nullptr);
-    if (!EC_KEY_set_private_key(key, priv_bn)) {
-        BN_free(priv_bn);
-        EC_KEY_free(key);
-        return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
-    }
-    
-    // Use ECDSA_do_sign to get raw BIGNUM r,s (avoids DER buffer overflow)
-    ECDSA_SIG* sig = ECDSA_do_sign(hash, SHA256_HASH_SIZE, key);
-    
-    BN_free(priv_bn);
-    EC_KEY_free(key);
-    
-    if (sig == nullptr) {
-        return GS_MAKE_ERROR(core::ErrorCode::SignatureInvalid);
-    }
-    
-    // Extract r and s as fixed-size 32-byte big-endian values
-    const BIGNUM* r_bn = nullptr;
-    const BIGNUM* s_bn = nullptr;
-    ECDSA_SIG_get0(sig, &r_bn, &s_bn);
-    
-    // Zero the output first, then write r and s with proper padding
-    std::memset(signature_out, 0, ECC_SIGNATURE_SIZE);
-    BN_bn2bin(r_bn, signature_out + (32 - BN_num_bytes(r_bn)));
-    BN_bn2bin(s_bn, signature_out + 32 + (32 - BN_num_bytes(s_bn)));
-    
-    ECDSA_SIG_free(sig);
-    
-    return core::Result<void>();
-    
+
 #else
     return GS_MAKE_ERROR(core::ErrorCode::NotImplemented);
 #endif
@@ -311,62 +222,15 @@ core::Result<bool> CryptoEngine::verify(
         return core::Result<bool>(result.error());
     }
     
-#if GS_PLATFORM_ARDUINO && defined(CRYPTO_ENABLED)
-    // Arduino: micro-ecc verify
+#if defined(USE_EMBEDDED_CRYPTO)
+    // micro-ecc verify
     const struct uECC_Curve_t* curve = uECC_secp256r1();
     
     int valid = uECC_verify(keypair.get_public_key(), hash, SHA256_HASH_SIZE,
                             signature, curve);
     
     return core::Result<bool>(valid != 0);
-    
-#elif GS_PLATFORM_NATIVE && defined(CRYPTO_ENABLED)
-    // Native: OpenSSL verify — convert raw (r || s) to ECDSA_SIG
-    EC_KEY* key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-    if (!key) {
-        return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::CryptoFailure));
-    }
-    
-    const EC_GROUP* group = EC_KEY_get0_group(key);
-    EC_POINT* pub_point = EC_POINT_new(group);
-    
-    // Convert public key (x || y) to EC_POINT (with 0x04 prefix)
-    uint8_t pub_buf[65];
-    pub_buf[0] = 0x04;
-    std::memcpy(pub_buf + 1, keypair.get_public_key(), ECC_PUBLIC_KEY_SIZE);
-    
-    if (!EC_POINT_oct2point(group, pub_point, pub_buf, 65, nullptr)) {
-        EC_POINT_free(pub_point);
-        EC_KEY_free(key);
-        return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::CryptoFailure));
-    }
-    
-    if (!EC_KEY_set_public_key(key, pub_point)) {
-        EC_POINT_free(pub_point);
-        EC_KEY_free(key);
-        return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::CryptoFailure));
-    }
-    
-    // Convert raw (r || s) back to ECDSA_SIG
-    ECDSA_SIG* sig = ECDSA_SIG_new();
-    if (!sig) {
-        EC_POINT_free(pub_point);
-        EC_KEY_free(key);
-        return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::CryptoFailure));
-    }
-    
-    BIGNUM* r_bn = BN_bin2bn(signature, 32, nullptr);
-    BIGNUM* s_bn = BN_bin2bn(signature + 32, 32, nullptr);
-    ECDSA_SIG_set0(sig, r_bn, s_bn); // Takes ownership of r_bn, s_bn
-    
-    int valid = ECDSA_do_verify(hash, SHA256_HASH_SIZE, sig, key);
-    
-    ECDSA_SIG_free(sig);
-    EC_POINT_free(pub_point);
-    EC_KEY_free(key);
-    
-    return core::Result<bool>(valid == 1);
-    
+
 #else
     return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::NotImplemented));
 #endif
@@ -382,8 +246,8 @@ core::Result<void> CryptoEngine::derive_shared_secret(
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
     
-#if GS_PLATFORM_ARDUINO && defined(CRYPTO_ENABLED)
-    // Arduino: micro-ecc ECDH
+#if defined(USE_EMBEDDED_CRYPTO)
+    // micro-ecc ECDH
     const struct uECC_Curve_t* curve = uECC_secp256r1();
     
     if (!uECC_shared_secret(their_public_key, our_keypair.get_private_key(),
@@ -392,66 +256,71 @@ core::Result<void> CryptoEngine::derive_shared_secret(
     }
     
     return core::Result<void>();
-    
-#elif GS_PLATFORM_NATIVE && defined(CRYPTO_ENABLED)
-    // Native: OpenSSL ECDH
-    EC_KEY* our_key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-    if (!our_key) {
-        return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
-    }
-    
-    BIGNUM* priv_bn = BN_bin2bn(our_keypair.get_private_key(), ECC_KEY_SIZE, nullptr);
-    EC_KEY_set_private_key(our_key, priv_bn);
-    
-    const EC_GROUP* group = EC_KEY_get0_group(our_key);
-    EC_POINT* their_point = EC_POINT_new(group);
-    
-    uint8_t pub_buf[65];
-    pub_buf[0] = 0x04;
-    std::memcpy(pub_buf + 1, their_public_key, ECC_PUBLIC_KEY_SIZE);
-    
-    EC_POINT_oct2point(group, their_point, pub_buf, 65, nullptr);
-    
-    int len = ECDH_compute_key(shared_secret_out, ECC_KEY_SIZE, 
-                               their_point, our_key, nullptr);
-    
-    EC_POINT_free(their_point);
-    BN_free(priv_bn);
-    EC_KEY_free(our_key);
-    
-    if (len != static_cast<int>(ECC_KEY_SIZE)) {
-        return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
-    }
-    
-    return core::Result<void>();
-    
+
 #else
     return GS_MAKE_ERROR(core::ErrorCode::NotImplemented);
 #endif
 }
 
 core::Result<size_t> CryptoEngine::encrypt_aes_gcm(
-    const uint8_t* /*key*/,
-    const uint8_t* /*nonce*/,
-    const uint8_t* /*plaintext*/, size_t /*pt_len*/,
-    uint8_t* /*ciphertext_out*/,
-    uint8_t* /*tag_out*/) noexcept {
+    const uint8_t* key,
+    const uint8_t* nonce,
+    const uint8_t* plaintext, size_t pt_len,
+    uint8_t* ciphertext_out,
+    uint8_t* tag_out) noexcept {
     
-    // TODO: Implement AES-GCM
-    // Arduino: Use Crypto library GCM
-    // Native: Use OpenSSL EVP_aes_256_gcm
+    if (GS_UNLIKELY(key == nullptr || nonce == nullptr || 
+                    plaintext == nullptr || ciphertext_out == nullptr ||
+                    tag_out == nullptr || pt_len == 0)) {
+        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+    }
     
+#if defined(USE_EMBEDDED_CRYPTO)
+    // Use Crypto library GCM<AES256>
+    GCM<AES256> gcm;
+    gcm.setKey(key, AES_KEY_SIZE);
+    gcm.setIV(nonce, NONCE_SIZE);
+    gcm.encrypt(ciphertext_out, plaintext, pt_len);
+    gcm.computeTag(tag_out, AES_GCM_TAG_SIZE);
+    
+    return core::Result<size_t>(pt_len);
+
+#else
     return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::NotImplemented));
+#endif
 }
 
 core::Result<size_t> CryptoEngine::decrypt_aes_gcm(
-    const uint8_t* /*key*/,
-    const uint8_t* /*nonce*/,
-    const uint8_t* /*ciphertext*/, size_t /*ct_len*/,
-    const uint8_t* /*tag*/,
-    uint8_t* /*plaintext_out*/) noexcept {
+    const uint8_t* key,
+    const uint8_t* nonce,
+    const uint8_t* ciphertext, size_t ct_len,
+    const uint8_t* tag,
+    uint8_t* plaintext_out) noexcept {
     
+    if (GS_UNLIKELY(key == nullptr || nonce == nullptr || 
+                    ciphertext == nullptr || tag == nullptr ||
+                    plaintext_out == nullptr || ct_len == 0)) {
+        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+    }
+    
+#if defined(USE_EMBEDDED_CRYPTO)
+    // Use Crypto library GCM<AES256>
+    GCM<AES256> gcm;
+    gcm.setKey(key, AES_KEY_SIZE);
+    gcm.setIV(nonce, NONCE_SIZE);
+    gcm.decrypt(plaintext_out, ciphertext, ct_len);
+    
+    // Verify authentication tag
+    if (!gcm.checkTag(tag, AES_GCM_TAG_SIZE)) {
+        // Tag verification failed — data may be tampered
+        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation));
+    }
+    
+    return core::Result<size_t>(ct_len);
+
+#else
     return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::NotImplemented));
+#endif
 }
 
 core::Result<void> CryptoEngine::hash_sha256(
