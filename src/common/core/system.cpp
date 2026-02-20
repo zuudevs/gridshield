@@ -141,6 +141,12 @@ core::Result<void> GridShieldSystem::process_cycle() noexcept {
     
     core::timestamp_t current_time = platform_->time->get_timestamp_ms();
     
+    // Process deferred tamper debounce (ISR sets flag, poll confirms)
+    {
+        auto poll_result = tamper_detector_.poll();
+        (void)poll_result;
+    }
+    
     // Check for tamper events (highest priority)
     if (tamper_detector_.is_tampered() && state_ != core::SystemState::Tampered) {
         auto result = handle_tamper_event();

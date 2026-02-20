@@ -57,6 +57,9 @@ public:
     virtual core::Result<void> start() noexcept = 0;
     virtual core::Result<void> stop() noexcept = 0;
     
+    // Call from main loop to process deferred debounce
+    virtual core::Result<void> poll() noexcept = 0;
+    
     GS_NODISCARD virtual bool is_tampered() const noexcept = 0;
     GS_NODISCARD virtual TamperType get_tamper_type() const noexcept = 0;
     GS_NODISCARD virtual core::timestamp_t get_tamper_timestamp() const noexcept = 0;
@@ -77,6 +80,7 @@ public:
                                  platform::PlatformServices& platform) noexcept override;
     core::Result<void> start() noexcept override;
     core::Result<void> stop() noexcept override;
+    core::Result<void> poll() noexcept override;
     
     GS_NODISCARD bool is_tampered() const noexcept override;
     GS_NODISCARD TamperType get_tamper_type() const noexcept override;
@@ -87,15 +91,17 @@ public:
     
 private:
     static void interrupt_handler(void* context) noexcept;
-    void handle_tamper_event() noexcept;
+    void confirm_tamper() noexcept;
     
     TamperConfig config_;
     platform::PlatformServices* platform_;
     
     // Volatile for ISR safety
     volatile bool is_tampered_;
+    volatile bool pending_tamper_;           // ISR sets this, poll() processes it
     volatile TamperType tamper_type_;
     volatile core::timestamp_t tamper_timestamp_;
+    volatile core::timestamp_t last_trigger_time_; // For debounce in poll()
     volatile bool initialized_;
 };
 

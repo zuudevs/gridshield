@@ -13,7 +13,7 @@
 #include "platform/platform.hpp"
 #include "utils/gs_macros.hpp"
 
-#if PLATFORM_NATIVE
+#if GS_PLATFORM_NATIVE
     #include <chrono>
     #include <random>
     #include <thread>
@@ -36,13 +36,13 @@ namespace mock {
 class MockTime : public IPlatformTime {
 public:
     MockTime() noexcept {
-        #if PLATFORM_NATIVE
+        #if GS_PLATFORM_NATIVE
         start_time_ = std::chrono::steady_clock::now();
         #endif
     }
     
     core::timestamp_t get_timestamp_ms() noexcept override {
-        #if PLATFORM_NATIVE
+        #if GS_PLATFORM_NATIVE
             auto now = std::chrono::steady_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
                 now - start_time_
@@ -54,7 +54,7 @@ public:
     }
     
     void delay_ms(uint32_t ms) noexcept override {
-        #if PLATFORM_NATIVE
+        #if GS_PLATFORM_NATIVE
             std::this_thread::sleep_for(std::chrono::milliseconds(ms));
         #else
             delay(ms);
@@ -62,7 +62,7 @@ public:
     }
     
 private:
-    #if PLATFORM_NATIVE
+    #if GS_PLATFORM_NATIVE
     std::chrono::time_point<std::chrono::steady_clock> start_time_;
     #endif
 };
@@ -116,7 +116,7 @@ public:
                              InterruptCallback callback, 
                              void* context) noexcept override {
         if (GS_UNLIKELY(callback == nullptr)) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         callbacks_[pin] = callback;
         contexts_[pin] = context;
@@ -158,7 +158,7 @@ private:
 class MockCrypto : public IPlatformCrypto {
 public:
     MockCrypto() noexcept {
-        #if PLATFORM_NATIVE
+        #if GS_PLATFORM_NATIVE
             std::random_device rd;
             rng_ = std::mt19937(rd());
         #else
@@ -168,10 +168,10 @@ public:
     
     core::Result<void> random_bytes(uint8_t* buffer, size_t length) noexcept override {
         if (GS_UNLIKELY(buffer == nullptr || length == 0)) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
-        #if PLATFORM_NATIVE
+        #if GS_PLATFORM_NATIVE
             std::uniform_int_distribution<int> dist(0, 255);
             for (size_t i = 0; i < length; ++i) {
                 buffer[i] = static_cast<uint8_t>(dist(rng_));
@@ -187,7 +187,7 @@ public:
     
     core::Result<uint32_t> crc32(const uint8_t* data, size_t length) noexcept override {
         if (GS_UNLIKELY(data == nullptr)) {
-            return core::Result<uint32_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
+            return core::Result<uint32_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
         // Simple checksum (NOT cryptographic CRC32)
@@ -201,7 +201,7 @@ public:
     core::Result<void> sha256(const uint8_t* data, size_t length, 
                              uint8_t* hash_out) noexcept override {
         if (GS_UNLIKELY(data == nullptr || hash_out == nullptr)) {
-            return MAKE_ERROR(core::ErrorCode::InvalidParameter);
+            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
         }
         
         // Placeholder hash (NOT cryptographically secure)
@@ -214,7 +214,7 @@ public:
     }
     
 private:
-    #if PLATFORM_NATIVE
+    #if GS_PLATFORM_NATIVE
     std::mt19937 rng_;
     #endif
 };
@@ -242,11 +242,11 @@ public:
     
     core::Result<size_t> send(const uint8_t* data, size_t length) noexcept override {
         if (GS_UNLIKELY(!initialized_ || !connected_)) {
-            return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::NetworkDisconnected));
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::NetworkDisconnected));
         }
         
         if (GS_UNLIKELY(data == nullptr || length == 0)) {
-            return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
         
         // Store in TX buffer
@@ -260,15 +260,15 @@ public:
     core::Result<size_t> receive(uint8_t* buffer, size_t max_length, 
                                 uint32_t /*timeout_ms*/) noexcept override {
         if (GS_UNLIKELY(!initialized_ || !connected_)) {
-            return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::NetworkDisconnected));
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::NetworkDisconnected));
         }
         
         if (GS_UNLIKELY(buffer == nullptr || max_length == 0)) {
-            return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::InvalidParameter));
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
         }
 
         if (rx_buffer_.empty()) {
-            return core::Result<size_t>(MAKE_ERROR(core::ErrorCode::NetworkTimeout));
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::NetworkTimeout));
         }
         
         size_t received = 0;

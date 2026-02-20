@@ -12,6 +12,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration of physical tamper sensors (Hall/Limit Switch).
 - Backend anomaly detection engine (Python/Go).
 
+## [1.0.1] - 2026-02-20
+
+### Fixed
+- **[CRITICAL] ECDSA Signature Buffer Overflow** (`src/common/security/crypto.cpp`):
+  OpenSSL `ECDSA_sign()` produces DER-encoded signatures (~72 bytes) but
+  the output buffer was only 64 bytes. Replaced with `ECDSA_do_sign()` /
+  `ECDSA_do_verify()` using raw BIGNUM r,s conversion to/from fixed 64-byte
+  (r || s) format.
+- **[CRITICAL] ISR Blocking Delay** (`src/common/hardware/tamper.cpp`,
+  `include/common/hardware/tamper.hpp`):
+  `delay_ms()` was called inside the interrupt handler, causing Arduino to
+  hang indefinitely. Refactored to deferred debounce: ISR now only sets a
+  `pending_tamper_` flag, actual debounce confirmation is done via new
+  `poll()` method called from `process_cycle()`.
+- **Wrong Macro Names** (`include/platform/mock_platform.hpp`):
+  Replaced `PLATFORM_NATIVE` → `GS_PLATFORM_NATIVE` (8 locations) and
+  `MAKE_ERROR` → `GS_MAKE_ERROR` (8 locations) to match project convention.
+- **StaticBuffer Alignment** (`include/common/core/types.hpp`):
+  Added `alignas(T)` to raw storage array in `StaticBuffer<T, N>` to
+  prevent undefined behavior with aligned types like `MeterReading`.
+
 ## [0.1.0] - 2026-02-09
 
 ### Added

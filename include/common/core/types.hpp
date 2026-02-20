@@ -189,8 +189,8 @@ public:
     }
     
 private:
-    // Raw char storage - no union, no alignment issues
-    char storage_[N * sizeof(T)];
+    // Raw storage with proper alignment for type T
+    alignas(T) char storage_[N * sizeof(T)];
     size_t size_;
 };
 

@@ -253,7 +253,7 @@ core::Result<void> CryptoEngine::sign(
     return core::Result<void>();
     
 #elif GS_PLATFORM_NATIVE && defined(CRYPTO_ENABLED)
-    // Native: OpenSSL ECDSA
+    // Native: OpenSSL ECDSA — sign and convert DER to raw (r || s)
     EC_KEY* key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     if (!key) {
         return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
@@ -266,16 +266,27 @@ core::Result<void> CryptoEngine::sign(
         return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
     }
     
-    unsigned int sig_len = ECC_SIGNATURE_SIZE;
-    int result = ECDSA_sign(0, hash, SHA256_HASH_SIZE, 
-                            signature_out, &sig_len, key);
+    // Use ECDSA_do_sign to get raw BIGNUM r,s (avoids DER buffer overflow)
+    ECDSA_SIG* sig = ECDSA_do_sign(hash, SHA256_HASH_SIZE, key);
     
     BN_free(priv_bn);
     EC_KEY_free(key);
     
-    if (result != 1) {
+    if (sig == nullptr) {
         return GS_MAKE_ERROR(core::ErrorCode::SignatureInvalid);
     }
+    
+    // Extract r and s as fixed-size 32-byte big-endian values
+    const BIGNUM* r_bn = nullptr;
+    const BIGNUM* s_bn = nullptr;
+    ECDSA_SIG_get0(sig, &r_bn, &s_bn);
+    
+    // Zero the output first, then write r and s with proper padding
+    std::memset(signature_out, 0, ECC_SIGNATURE_SIZE);
+    BN_bn2bin(r_bn, signature_out + (32 - BN_num_bytes(r_bn)));
+    BN_bn2bin(s_bn, signature_out + 32 + (32 - BN_num_bytes(s_bn)));
+    
+    ECDSA_SIG_free(sig);
     
     return core::Result<void>();
     
@@ -310,7 +321,7 @@ core::Result<bool> CryptoEngine::verify(
     return core::Result<bool>(valid != 0);
     
 #elif GS_PLATFORM_NATIVE && defined(CRYPTO_ENABLED)
-    // Native: OpenSSL verify
+    // Native: OpenSSL verify — convert raw (r || s) to ECDSA_SIG
     EC_KEY* key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     if (!key) {
         return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::CryptoFailure));
@@ -336,9 +347,21 @@ core::Result<bool> CryptoEngine::verify(
         return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::CryptoFailure));
     }
     
-    int valid = ECDSA_verify(0, hash, SHA256_HASH_SIZE, 
-                            signature, ECC_SIGNATURE_SIZE, key);
+    // Convert raw (r || s) back to ECDSA_SIG
+    ECDSA_SIG* sig = ECDSA_SIG_new();
+    if (!sig) {
+        EC_POINT_free(pub_point);
+        EC_KEY_free(key);
+        return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::CryptoFailure));
+    }
     
+    BIGNUM* r_bn = BN_bin2bn(signature, 32, nullptr);
+    BIGNUM* s_bn = BN_bin2bn(signature + 32, 32, nullptr);
+    ECDSA_SIG_set0(sig, r_bn, s_bn); // Takes ownership of r_bn, s_bn
+    
+    int valid = ECDSA_do_verify(hash, SHA256_HASH_SIZE, sig, key);
+    
+    ECDSA_SIG_free(sig);
     EC_POINT_free(pub_point);
     EC_KEY_free(key);
     
