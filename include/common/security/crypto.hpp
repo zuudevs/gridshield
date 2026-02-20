@@ -39,6 +39,9 @@ constexpr size_t SHA256_HASH_SIZE = 32;
 // ============================================================================
 class ECCKeyPair {
 public:
+    static constexpr size_t PRIVATE_KEY_SIZE = ECC_KEY_SIZE;
+    static constexpr size_t PUBLIC_KEY_SIZE = ECC_PUBLIC_KEY_SIZE;
+
     ECCKeyPair() noexcept;
     ~ECCKeyPair() noexcept;
     
