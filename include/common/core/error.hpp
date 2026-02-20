@@ -174,7 +174,7 @@ public:
     GS_NODISCARD ErrorContext error() const noexcept { return error_; }
     
     // Convert to Result<void>, discarding the value
-    Result<void> as_void() noexcept {
+    Result<void> as_void() const noexcept {
         if (has_value_) return Result<void>();
         return error_;
     }
