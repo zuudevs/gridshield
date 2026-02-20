@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Documentation**:
+  - Added `KeyStorage` class API documentation to `docs/API.md`.
+  - Added `Utilities Module` section to `docs/API.md` (macros, type traits, compiler hints).
+  - Added complete `ErrorCode` enumeration with category descriptions.
+  - Created `examples/README.md` with usage guides for SimpleMeter and demo_native examples.
+
+### Changed
+- **Documentation Translations**:
+  - Translated `docs/PROPOSAL.md` from Indonesian to English.
+  - Translated `docs/requirements.md` from Indonesian to English.
+  - Translated `docs/MUST_READ/workflow.md` from Indonesian to English with GridShield-specific workflow.
+
+### Fixed
+- **Documentation Consistency**:
+  - Fixed incorrect `gridshield.ino` filename references to `main.ino` across all documentation.
+  - Updated file references in `BUILD.md`, `QUICKSTART.md`, and `ARCHITECTURE.md`.
+  - Fixed `@file` header comments in `src/arduino/main.ino` and `src/arduino/main.cpp`.
+
 ### Planned
 - Implementation of Elliptic Curve Cryptography (ECC) on ESP32.
 - Integration of physical tamper sensors (Hall/Limit Switch).

@@ -1,5 +1,5 @@
 /**
- * @file gridshield.ino
+ * @file main.ino
  * @author zuudevs (zuudevs@gmail.com)
  * @brief Production Arduino application
  * @version 1.0

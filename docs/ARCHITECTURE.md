@@ -675,7 +675,7 @@ gridshield/
 │   │   └── main.cpp                    # PC entry point (testing)
 │   │
 │   └── arduino/
-│       └── gridshield.ino              # Arduino entry point (production)
+│       └── main.ino                    # Arduino entry point (production)
 │
 ├── docs/                               # Documentation
 │   ├── ARCHITECTURE.md                 # This file
@@ -702,7 +702,7 @@ gridshield/
 - `crypto.cpp` - Cryptographic operations
 - `packet.cpp` - Network protocol
 - `detector.cpp` - Anomaly detection
-- `main.cpp` / `gridshield.ino` - Entry points
+- `main.cpp` / `main.ino` - Entry points
 
 ---
 
@@ -858,8 +858,8 @@ cmake --build --preset native-debug
 
 **Integration Testing (Arduino):**
 ```bash
-arduino-cli compile --fqbn arduino:avr:mega src/arduino/gridshield.ino
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino
+arduino-cli compile --fqbn arduino:avr:mega src/arduino/main.ino
+arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/main.ino
 arduino-cli monitor -p COM3 -b 115200
 ```
 

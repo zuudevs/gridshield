@@ -118,7 +118,7 @@ Simulating anomalous consumption drop...
 ### Step 1: Compile the Firmware
 
 ```bash
-arduino-cli compile --fqbn arduino:avr:mega src/arduino/gridshield.ino
+arduino-cli compile --fqbn arduino:avr:mega src/arduino/main.ino
 ```
 
 **Expected output:**
@@ -133,10 +133,10 @@ Global variables use 3456 bytes (42.2%) of dynamic memory.
 
 ```bash
 # Windows
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino
+arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/main.ino
 
 # Linux/macOS
-arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:mega src/arduino/gridshield.ino
+arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:mega src/arduino/main.ino
 ```
 
 ### Step 3: Monitor Serial Output
@@ -468,7 +468,7 @@ Edit `src/common/security/crypto.cpp` and uncomment uECC integration.
 **4. Upload and Monitor:**
 
 ```bash
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino
+arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/main.ino
 arduino-cli monitor -p COM3 -b 115200
 ```
 
@@ -486,7 +486,7 @@ cmake --preset native-debug -DCMAKE_VERBOSE_MAKEFILE=ON
 arduino-cli board list
 
 # Try different baud rate
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega --upload-speed 57600 src/arduino/gridshield.ino
+arduino-cli upload -p COM3 --fqbn arduino:avr:mega --upload-speed 57600 src/arduino/main.ino
 ```
 
 **System crashes on Arduino:**

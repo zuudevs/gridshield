@@ -1,84 +1,92 @@
-# DOKUMEN SPESIFIKASI KEBUTUHAN PERANGKAT LUNAK (SRS)
-## Proyek: GridShield - Multi-layer Security Model for AMI
-**Versi:** 1.0.0
-**Status:** Draft Awal
-**Analisis oleh:** Rafi
+# SOFTWARE REQUIREMENTS SPECIFICATION (SRS)
+## Project: GridShield - Multi-layer Security Model for AMI
+**Version:** 1.1.0  
+**Status:** Active  
+**Analysis by:** Rafi  
+**Last Updated:** February 2026
 
 ---
 
-## 1. PENDAHULUAN
-### 1.1 Tujuan
-Dokumen ini merinci kebutuhan fungsional dan non-fungsional untuk **GridShield**, sebuah sistem keamanan berlapis untuk infrastruktur meteran pintar (AMI). Tujuannya adalah mencegah manipulasi data (tampering) dan serangan siber yang merugikan utilitas (PLN) dan pelanggan.
+## 1. INTRODUCTION
+### 1.1 Purpose
+This document details the functional and non-functional requirements for **GridShield**, a multi-layer security system for smart meter infrastructure (AMI). The goal is to prevent data manipulation (tampering) and cyber attacks that harm utilities (PLN) and customers.
 
-### 1.2 Lingkup Masalah
-Sesuai proposal, masalah utama yang diselesaikan adalah:
-1.  **Manipulasi Fisik:** Pembukaan casing meteran secara ilegal.
-2.  **Injeksi Data Palsu:** Serangan siber pada jalur komunikasi untuk memanipulasi tagihan.
-3.  **Keterbatasan Resource:** Perangkat keras Smart Meter (ESP32/STM32) memiliki daya dan memori terbatas, tidak kuat menjalankan enkripsi berat.
+### 1.2 Problem Scope
+As per the proposal, the main problems being solved are:
+1.  **Physical Manipulation:** Illegal meter casing opening.
+2.  **False Data Injection:** Cyber attacks on communication channels to manipulate billing.
+3.  **Resource Constraints:** Smart Meter hardware (Arduino Mega, ESP32/STM32 planned) has limited power and memory, unable to run heavy encryption.
 
 ---
 
-## 2. PENGGUNA & STAKEHOLDER (User Persona)
-| Aktor | Deskripsi | Peran dalam Sistem |
+## 2. USERS & STAKEHOLDERS (User Personas)
+| Actor | Description | Role in System |
 | :--- | :--- | :--- |
-| **Sistem Meter (Edge)** | Perangkat keras Smart Meter di pelanggan. | Mengirim data konsumsi & sinyal tamper. |
-| **Server Pusat (HES)** | Head-End System di utilitas/PLN. | Menerima data, mendekripsi, & analisis anomali. |
-| **Administrator/Operator** | Petugas P2TL atau IT PLN. | Memantau dashboard & menerima alert pencurian. |
-| **Peretas/Pencuri (Threat)** | Aktor jahat. | Mencoba memanipulasi fisik atau jaringan (objek mitigasi). |
+| **Meter System (Edge)** | Smart Meter hardware at customer site. | Sends consumption data & tamper signals. |
+| **Central Server (HES)** | Head-End System at utility/PLN. | Receives data, decrypts, & analyzes anomalies. |
+| **Administrator/Operator** | P2TL or IT PLN personnel. | Monitors dashboard & receives theft alerts. |
+| **Attacker/Thief (Threat)** | Malicious actor. | Attempts physical or network manipulation (mitigation target). |
 
 ---
 
-## 3. KEBUTUHAN FUNGSIONAL (Functional Requirements - FR)
+## 3. FUNCTIONAL REQUIREMENTS (FR)
 
-### 3.1 Layer 1: Keamanan Fisik (Physical Security)
-*Kode Referensi: FR-PHYS*
-* **[FR-PHYS-01] Deteksi Tamper Fisik:** Sistem harus mampu mendeteksi jika casing meteran dibuka secara paksa menggunakan sensor terintegrasi.
-* **[FR-PHYS-02] Priority Flagging:** Saat tamper terdeteksi, mikrokontroler harus segera mengirimkan sinyal "Priority Flag" ke server, mengabaikan antrian pengiriman data rutin.
-* **[FR-PHYS-03] Power Backup Operation:** Modul keamanan harus tetap dapat mengirimkan sinyal tamper sesaat setelah daya utama diputus (menggunakan kapasitor/baterai cadangan).
+### 3.1 Layer 1: Physical Security
+*Reference Code: FR-PHYS*
+* **[FR-PHYS-01] Physical Tamper Detection:** System must be able to detect if meter casing is forcibly opened using integrated sensors.
+* **[FR-PHYS-02] Priority Flagging:** When tamper is detected, microcontroller must immediately send "Priority Flag" signal to server, bypassing routine data transmission queue.
+* **[FR-PHYS-03] Power Backup Operation:** Security module must be able to send tamper signal momentarily after main power is cut (using backup capacitor/battery).
 
-### 3.2 Layer 2: Keamanan Jaringan (Network Security)
-*Kode Referensi: FR-NET*
-* **[FR-NET-01] Enkripsi Ringan (Lightweight Crypto):** Sistem harus mengimplementasikan algoritma ECC (Elliptic Curve Cryptography) untuk enkripsi data pengukuran sebelum dikirim.
-    * *Catatan:* Harus dioptimalkan untuk C/C++ (Low-Level) agar hemat memori.
-* **[FR-NET-02] Otentikasi Perangkat:** Server harus memvalidasi tanda tangan digital dari setiap paket data untuk memastikan data berasal dari meteran yang sah (Mencegah *Man-in-the-Middle*).
-* **[FR-NET-03] Integritas Data:** Payload data harus memiliki mekanisme hashing untuk memastikan data tidak berubah selama transmisi.
+### 3.2 Layer 2: Network Security
+*Reference Code: FR-NET*
+* **[FR-NET-01] Lightweight Encryption:** System must implement ECC (Elliptic Curve Cryptography) algorithm for encrypting measurement data before transmission.
+    * *Note:* Must be optimized for C/C++ (Low-Level) for memory efficiency.
+* **[FR-NET-02] Device Authentication:** Server must validate digital signatures from each data packet to ensure data originates from legitimate meters (Prevents *Man-in-the-Middle*).
+* **[FR-NET-03] Data Integrity:** Data payload must have hashing mechanism to ensure data is unchanged during transmission.
 
-### 3.3 Layer 3: Analisis Anomali (Application Layer)
-*Kode Referensi: FR-APP*
-* **[FR-APP-01] Penerimaan Data:** Server harus mampu mendekripsi data yang diterima dari ribuan meteran secara *concurrent*.
-* **[FR-APP-02] Deteksi Anomali Beban:** Sistem harus membandingkan data *real-time* dengan pola historis pelanggan.
-    * *Trigger:* Jika beban turun drastis (misal: 90%) tanpa alasan logis -> Flag Anomali.
-* **[FR-APP-03] Cross-Layer Validation:** Sistem harus memverifikasi data fisik dengan pola digital.
-* **[FR-APP-04] Dashboard Monitoring:** Menyediakan antarmuka visual untuk menampilkan status keamanan meteran (Hijau: Aman, Merah: Tamper/Anomali).
-
----
-
-## 4. KEBUTUHAN NON-FUNGSIONAL (Non-Functional Requirements - NFR)
-
-### 4.1 Efisiensi & Kinerja (Performance)
-* **[NFR-PERF-01] Latensi Rendah:** Proses enkripsi/dekripsi di sisi meteran tidak boleh menghambat fungsi utama pengukuran listrik (> 100ms overhead dianggap gagal).
-* **[NFR-PERF-02] Hemat Daya:** Algoritma keamanan tidak boleh menguras daya secara signifikan (Resource-constrained friendly).
-
-### 4.2 Keamanan (Security)
-* **[NFR-SEC-01] Confidentiality:** Data konsumsi listrik pelanggan tidak boleh bisa dibaca oleh pihak ketiga (sniffing).
-* **[NFR-SEC-02] Availability:** Sistem keamanan tidak boleh menyebabkan meteran *hang* atau *crash* (Denial of Service).
-
-### 4.3 Portabilitas (Portability)
-* **[NFR-PORT-01] Hardware Agnostic:** Kode C/C++ untuk modul keamanan harus dapat di-porting ke berbagai jenis mikrokontroler (ESP32, STM32) dengan perubahan minimal.
+### 3.3 Layer 3: Anomaly Analysis (Application Layer)
+*Reference Code: FR-APP*
+* **[FR-APP-01] Data Reception:** Server must be able to decrypt data received from thousands of meters *concurrently*.
+* **[FR-APP-02] Load Anomaly Detection:** System must compare *real-time* data with customer historical patterns.
+    * *Trigger:* If load drops drastically (e.g., 90%) without logical reason -> Flag Anomaly.
+* **[FR-APP-03] Cross-Layer Validation:** System must verify physical data against digital patterns.
+* **[FR-APP-04] Monitoring Dashboard:** Provides visual interface to display meter security status (Green: Safe, Red: Tamper/Anomaly).
 
 ---
 
-## 5. BATASAN SISTEM (Constraints)
-1.  **Bahasa Pemrograman:** Sisi firmware wajib menggunakan **C/C++** (Sesuai keahlian Rafi & kebutuhan hardware). Sisi Server/Analitik boleh menggunakan **Python**.
-2.  **Hardware:** Prototype menggunakan ESP32/STM32.
-3.  **Konektivitas:** Simulasi pengiriman data menggunakan protokol serial atau WiFi/LoRa (tergantung modul komunikasi yang tersedia).
+## 4. NON-FUNCTIONAL REQUIREMENTS (NFR)
+
+### 4.1 Efficiency & Performance
+* **[NFR-PERF-01] Low Latency:** Encryption/decryption process on meter side must not impede primary measurement function (>100ms overhead considered failure).
+* **[NFR-PERF-02] Power Efficient:** Security algorithm must not significantly drain power (Resource-constrained friendly).
+
+### 4.2 Security
+* **[NFR-SEC-01] Confidentiality:** Customer electricity consumption data must not be readable by third parties (sniffing).
+* **[NFR-SEC-02] Availability:** Security system must not cause meter to *hang* or *crash* (Denial of Service).
+
+### 4.3 Portability
+* **[NFR-PORT-01] Hardware Agnostic:** C/C++ code for security module must be portable to various microcontroller types (Arduino Mega, ESP32, STM32) with minimal changes.
 
 ---
 
-## 6. RENCANA PENGUJIAN (Acceptance Criteria)
-| ID Skenario | Deskripsi Pengujian | Hasil yang Diharapkan |
+## 5. SYSTEM CONSTRAINTS
+1.  **Programming Language:** Firmware side must use **C++17** (Per team expertise & hardware requirements). Server/Analytics side may use **Python**.
+2.  **Hardware:** Current prototype uses Arduino Mega 2560. ESP32/STM32 support planned.
+3.  **Connectivity:** Data transmission simulation using serial protocol or WiFi/LoRa (depending on available communication module).
+
+---
+
+## 6. TEST PLAN (Acceptance Criteria)
+| Scenario ID | Test Description | Expected Result |
 | :--- | :--- | :--- |
-| **TEST-01** | Buka Casing Meteran | Alert muncul di dashboard server dalam waktu < 5 detik. |
-| **TEST-02** | Sniffing Data Paket | Data yang ditangkap di jaringan tidak terbaca (ciphertext). |
-| **TEST-03** | Injeksi Data Palsu | Server menolak data yang dimanipulasi & mencatat log serangan. |
-| **TEST-04** | Drop Beban Ekstrem | Sistem menandai anomali saat penggunaan listrik turun drastis tiba-tiba. |
+| **TEST-01** | Open Meter Casing | Alert appears on server dashboard within < 5 seconds. |
+| **TEST-02** | Packet Data Sniffing | Captured data on network is unreadable (ciphertext). |
+| **TEST-03** | False Data Injection | Server rejects manipulated data & logs attack. |
+| **TEST-04** | Extreme Load Drop | System flags anomaly when electricity usage suddenly drops drastically. |
+
+---
+
+**Document Information:**
+- **Version:** 1.1.0
+- **Last Updated:** February 2026
+- **Language:** Translated from Indonesian (original)

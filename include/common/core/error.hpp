@@ -96,6 +96,34 @@ struct ErrorContext {
 // ============================================================================
 // RESULT<T> MONAD (C++17 compliant)
 // ============================================================================
+
+// Forward declaration
+template<typename T> class Result;
+
+// ============================================================================
+// RESULT<void> SPECIALIZATION (defined first so generic template can use it)
+// ============================================================================
+template<>
+class Result<void> {
+public:
+    Result() noexcept : error_(ErrorCode::Success) {}
+    /*implicit*/ Result(ErrorContext err) noexcept : error_(err) {}
+    
+    GS_NODISCARD constexpr bool is_ok() const noexcept { 
+        return error_.code == ErrorCode::Success; 
+    }
+    GS_NODISCARD constexpr bool is_error() const noexcept { 
+        return !is_ok(); 
+    }
+    GS_NODISCARD ErrorContext error() const noexcept { return error_; }
+    
+private:
+    ErrorContext error_;
+};
+
+// ============================================================================
+// GENERIC RESULT<T> TEMPLATE
+// ============================================================================
 template<typename T>
 class Result {
 public:
@@ -187,27 +215,6 @@ private:
     } storage_;
     
     bool has_value_;
-    ErrorContext error_;
-};
-
-// ============================================================================
-// RESULT<void> SPECIALIZATION
-// ============================================================================
-template<>
-class Result<void> {
-public:
-    Result() noexcept : error_(ErrorCode::Success) {}
-    /*implicit*/ Result(ErrorContext err) noexcept : error_(err) {}
-    
-    GS_NODISCARD constexpr bool is_ok() const noexcept { 
-        return error_.code == ErrorCode::Success; 
-    }
-    GS_NODISCARD constexpr bool is_error() const noexcept { 
-        return !is_ok(); 
-    }
-    GS_NODISCARD ErrorContext error() const noexcept { return error_; }
-    
-private:
     ErrorContext error_;
 };
 

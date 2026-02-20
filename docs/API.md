@@ -16,6 +16,7 @@ Complete API documentation for GridShield Multi-Layer AMI Security System.
 - [Network Module](#network-module)
 - [Analytics Module](#analytics-module)
 - [Platform Abstraction](#platform-abstraction)
+- [Utilities Module](#utilities-module)
 - [Error Handling](#error-handling)
 - [Type Definitions](#type-definitions)
 
@@ -510,6 +511,142 @@ void clear() noexcept;
 ```
 
 Securely erases all key material.
+
+---
+
+### KeyStorage
+
+**Header:** `include/common/security/key_storage.hpp`
+
+Manages secure storage of cryptographic keys in persistent memory (EEPROM/Flash).
+
+#### Storage Layout
+
+```
+[MAGIC: 4B] [VERSION: 1B] [RSVD: 3B] [PUBKEY: 64B] [PRIVKEY: 32B] [CRC32: 4B]
+Total: 108 bytes
+```
+
+#### Constants
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `STORAGE_MAGIC` | `0x47534B53` | "GSKS" identifier |
+| `STORAGE_VERSION` | `1` | Storage format version |
+| `STORAGE_SIZE` | `108` | Total bytes used |
+| `DEFAULT_ADDRESS` | `0` | Default EEPROM address |
+
+#### Constructor
+
+```cpp
+explicit KeyStorage(platform::PlatformServices& platform) noexcept;
+```
+
+Creates a key storage manager with platform services.
+
+**Parameters:**
+- `platform` - Platform abstraction layer services (requires storage and crypto)
+
+---
+
+#### Public Methods
+
+##### save()
+
+```cpp
+core::Result<void> save(
+    const ECCKeyPair& keypair,
+    uint32_t address = DEFAULT_ADDRESS
+) noexcept;
+```
+
+Saves a key pair to persistent storage.
+
+**Parameters:**
+- `keypair` - Key pair to save (must have both private and public keys)
+- `address` - Storage address (default: 0)
+
+**Returns:** `Result<void>` - Success or error code
+
+**Errors:**
+- `KeyGenerationFailed` - Invalid keypair (missing keys)
+- `CryptoFailure` - CRC32 computation failed
+- `HardwareFailure` - Storage write failed
+
+**Example:**
+```cpp
+security::KeyStorage storage(platform);
+security::ECCKeyPair keypair;
+
+// Generate or load keypair...
+crypto_engine.generate_keypair(keypair);
+
+// Save to EEPROM
+auto result = storage.save(keypair);
+if (result.is_error()) {
+    // Handle storage error
+}
+```
+
+---
+
+##### load()
+
+```cpp
+core::Result<void> load(
+    ECCKeyPair& keypair,
+    uint32_t address = DEFAULT_ADDRESS
+) noexcept;
+```
+
+Loads a key pair from persistent storage.
+
+**Parameters:**
+- `keypair` - Output key pair object
+- `address` - Storage address (default: 0)
+
+**Returns:** `Result<void>` - Success or error code
+
+**Errors:**
+- `IntegrityViolation` - Storage not initialized or corrupted (invalid magic/CRC)
+- `HardwareFailure` - Storage read failed
+- `CryptoFailure` - Key loading failed
+
+**Example:**
+```cpp
+security::KeyStorage storage(platform);
+security::ECCKeyPair keypair;
+
+auto result = storage.load(keypair);
+if (result.is_error()) {
+    if (result.error().code == core::ErrorCode::IntegrityViolation) {
+        // No saved keys - generate new ones
+        crypto_engine.generate_keypair(keypair);
+        storage.save(keypair);
+    }
+}
+```
+
+---
+
+##### erase()
+
+```cpp
+core::Result<void> erase(uint32_t address = DEFAULT_ADDRESS) noexcept;
+```
+
+Erases keys from storage (fills with zeros).
+
+**Parameters:**
+- `address` - Storage address (default: 0)
+
+**Returns:** `Result<void>` - Success or error code
+
+**Example:**
+```cpp
+// Factory reset - erase all stored keys
+storage.erase();
+```
 
 ---
 
@@ -1099,6 +1236,189 @@ virtual bool is_connected() noexcept = 0;
 
 ---
 
+## Utilities Module
+
+### Platform Detection Macros
+
+**Header:** `include/common/utils/gs_macros.hpp`
+
+Compile-time platform and compiler detection.
+
+#### Platform Macros
+
+| Macro | Value when Active | Description |
+|-------|-------------------|-------------|
+| `GS_PLATFORM_ARDUINO` | `1` | Compiling for Arduino/AVR |
+| `GS_PLATFORM_NATIVE` | `1` | Compiling for PC (Native) |
+
+**Example:**
+```cpp
+#if GS_PLATFORM_ARDUINO
+    // Arduino-specific code
+    Serial.println("Hello Arduino!");
+#else
+    // Native platform code
+    std::cout << "Hello PC!" << std::endl;
+#endif
+```
+
+#### Compiler Macros
+
+| Macro | Value when Active | Description |
+|-------|-------------------|-------------|
+| `GS_COMPILER_CLANG` | `1` | Clang compiler |
+| `GS_COMPILER_GCC` | `1` | GCC compiler |
+| `GS_COMPILER_MSVC` | `1` | Microsoft Visual C++ |
+
+---
+
+### Move Semantics
+
+**Header:** `include/common/utils/gs_macros.hpp`
+
+Cross-platform move semantics for C++17.
+
+#### GS_MOVE
+
+```cpp
+#define GS_MOVE(x) /* platform-specific move */
+```
+
+Moves an object (equivalent to `std::move()` on native, manual implementation on AVR).
+
+**Example:**
+```cpp
+StaticBuffer<uint8_t, 256> source;
+// ... fill source
+StaticBuffer<uint8_t, 256> dest = GS_MOVE(source);
+```
+
+#### GS_FORWARD
+
+```cpp
+#define GS_FORWARD(T, x) /* platform-specific forward */
+```
+
+Perfect forwarding (equivalent to `std::forward<T>()`).
+
+---
+
+### Compiler Hints
+
+**Header:** `include/common/utils/gs_macros.hpp`
+
+Optimization hints for the compiler.
+
+| Macro | Description | GCC/Clang | MSVC |
+|-------|-------------|-----------|------|
+| `GS_LIKELY(x)` | Branch prediction hint (likely true) | `__builtin_expect` | No-op |
+| `GS_UNLIKELY(x)` | Branch prediction hint (likely false) | `__builtin_expect` | No-op |
+| `GS_INLINE` | Force inline | `always_inline` | `__forceinline` |
+| `GS_NOINLINE` | Prevent inlining | `noinline` | `__declspec(noinline)` |
+| `GS_PACKED` | Pack struct without padding | `packed` | N/A |
+| `GS_ALIGN(n)` | Align to n bytes | `aligned(n)` | `__declspec(align(n))` |
+
+**Example:**
+```cpp
+if (GS_UNLIKELY(result.is_error())) {
+    // Error handling path (rarely taken)
+    return result.error();
+}
+```
+
+---
+
+### C++17 Attributes
+
+**Header:** `include/common/utils/gs_macros.hpp`
+
+| Macro | C++17 Equivalent | Description |
+|-------|------------------|-------------|
+| `GS_NODISCARD` | `[[nodiscard]]` | Warn if return value is discarded |
+| `GS_FALLTHROUGH` | `[[fallthrough]]` | Intentional switch fallthrough |
+| `GS_MAYBE_UNUSED` | `[[maybe_unused]]` | Suppress unused variable warnings |
+| `GS_CONSTEXPR` | `constexpr` | Compile-time evaluation |
+
+---
+
+### Arduino-Specific Macros
+
+**Header:** `include/common/utils/gs_macros.hpp`
+
+| Macro | Description |
+|-------|-------------|
+| `GS_PROGMEM` | Store in program memory (flash) |
+| `GS_NOINIT` | Do not initialize on startup |
+
+**Note:** These macros are no-ops on native platform.
+
+---
+
+### Assertions
+
+**Header:** `include/common/utils/gs_macros.hpp`
+
+#### GS_ASSERT
+
+```cpp
+#define GS_ASSERT(expr) /* platform-specific assert */
+```
+
+Runtime assertion (enabled only on native platform with debug builds).
+
+#### GS_STATIC_ASSERT
+
+```cpp
+#define GS_STATIC_ASSERT(expr, msg) static_assert(expr, msg)
+```
+
+Compile-time assertion with message.
+
+---
+
+### Type Traits (AVR)
+
+**Header:** `include/common/utils/gs_typetraits.hpp`
+
+Minimal type traits for AVR (where `<type_traits>` is unavailable).
+
+#### remove_reference
+
+```cpp
+template<typename T>
+struct remove_reference;
+```
+
+Removes reference from type.
+
+**Example:**
+```cpp
+remove_reference<int&>::type;   // int
+remove_reference<int&&>::type;  // int
+remove_reference<int>::type;    // int
+```
+
+---
+
+### Utility Functions (AVR)
+
+**Header:** `include/common/utils/gs_utils.hpp`
+
+Minimal utility functions for AVR.
+
+#### move()
+
+```cpp
+template<typename T>
+typename remove_reference<T>::type&& move(T&& arg);
+```
+
+Manual move implementation for AVR (use `GS_MOVE` macro instead for cross-platform code).
+
+**Note:** On native platform, includes `<utility>` and provides `MOVE(x)` as `std::move(x)`.
+
+---
+
 ## Error Handling
 
 ### Result<T>
@@ -1164,7 +1484,7 @@ Returns the error context.
 
 **Header:** `include/common/core/error.hpp`
 
-Error code enumeration.
+Error code enumeration organized by category.
 
 ```cpp
 enum class ErrorCode : uint16_t {
@@ -1173,33 +1493,63 @@ enum class ErrorCode : uint16_t {
     // System errors (100-199)
     SystemNotInitialized = 100,
     SystemAlreadyInitialized = 101,
+    SystemShutdown = 102,
     InvalidState = 103,
     ResourceExhausted = 104,
     
     // Hardware errors (200-299)
     HardwareFailure = 200,
     SensorReadFailure = 201,
+    SensorNotCalibrated = 202,
     TamperDetected = 203,
+    PowerLossDetected = 204,
     
     // Security errors (300-399)
     CryptoFailure = 300,
     AuthenticationFailed = 301,
     IntegrityViolation = 302,
+    KeyGenerationFailed = 303,
     SignatureInvalid = 304,
+    EncryptionFailed = 305,
+    DecryptionFailed = 306,
     
     // Network errors (400-499)
     NetworkTimeout = 400,
     NetworkDisconnected = 401,
+    TransmissionFailed = 402,
     InvalidPacket = 403,
     BufferOverflow = 404,
     
     // Analytics errors (500-599)
     AnomalyDetected = 500,
+    ProfileMismatch = 501,
+    ThresholdExceeded = 502,
+    DataInvalid = 503,
     
     // Configuration errors (600-699)
-    InvalidParameter = 600
+    InvalidParameter = 600,
+    ConfigurationError = 601,
+    CalibrationRequired = 602,
+    
+    // Generic errors (900-999)
+    Unknown = 900,
+    NotImplemented = 901,
+    NotSupported = 902
 };
 ```
+
+#### Error Categories
+
+| Range | Category | Description |
+|-------|----------|-------------|
+| 0 | Success | Operation completed successfully |
+| 100-199 | System | Initialization, state, resource errors |
+| 200-299 | Hardware | Sensor, tamper, power errors |
+| 300-399 | Security | Crypto, auth, integrity errors |
+| 400-499 | Network | Timeout, transmission, packet errors |
+| 500-599 | Analytics | Anomaly detection errors |
+| 600-699 | Configuration | Parameter, calibration errors |
+| 900-999 | Generic | Unknown, not implemented errors |
 
 ---
 

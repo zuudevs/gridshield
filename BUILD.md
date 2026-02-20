@@ -107,7 +107,7 @@ Compile and upload to Arduino Mega:
 arduino-cli compile --fqbn arduino:avr:mega src/arduino/main.ino
 
 # Upload (adjust COM port)
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/gridshield.ino
+arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/main.ino
 
 # Monitor serial output
 arduino-cli monitor -p COM3 -b 115200
@@ -508,7 +508,7 @@ sudo usermod -a -G dialout $USER
 **Alternative:** Use sudo (not recommended):
 
 ```bash
-sudo arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:mega src/arduino/gridshield.ino
+sudo arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:mega src/arduino/main.ino
 ```
 
 ### Issue: "avr-gcc: command not found"
