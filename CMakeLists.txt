@@ -92,8 +92,13 @@ if(PLATFORM STREQUAL "NATIVE")
         message(STATUS "Crypto Library: ${CRYPTO_LIB_DIR}")
         include_directories("${CRYPTO_LIB_DIR}")
         
+        # Also include src/ subdirectory if it exists (Arduino library format)
+        if(EXISTS "${CRYPTO_LIB_DIR}/src")
+            include_directories("${CRYPTO_LIB_DIR}/src")
+        endif()
+        
         # Add Crypto source files
-        file(GLOB CRYPTO_SOURCES "${CRYPTO_LIB_DIR}/*.cpp")
+        file(GLOB CRYPTO_SOURCES "${CRYPTO_LIB_DIR}/*.cpp" "${CRYPTO_LIB_DIR}/src/*.cpp")
         list(APPEND COMMON_SOURCES ${CRYPTO_SOURCES})
         
         add_definitions(-DGS_PLATFORM_NATIVE=1)
@@ -156,6 +161,7 @@ if(PLATFORM STREQUAL "NATIVE")
             include/platform
             include/native
             "${CRYPTO_LIB_DIR}"
+            "${CRYPTO_LIB_DIR}/src"
         )
         
         target_compile_definitions(demo_native PRIVATE GS_PLATFORM_NATIVE=1)
@@ -191,6 +197,7 @@ if(PLATFORM STREQUAL "NATIVE")
                 include/platform
                 include/native
                 "${CRYPTO_LIB_DIR}"
+                "${CRYPTO_LIB_DIR}/src"
                 "${UNITY_LIB_DIR}"
             )
             

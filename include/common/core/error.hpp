@@ -173,6 +173,12 @@ public:
     // Error access
     GS_NODISCARD ErrorContext error() const noexcept { return error_; }
     
+    // Convert to Result<void>, discarding the value
+    Result<void> as_void() noexcept {
+        if (has_value_) return Result<void>();
+        return error_;
+    }
+    
 private:
     union Storage {
         T value;
