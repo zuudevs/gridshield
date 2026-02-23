@@ -83,7 +83,7 @@ public:
         if (!has_primary()) {
             return rotate();
         }
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
 private:
@@ -97,7 +97,7 @@ private:
         if (!verify.has_private_key() || !verify.has_public_key()) {
             return GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation);
         }
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     KeyStorage& storage_;

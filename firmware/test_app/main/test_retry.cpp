@@ -24,7 +24,7 @@ static core::Result<void> mock_operation()
 {
     ++g_call_count;
     if (g_call_count >= g_succeed_on_attempt) {
-        return core::Result<void>();
+        return core::Result<void>{};
     }
     return GS_MAKE_ERROR(core::ErrorCode::TransmissionFailed);
 }

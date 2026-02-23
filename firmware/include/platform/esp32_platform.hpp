@@ -47,7 +47,7 @@ public:
         // esp_fill_random uses the hardware RNG on real ESP32.
         // On QEMU it uses a PRNG seed — same API, same code path.
         esp_fill_random(buffer, length);
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     core::Result<uint32_t> crc32(const uint8_t* data, size_t length) noexcept override
@@ -74,7 +74,7 @@ public:
             return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
         }
 
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 };
 
@@ -106,7 +106,7 @@ public:
         }
 
         initialized_ = true;
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     core::Result<size_t> read(uint32_t address, uint8_t* buffer, size_t length) noexcept override
@@ -197,7 +197,7 @@ public:
         }
 
         nvs_close(handle);
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
 private:
@@ -239,7 +239,7 @@ public:
             return GS_MAKE_ERROR(core::ErrorCode::HardwareFailure);
         }
 
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     /**

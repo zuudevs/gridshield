@@ -120,7 +120,7 @@ public:
         if (priv_res.is_error())
             return priv_res.error();
 
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     /**

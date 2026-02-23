@@ -101,7 +101,7 @@ core::Result<void> ECCKeyPair::generate() noexcept
     has_private_ = true;
     has_public_ = true;
     ESP_LOGI(TAG, "ECC keypair generated (secp256r1)");
-    return core::Result<void>();
+    return core::Result<void>{};
 
 #else
     return GS_MAKE_ERROR(core::ErrorCode::NotImplemented);
@@ -120,7 +120,7 @@ core::Result<void> ECCKeyPair::load_private_key(const uint8_t* key, size_t lengt
     memcpy(private_key_.data(), key, ECC_KEY_SIZE);
 #endif
     has_private_ = true;
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> ECCKeyPair::load_public_key(const uint8_t* key, size_t length) noexcept
@@ -135,7 +135,7 @@ core::Result<void> ECCKeyPair::load_public_key(const uint8_t* key, size_t length
     memcpy(public_key_.data(), key, ECC_PUBLIC_KEY_SIZE);
 #endif
     has_public_ = true;
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 const uint8_t* ECCKeyPair::get_private_key() const noexcept
@@ -214,7 +214,7 @@ core::Result<void> CryptoEngine::sign(const ECCKeyPair& keypair,
     }
 
     ESP_LOGD(TAG, "ECDSA sign OK (msg_len=%u)", static_cast<unsigned>(msg_len));
-    return core::Result<void>();
+    return core::Result<void>{};
 
 #else
     return GS_MAKE_ERROR(core::ErrorCode::NotImplemented);
@@ -269,7 +269,7 @@ core::Result<void> CryptoEngine::derive_shared_secret(const ECCKeyPair& our_keyp
         return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
     }
 
-    return core::Result<void>();
+    return core::Result<void>{};
 
 #else
     return GS_MAKE_ERROR(core::ErrorCode::NotImplemented);

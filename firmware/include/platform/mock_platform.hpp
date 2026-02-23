@@ -83,7 +83,7 @@ public:
     core::Result<void> configure(uint8_t pin, PinMode mode) noexcept override
     {
         pin_modes_[pin] = mode;
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     core::Result<bool> read(uint8_t pin) noexcept override
@@ -94,7 +94,7 @@ public:
     core::Result<void> write(uint8_t pin, bool value) noexcept override
     {
         pin_states_[pin] = value;
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     // Test helper
@@ -131,26 +131,26 @@ public:
         }
         callbacks_[pin] = callback;
         contexts_[pin] = context;
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     core::Result<void> detach(uint8_t pin) noexcept override
     {
         callbacks_[pin] = nullptr;
         contexts_[pin] = nullptr;
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     core::Result<void> enable(uint8_t pin) noexcept override
     {
         enabled_[pin] = true;
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     core::Result<void> disable(uint8_t pin) noexcept override
     {
         enabled_[pin] = false;
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     // Test helper
@@ -200,7 +200,7 @@ public:
         }
 #endif
 
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     core::Result<uint32_t> crc32(const uint8_t* data, size_t length) noexcept override
@@ -230,7 +230,7 @@ public:
             hash_out[i] = static_cast<uint8_t>((val + i) & 0xFF);
         }
 
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
 private:
@@ -254,14 +254,14 @@ public:
     core::Result<void> init() noexcept override
     {
         initialized_ = true;
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     core::Result<void> shutdown() noexcept override
     {
         initialized_ = false;
         connected_ = false;
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
     core::Result<size_t> send(const uint8_t* data, size_t length) noexcept override
@@ -399,7 +399,7 @@ public:
 #else
         memset(&storage_[address], 0, length);
 #endif
-        return core::Result<void>();
+        return core::Result<void>{};
     }
 
 private:

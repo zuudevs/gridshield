@@ -104,7 +104,7 @@ public:
     {
         auto retry_result = execute(GS_FORWARD(Func, operation));
         if (retry_result.succeeded) {
-            return core::Result<void>();
+            return core::Result<void>{};
         }
         return GS_MAKE_ERROR(retry_result.last_error);
     }

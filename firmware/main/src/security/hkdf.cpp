@@ -36,7 +36,7 @@ static core::Result<void> hmac_sha256(const uint8_t* key,
         return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
     }
 
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 // ============================================================================
@@ -160,7 +160,7 @@ core::Result<void> hkdf_expand(const uint8_t* prk,
         vptr[i] = 0;
     }
 
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 // ============================================================================
