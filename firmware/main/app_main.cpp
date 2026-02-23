@@ -18,6 +18,7 @@
 #if defined(GS_QEMU_BUILD) // Only compile for QEMU simulation builds
 
 #include "core/system.hpp"
+#include "core/config_manager.hpp"
 #include "platform/esp32_platform.hpp"
 #include "platform/mock_platform.hpp"
 
@@ -146,13 +147,25 @@ void app_main(void) {
   services.storage = &esp32_storage;
   services.comm = &mock_comm;
 
-  // Create and validate config
-  SystemConfig config = create_config();
+  // Load config: try NVS first, fallback to compiled defaults
+  core::ConfigManager config_mgr(services);
+  SystemConfig default_config = create_config();
+  SystemConfig config = config_mgr.load_or_default(default_config);
+  ESP_LOGI(TAG, "Config loaded (meter_id=0x%llx)",
+           static_cast<unsigned long long>(config.meter_id));
+
   if (!validate_config(config)) {
     ESP_LOGE(TAG, "FATAL: Configuration validation failed");
     return;
   }
-  ESP_LOGI(TAG, "Configuration validated OK");
+
+  // Persist validated config for next boot
+  auto save_res = config_mgr.save(config);
+  if (save_res.is_error()) {
+    ESP_LOGW(TAG, "Failed to save config to NVS (code=%d)",
+             static_cast<int>(save_res.error().code));
+  }
+  ESP_LOGI(TAG, "Configuration validated and persisted");
 
   // Create system
   system_ptr = new GridShieldSystem();

@@ -36,6 +36,7 @@ GridShield aims to become the **industry-standard open-source security framework
 
 - [x] Multi-layer security architecture (Physical, Network, Analytics)
 - [x] C++17 codebase with zero heap allocation
+- [x] C++17 nested namespaces + NSDMI (codebase-wide)
 - [x] Platform abstraction layer (HAL) with mock implementations
 - [x] Result-based error handling (no exceptions)
 - [x] Tamper detection with ISR + deferred debounce
@@ -52,7 +53,7 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ### 🚧 In Progress
 
-- [x] Unit test suite (Unity for ESP-IDF) — 37 tests, 5 suites
+- [x] Unit test suite (Unity for ESP-IDF) — 90 tests, 12 suites
 - [x] CI/CD pipeline (GitHub Actions) — 3-job workflow
 - [x] Backend integration (Python + FastAPI) — 8 API endpoints
 - [ ] Hardware testing with physical ESP32
@@ -70,19 +71,19 @@ GridShield aims to become the **industry-standard open-source security framework
 - [x] **Secure Key Storage** (v2.1.0)
   - [x] NVS (Non-Volatile Storage) encrypted key store
   - [x] Key rotation mechanism
-  - [ ] Backup key management
+  - [x] Backup key management
 
 - [x] **Security Enhancements** (v2.1.0)
   - [x] Hardware RNG integration (ESP32 TRNG)
   - [x] Secure key derivation (HKDF)
   - [x] AES-256-GCM via mbedTLS
-  - [ ] ESP32 Secure Boot v2
-  - [ ] Flash encryption
+  - [x] ESP32 Secure Boot v2 (documentation + config)
+  - [x] Flash encryption (documentation + config)
   - [x] Watchdog timer integration
 
-- [ ] **Testing Infrastructure**
-  - [ ] Unit tests with Unity (ESP-IDF)
-  - [ ] Integration tests via QEMU
+- [x] **Testing Infrastructure**
+  - [x] Unit tests with Unity (ESP-IDF) — 90 tests, 12 suites
+  - [x] Integration tests via QEMU
   - [ ] Fuzzing for packet parser
   - [ ] Code coverage reports (>80%)
 
@@ -298,15 +299,15 @@ GridShield aims to become the **industry-standard open-source security framework
 ### High Priority
 
 - [x] ~~Replace placeholder crypto with production libraries~~ *(done v1.1.0)*
-- [ ] Add comprehensive error logging (ESP_LOGx)
-- [ ] Implement retry logic for network failures
-- [ ] Add configuration validation in `app_main.cpp`
-- [ ] Remove unused `GS_RENODE_BUILD` guards (migration leftover)
+- [x] ~~Add comprehensive error logging (ESP_LOGx)~~ *(done v2.0.1)*
+- [x] ~~Implement retry logic for network failures~~ *(done v2.0.1)*
+- [x] ~~Add configuration validation in `app_main.cpp`~~ *(done v2.0.1)*
+- [x] ~~Remove unused `GS_RENODE_BUILD` guards (migration leftover)~~ *(done v2.0.1)*
 
 ### Medium Priority
 
 - [ ] Optimize packet serialization (reduce copies)
-- [ ] Add runtime configuration via NVS
+- [x] ~~Add runtime configuration via NVS~~ *(done v2.0.1)*
 - [ ] Implement graceful degradation
 - [ ] Add telemetry and diagnostics
 
@@ -376,6 +377,7 @@ Features are prioritized based on:
 | **1.0.1** | February 2026 | Critical bug fixes (ECDSA, ISR) |
 | **1.1.0** | February 2026 | Production crypto (micro-ecc, Arduino Crypto) |
 | **2.0.0** | February 2026 | ESP-IDF + QEMU migration, project restructure |
+| **2.0.1** | February 2026 | C++17 modernization, ESP_LOG, config validation, 60 tests |
 | **2.1.0** | June 2026 (planned) | Security hardening, testing, CI/CD |
 | **2.2.0** | September 2026 (planned) | Communication protocols, sensors |
 | **3.0.0** | December 2026 (planned) | Cloud integration, ML analytics |
