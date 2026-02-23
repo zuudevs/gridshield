@@ -26,12 +26,18 @@ namespace gridshield {
 // ============================================================================
 // SYSTEM CONFIGURATION
 // ============================================================================
+
+namespace config::defaults {
+    constexpr uint32_t HEARTBEAT_INTERVAL_MS = 60'000; 
+    constexpr uint32_t READING_INTERVAL_MS = 5'000;
+}
+
 struct SystemConfig {
     core::meter_id_t meter_id{};
     hardware::TamperConfig tamper_config;
     analytics::ConsumptionProfile baseline_profile;
-    uint32_t heartbeat_interval_ms{60000};
-    uint32_t reading_interval_ms{5000};
+    uint32_t heartbeat_interval_ms{config::defaults::HEARTBEAT_INTERVAL_MS};
+    uint32_t reading_interval_ms{config::defaults::READING_INTERVAL_MS};
     
     GS_CONSTEXPR SystemConfig() noexcept = default;
 };
@@ -93,24 +99,24 @@ private:
     void set_mode(OperationMode new_mode) noexcept;
     
     SystemConfig config_;
-    platform::PlatformServices* platform_;
+    platform::PlatformServices* platform_{nullptr};
     
     // Layer components
     hardware::TamperDetector tamper_detector_;
-    security::CryptoEngine* crypto_engine_;
+    security::CryptoEngine* crypto_engine_{nullptr};
     security::ECCKeyPair device_keypair_;
     security::ECCKeyPair server_public_key_;
-    network::PacketTransport* packet_transport_;
+    network::PacketTransport* packet_transport_{nullptr};
     analytics::AnomalyDetector anomaly_detector_;
     
     // State management
-    core::SystemState state_;
-    OperationMode mode_;
-    bool initialized_;
+    core::SystemState state_{core::SystemState::Uninitialized};
+    OperationMode mode_{OperationMode::Normal};
+    bool initialized_{false};
     
     // Timing
-    core::timestamp_t last_heartbeat_;
-    core::timestamp_t last_reading_;
+    core::timestamp_t last_heartbeat_{};
+    core::timestamp_t last_reading_{};
     
     // Cross-layer validation
     analytics::CrossLayerValidation validation_state_;

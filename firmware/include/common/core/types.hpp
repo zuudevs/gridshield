@@ -19,6 +19,7 @@
 #include <cstring>
 #include <new>
 #include <type_traits>
+#include <array>
 
 #else
 // AVR fallback
@@ -79,7 +80,7 @@ struct GS_ALIGN(8) MeterReading {
   uint16_t current_ma{};   // 2 bytes
   uint16_t power_factor{}; // 2 bytes (0-1000 scaled by 10)
   uint8_t phase{};         // 1 byte
-  uint8_t reserved[3]{};   // 3 bytes padding
+  std::array<uint8_t, 3> reserved{};   // 3 bytes padding
 
   constexpr MeterReading() noexcept = default;
 };
@@ -140,8 +141,9 @@ public:
   }
 
   bool push(const T &item) {
-    if (size_ >= N)
+    if (size_ >= N) {
       return false;
+	}
     T *ptr = reinterpret_cast<T *>(&storage_[size_ * sizeof(T)]);
     new (ptr) T(item);
     ++size_;
@@ -149,8 +151,9 @@ public:
   }
 
   bool push(T &&item) {
-    if (size_ >= N)
+    if (size_ >= N) {
       return false;
+	}
     T *ptr = reinterpret_cast<T *>(&storage_[size_ * sizeof(T)]);
     new (ptr) T(GS_MOVE(item));
     ++size_;
@@ -158,8 +161,9 @@ public:
   }
 
   bool pop(T &item) {
-    if (size_ == 0)
+    if (size_ == 0) {
       return false;
+	}
     T *ptr = reinterpret_cast<T *>(&storage_[(size_ - 1) * sizeof(T)]);
     item = GS_MOVE(*ptr);
     ptr->~T();
@@ -169,8 +173,9 @@ public:
 
   // FIFO removal: remove oldest element (front) and shift remaining
   bool pop_front(T &item) {
-    if (size_ == 0)
+    if (size_ == 0) {
       return false;
+	}
     T *front = reinterpret_cast<T *>(&storage_[0]);
     item = GS_MOVE(*front);
     front->~T();
@@ -194,10 +199,10 @@ public:
     size_ = 0;
   }
 
-  size_t size() const { return size_; }
-  size_t capacity() const { return N; }
-  bool empty() const { return size_ == 0; }
-  bool full() const { return size_ == N; }
+  [[nodiscard]] size_t size() const { return size_; }
+  [[nodiscard]] size_t capacity() const { return N; }
+  [[nodiscard]] bool empty() const { return size_ == 0; }
+  [[nodiscard]] bool full() const { return size_ == N; }
 
   T &operator[](size_t idx) {
     return *reinterpret_cast<T *>(&storage_[idx * sizeof(T)]);
@@ -210,11 +215,11 @@ public:
 private:
   // Raw storage — ESP32 supports proper alignment, AVR does not
 #if GS_PLATFORM_NATIVE || GS_PLATFORM_ESP32
-  alignas(T) char storage_[N * sizeof(T)];
+  alignas(T) std::array<char, N * sizeof(T)> storage_{};
 #else
   char storage_[N * sizeof(T)];
 #endif
-  size_t size_;
+  size_t size_{};
 };
 
 // ============================================================================
@@ -239,9 +244,10 @@ public:
 #endif
   }
 
-  GS_NODISCARD inline bool append(const uint8_t *data, size_t len) noexcept {
-    if (GS_UNLIKELY(size_ + len > N))
+  GS_NODISCARD bool append(const uint8_t *data, size_t len) noexcept {
+    if (GS_UNLIKELY(size_ + len > N)) {
       return false;
+	}
 #if GS_PLATFORM_NATIVE || GS_PLATFORM_ESP32
     std::memcpy(data_ + size_, data, len);
 #else
@@ -268,8 +274,8 @@ public:
   }
 
 private:
-  uint8_t data_[N];
-  size_t size_;
+  std::array<uint8_t, N> data_{};
+  size_t size_{};
 };
 
 } // namespace gridshield::core

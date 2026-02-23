@@ -109,12 +109,16 @@ public:
 
     void record_error(bool critical = false) noexcept {
         ++counters_.total_errors;
-        if (critical) ++counters_.critical_errors;
+        if (critical) {
+			++counters_.critical_errors;
+		}
     }
 
     void record_cycle(bool overrun = false) noexcept {
         ++counters_.cycle_count;
-        if (overrun) ++counters_.cycle_overruns;
+        if (overrun) {
+			++counters_.cycle_overruns;
+		}
     }
 
     void record_boot(timestamp_t boot_time = 0) noexcept {
