@@ -27,6 +27,9 @@
 // ESP-IDF includes
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_log.h"
+
+static const char *TAG = "GridShield";
 
 // Forward declaration for ESP-IDF entry point
 extern "C" void app_main(void);
@@ -52,14 +55,7 @@ static platform::esp32::Esp32Storage esp32_storage;
 static platform::PlatformServices services;
 static GridShieldSystem *system_ptr = nullptr;
 
-// ============================================================================
-// HELPER: printf-based logging (captured by QEMU UART)
-// ============================================================================
-static void log_info(const char *msg) { printf("[GridShield] %s\n", msg); }
 
-static void log_error(const char *msg, int code) {
-  printf("[GridShield] ERROR: %s (code=%d)\n", msg, code);
-}
 
 // ============================================================================
 // SYSTEM CONFIGURATION
@@ -82,29 +78,64 @@ static SystemConfig create_config() {
 }
 
 // ============================================================================
+// CONFIGURATION VALIDATION
+// ============================================================================
+static bool validate_config(const SystemConfig &config) {
+  bool valid = true;
+
+  if (config.meter_id == 0) {
+    ESP_LOGE(TAG, "Config error: meter_id must not be zero");
+    valid = false;
+  }
+
+  if (config.reading_interval_ms == 0) {
+    ESP_LOGE(TAG, "Config error: reading_interval_ms must be > 0");
+    valid = false;
+  }
+
+  if (config.heartbeat_interval_ms == 0) {
+    ESP_LOGE(TAG, "Config error: heartbeat_interval_ms must be > 0");
+    valid = false;
+  }
+
+  if (config.heartbeat_interval_ms <= config.reading_interval_ms) {
+    ESP_LOGW(TAG, "Config warning: heartbeat <= reading interval");
+  }
+
+  if (config.baseline_profile.variance_threshold == 0) {
+    ESP_LOGW(TAG, "Config warning: variance_threshold is 0");
+  }
+
+  if (config.tamper_config.sensor_pin == 0) {
+    ESP_LOGW(TAG, "Config warning: sensor_pin is 0");
+  }
+
+  return valid;
+}
+
+// ============================================================================
 // ESP-IDF ENTRY POINT
 // ============================================================================
 void app_main(void) {
-  log_info("==============================================");
-  log_info("GridShield v2.1 [ESP32 - QEMU Simulation]");
-  log_info("Platform: ESP-IDF + QEMU + mbedTLS");
-  log_info("==============================================");
+  ESP_LOGI(TAG, "==============================================");
+  ESP_LOGI(TAG, "GridShield v2.1 [ESP32 - QEMU Simulation]");
+  ESP_LOGI(TAG, "Platform: ESP-IDF + QEMU + mbedTLS");
+  ESP_LOGI(TAG, "==============================================");
 
   // Initialize NVS storage
   auto nvs_result = esp32_storage.init();
   if (nvs_result.is_error()) {
-    log_error("NVS init failed", static_cast<int>(nvs_result.error().code));
+    ESP_LOGE(TAG, "NVS init failed (code=%d)", static_cast<int>(nvs_result.error().code));
     return;
   }
-  log_info("NVS storage initialized");
+  ESP_LOGI(TAG, "NVS storage initialized");
 
   // Initialize Watchdog Timer (30s timeout)
   auto wdt_result = platform::esp32::Esp32Watchdog::init(30);
   if (wdt_result.is_error()) {
-    log_error("Watchdog init failed", static_cast<int>(wdt_result.error().code));
-    // Non-fatal — continue without watchdog
+    ESP_LOGW(TAG, "Watchdog init failed (code=%d) — continuing", static_cast<int>(wdt_result.error().code));
   } else {
-    log_info("Watchdog timer initialized (30s)");
+    ESP_LOGI(TAG, "Watchdog timer initialized (30s)");
   }
 
   // Assemble platform services (real crypto + NVS, mock GPIO/Interrupt/Comm)
@@ -115,30 +146,37 @@ void app_main(void) {
   services.storage = &esp32_storage;
   services.comm = &mock_comm;
 
+  // Create and validate config
+  SystemConfig config = create_config();
+  if (!validate_config(config)) {
+    ESP_LOGE(TAG, "FATAL: Configuration validation failed");
+    return;
+  }
+  ESP_LOGI(TAG, "Configuration validated OK");
+
   // Create system
   system_ptr = new GridShieldSystem();
   if (system_ptr == nullptr) {
-    log_info("FATAL: Out of memory");
+    ESP_LOGE(TAG, "FATAL: Out of memory");
     return;
   }
 
   // Initialize
-  SystemConfig config = create_config();
   auto result = system_ptr->initialize(config, services);
   if (result.is_error()) {
-    log_error("Init failed", static_cast<int>(result.error().code));
+    ESP_LOGE(TAG, "Init failed (code=%d)", static_cast<int>(result.error().code));
     return;
   }
 
   // Start
   result = system_ptr->start();
   if (result.is_error()) {
-    log_error("Start failed", static_cast<int>(result.error().code));
+    ESP_LOGE(TAG, "Start failed (code=%d)", static_cast<int>(result.error().code));
     return;
   }
 
-  log_info("System started successfully");
-  log_info("Entering main processing loop...");
+  ESP_LOGI(TAG, "System started successfully");
+  ESP_LOGI(TAG, "Entering main processing loop...");
 
   // Main loop with cycle counter
   int cycle = 0;
@@ -147,11 +185,10 @@ void app_main(void) {
   while (cycle < max_cycles) {
     result = system_ptr->process_cycle();
     if (result.is_error()) {
-      log_error("Process cycle error", static_cast<int>(result.error().code));
+      ESP_LOGW(TAG, "Process cycle %d error (code=%d)", cycle + 1,
+               static_cast<int>(result.error().code));
     } else {
-      char buf[64];
-      snprintf(buf, sizeof(buf), "Cycle %d/%d OK", cycle + 1, max_cycles);
-      log_info(buf);
+      ESP_LOGI(TAG, "Cycle %d/%d OK", cycle + 1, max_cycles);
     }
 
     // Feed watchdog
@@ -163,9 +200,9 @@ void app_main(void) {
     ++cycle;
   }
 
-  log_info("==============================================");
-  log_info("Simulation complete — all cycles finished");
-  log_info("==============================================");
+  ESP_LOGI(TAG, "==============================================");
+  ESP_LOGI(TAG, "Simulation complete — all cycles finished");
+  ESP_LOGI(TAG, "==============================================");
 
   // Cleanup
   system_ptr->shutdown();

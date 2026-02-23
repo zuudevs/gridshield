@@ -9,6 +9,9 @@
  */
 
 #include "network/packet.hpp"
+#include "esp_log.h"
+
+static const char *TAG = "GS_Packet";
 
 #if GS_PLATFORM_NATIVE
     #include <cstring>
@@ -74,6 +77,10 @@ core::Result<void> SecurePacket::build(
     GS_TRY(compute_signature(crypto, keypair));
     
     is_valid_ = true;
+    ESP_LOGD(TAG, "Packet built: type=%d meter=0x%llx len=%u",
+             static_cast<int>(type),
+             static_cast<unsigned long long>(meter_id),
+             payload_len);
     return core::Result<void>();
 }
 
@@ -98,6 +105,7 @@ core::Result<void> SecurePacket::parse(
     
     // Verify magic numbers
     if (GS_UNLIKELY(header_.magic_header != MAGIC_HEADER)) {
+        ESP_LOGW(TAG, "Parse failed: invalid magic header");
         return GS_MAKE_ERROR(core::ErrorCode::InvalidPacket);
     }
     
@@ -154,6 +162,7 @@ core::Result<void> SecurePacket::parse(
     );
     
     if (sig_verify.is_error() || !sig_verify.value()) {
+        ESP_LOGW(TAG, "Parse failed: signature verification failed");
         return GS_MAKE_ERROR(core::ErrorCode::SignatureInvalid);
     }
     
@@ -262,6 +271,9 @@ core::Result<void> PacketTransport::send_packet(
     }
     
     if (GS_UNLIKELY(send_result.value() != packet_size)) {
+        ESP_LOGE(TAG, "Send incomplete: sent %u of %u bytes",
+                 static_cast<unsigned>(send_result.value()),
+                 static_cast<unsigned>(packet_size));
         return GS_MAKE_ERROR(core::ErrorCode::TransmissionFailed);
     }
     

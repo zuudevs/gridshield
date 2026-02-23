@@ -18,6 +18,9 @@ extern void test_byte_array_suite(void);
 extern void test_anomaly_detector_suite(void);
 extern void test_secure_packet_suite(void);
 extern void test_hkdf_suite(void);
+extern void test_tamper_detector_suite(void);
+extern void test_key_storage_suite(void);
+extern void test_crypto_engine_suite(void);
 
 extern "C" void app_main(void) {
     // Small delay for QEMU UART stabilization
@@ -38,6 +41,9 @@ extern "C" void app_main(void) {
     test_anomaly_detector_suite();
     test_secure_packet_suite();
     test_hkdf_suite();
+    test_tamper_detector_suite();
+    test_key_storage_suite();
+    test_crypto_engine_suite();
 
     int failures = UNITY_END();
 

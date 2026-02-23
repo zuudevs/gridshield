@@ -13,6 +13,9 @@
  */
 
 #include "security/crypto.hpp"
+#include "esp_log.h"
+
+static const char *TAG = "GS_Crypto";
 
 #if GS_PLATFORM_NATIVE
 #include <cstring>
@@ -94,6 +97,7 @@ core::Result<void> ECCKeyPair::generate() noexcept {
 
   has_private_ = true;
   has_public_ = true;
+  ESP_LOGI(TAG, "ECC keypair generated (secp256r1)");
   return core::Result<void>();
 
 #else
@@ -196,6 +200,7 @@ core::Result<void> CryptoEngine::sign(const ECCKeyPair &keypair,
     return GS_MAKE_ERROR(core::ErrorCode::SignatureInvalid);
   }
 
+  ESP_LOGD(TAG, "ECDSA sign OK (msg_len=%u)", static_cast<unsigned>(msg_len));
   return core::Result<void>();
 
 #else
@@ -295,6 +300,7 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(
         GS_MAKE_ERROR(core::ErrorCode::EncryptionFailed));
   }
 
+  ESP_LOGD(TAG, "AES-GCM encrypt OK (len=%u)", static_cast<unsigned>(pt_len));
   return core::Result<size_t>(pt_len);
 
 #else
@@ -334,6 +340,7 @@ core::Result<size_t> CryptoEngine::decrypt_aes_gcm(
 
   if (ret != 0) {
     // Auth tag mismatch or decrypt error
+    ESP_LOGW(TAG, "AES-GCM auth failed (integrity violation)");
     return core::Result<size_t>(
         GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation));
   }

@@ -112,16 +112,12 @@ private:
 // CROSS-LAYER VALIDATION
 // ============================================================================
 struct CrossLayerValidation {
-    bool physical_tamper_detected;
-    bool network_anomaly_detected;
-    bool consumption_anomaly_detected;
-    core::timestamp_t validation_timestamp;
+    bool physical_tamper_detected{false};
+    bool network_anomaly_detected{false};
+    bool consumption_anomaly_detected{false};
+    core::timestamp_t validation_timestamp{};
     
-    GS_CONSTEXPR CrossLayerValidation() noexcept
-        : physical_tamper_detected(false),
-          network_anomaly_detected(false),
-          consumption_anomaly_detected(false),
-          validation_timestamp(0) {}
+    GS_CONSTEXPR CrossLayerValidation() noexcept = default;
     
     GS_NODISCARD bool requires_investigation() const noexcept {
         return (physical_tamper_detected && consumption_anomaly_detected) ||

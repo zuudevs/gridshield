@@ -9,6 +9,9 @@
  */
 
 #include "core/system.hpp"
+#include "esp_log.h"
+
+static const char *TAG = "GS_System";
 
 #if GS_PLATFORM_NATIVE
     #include <new>
@@ -54,6 +57,8 @@ core::Result<void> GridShieldSystem::initialize(
     platform_ = &platform;
     
     transition_state(core::SystemState::Initializing);
+    ESP_LOGI(TAG, "Initializing (meter_id=0x%llx)",
+             static_cast<unsigned long long>(config_.meter_id));
     
     // Initialize hardware layer
     GS_TRY(tamper_detector_.initialize(config_.tamper_config, platform));
@@ -81,6 +86,7 @@ core::Result<void> GridShieldSystem::initialize(
     
     initialized_ = true;
     transition_state(core::SystemState::Ready);
+    ESP_LOGI(TAG, "Initialization complete");
     
     return core::Result<void>();
 }
@@ -94,6 +100,7 @@ core::Result<void> GridShieldSystem::start() noexcept {
     GS_TRY(tamper_detector_.start());
     
     transition_state(core::SystemState::Operating);
+    ESP_LOGI(TAG, "System started — entering operating state");
     last_heartbeat_ = platform_->time->get_timestamp_ms();
     last_reading_ = last_heartbeat_;
     
@@ -129,6 +136,7 @@ core::Result<void> GridShieldSystem::shutdown() noexcept {
     
     transition_state(core::SystemState::Shutdown);
     initialized_ = false;
+    ESP_LOGI(TAG, "System shutdown complete");
     
     return core::Result<void>();
 }
@@ -289,6 +297,7 @@ core::Result<void> GridShieldSystem::initialize_crypto() noexcept {
     
     // Generate device keypair
     GS_TRY(crypto_engine_->generate_keypair(device_keypair_));
+    ESP_LOGI(TAG, "Device keypair generated");
     
     // PRODUCTION: Load server public key from secure storage
     // For now: Generate placeholder
@@ -300,6 +309,7 @@ core::Result<void> GridShieldSystem::initialize_crypto() noexcept {
 core::Result<void> GridShieldSystem::handle_tamper_event() noexcept {
     transition_state(core::SystemState::Tampered);
     set_mode(OperationMode::TamperResponse);
+    ESP_LOGW(TAG, "TAMPER EVENT — switching to TamperResponse mode");
     
     validation_state_.physical_tamper_detected = true;
     validation_state_.validation_timestamp = platform_->time->get_timestamp_ms();

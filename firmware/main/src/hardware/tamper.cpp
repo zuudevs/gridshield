@@ -10,6 +10,9 @@
  */
 
 #include "hardware/tamper.hpp"
+#include "esp_log.h"
+
+static const char *TAG = "GS_Tamper";
 
 namespace gridshield::hardware {
 
@@ -43,6 +46,8 @@ core::Result<void> TamperDetector::initialize(
     }
     
     initialized_ = true;
+    ESP_LOGI(TAG, "Tamper detector initialized (pin=%u, debounce=%ums)",
+             config_.sensor_pin, config_.debounce_ms);
     return core::Result<void>();
 }
 
@@ -147,12 +152,15 @@ void TamperDetector::confirm_tamper() noexcept {
     is_tampered_ = true;
     tamper_type_ = TamperType::CasingOpened;
     tamper_timestamp_ = platform_->time->get_timestamp_ms();
+    ESP_LOGW(TAG, "Tamper confirmed: type=CasingOpened ts=%llu",
+             static_cast<unsigned long long>(tamper_timestamp_));
     
     // Check backup power status
     if (config_.backup_power_pin > 0) {
         auto power_result = platform_->gpio->read(config_.backup_power_pin);
         if (power_result.is_ok() && !power_result.value()) {
             tamper_type_ = TamperType::PowerCutAttempt;
+            ESP_LOGE(TAG, "Power cut attack detected!");
         }
     }
 }

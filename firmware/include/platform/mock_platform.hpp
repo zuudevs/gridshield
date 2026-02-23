@@ -13,7 +13,7 @@
 #include "platform/platform.hpp"
 #include "utils/gs_macros.hpp"
 
-#if GS_PLATFORM_NATIVE || defined(GS_RENODE_BUILD) || defined(GS_QEMU_BUILD)
+#if GS_PLATFORM_NATIVE || defined(GS_QEMU_BUILD)
 #include <chrono>
 #include <cstdint>
 #include <cstring>
@@ -35,13 +35,13 @@ namespace gridshield::platform::mock {
 class MockTime : public IPlatformTime {
 public:
   MockTime() noexcept {
-#if GS_PLATFORM_NATIVE || defined(GS_RENODE_BUILD) || defined(GS_QEMU_BUILD)
+#if GS_PLATFORM_NATIVE || defined(GS_QEMU_BUILD)
     start_time_ = std::chrono::steady_clock::now();
 #endif
   }
 
   core::timestamp_t get_timestamp_ms() noexcept override {
-#if GS_PLATFORM_NATIVE || defined(GS_RENODE_BUILD) || defined(GS_QEMU_BUILD)
+#if GS_PLATFORM_NATIVE || defined(GS_QEMU_BUILD)
     auto now = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
         now - start_time_);
@@ -52,7 +52,7 @@ public:
   }
 
   void delay_ms(uint32_t ms) noexcept override {
-#if GS_PLATFORM_NATIVE || defined(GS_RENODE_BUILD) || defined(GS_QEMU_BUILD)
+#if GS_PLATFORM_NATIVE || defined(GS_QEMU_BUILD)
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 #else
     delay(ms);
@@ -60,7 +60,7 @@ public:
   }
 
 private:
-#if GS_PLATFORM_NATIVE || defined(GS_RENODE_BUILD) || defined(GS_QEMU_BUILD)
+#if GS_PLATFORM_NATIVE || defined(GS_QEMU_BUILD)
   std::chrono::time_point<std::chrono::steady_clock> start_time_;
 #endif
 };
@@ -154,7 +154,7 @@ private:
 class MockCrypto : public IPlatformCrypto {
 public:
   MockCrypto() noexcept {
-#if GS_PLATFORM_NATIVE || defined(GS_RENODE_BUILD) || defined(GS_QEMU_BUILD)
+#if GS_PLATFORM_NATIVE || defined(GS_QEMU_BUILD)
     std::random_device rd;
     rng_ = std::mt19937(rd());
 #else
@@ -168,7 +168,7 @@ public:
       return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
 
-#if GS_PLATFORM_NATIVE || defined(GS_RENODE_BUILD) || defined(GS_QEMU_BUILD)
+#if GS_PLATFORM_NATIVE || defined(GS_QEMU_BUILD)
     std::uniform_int_distribution<int> dist(0, 255);
     for (size_t i = 0; i < length; ++i) {
       buffer[i] = static_cast<uint8_t>(dist(rng_));
@@ -213,7 +213,7 @@ public:
   }
 
 private:
-#if GS_PLATFORM_NATIVE || defined(GS_RENODE_BUILD) || defined(GS_QEMU_BUILD)
+#if GS_PLATFORM_NATIVE || defined(GS_QEMU_BUILD)
   std::mt19937 rng_;
 #endif
 };
