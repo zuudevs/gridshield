@@ -101,7 +101,7 @@ public:
     core::Result<void> reset_profile() noexcept override;
     
 private:
-    GS_NODISCARD AnomalySeverity calculate_severity(uint32_t deviation_percent) const noexcept;
+    GS_NODISCARD AnomalySeverity calculate_severity(uint32_t deviation_percent) noexcept;
     GS_NODISCARD uint32_t calculate_expected_value(core::timestamp_t timestamp) const noexcept;
     
     ConsumptionProfile profile_;

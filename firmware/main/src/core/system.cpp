@@ -19,16 +19,6 @@ static const char *TAG = "GS_System";
 
 namespace gridshield {
 
-GridShieldSystem::GridShieldSystem() noexcept
-    : platform_(nullptr),
-      crypto_engine_(nullptr),
-      packet_transport_(nullptr),
-      state_(core::SystemState::Uninitialized),
-      mode_(OperationMode::Normal),
-      initialized_(false),
-      last_heartbeat_(0),
-      last_reading_(0) {}
-
 GridShieldSystem::~GridShieldSystem() noexcept {
     if (crypto_engine_ != nullptr) {
         delete crypto_engine_;
@@ -88,7 +78,7 @@ core::Result<void> GridShieldSystem::initialize(
     transition_state(core::SystemState::Ready);
     ESP_LOGI(TAG, "Initialization complete");
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> GridShieldSystem::start() noexcept {
@@ -104,7 +94,7 @@ core::Result<void> GridShieldSystem::start() noexcept {
     last_heartbeat_ = platform_->time->get_timestamp_ms();
     last_reading_ = last_heartbeat_;
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> GridShieldSystem::stop() noexcept {
@@ -116,7 +106,7 @@ core::Result<void> GridShieldSystem::stop() noexcept {
     
     transition_state(core::SystemState::Ready);
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> GridShieldSystem::shutdown() noexcept {
@@ -138,7 +128,7 @@ core::Result<void> GridShieldSystem::shutdown() noexcept {
     initialized_ = false;
     ESP_LOGI(TAG, "System shutdown complete");
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> GridShieldSystem::process_cycle() noexcept {
@@ -191,7 +181,7 @@ core::Result<void> GridShieldSystem::process_cycle() noexcept {
     auto validation_result = perform_cross_layer_validation();
     (void)validation_result;
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> GridShieldSystem::send_meter_reading(
@@ -259,7 +249,7 @@ core::Result<void> GridShieldSystem::send_heartbeat() noexcept {
         return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
     
-    uint8_t heartbeat_data[8];
+    std::array<uint8_t, 8> heartbeat_data;
     core::timestamp_t timestamp = platform_->time->get_timestamp_ms();
     
     // Serialize timestamp to bytes
@@ -272,7 +262,7 @@ core::Result<void> GridShieldSystem::send_heartbeat() noexcept {
         network::PacketType::Heartbeat,
         config_.meter_id,
         core::Priority::Low,
-        heartbeat_data,
+        heartbeat_data.data(),
         sizeof(heartbeat_data),
         *crypto_engine_,
         device_keypair_
@@ -303,7 +293,7 @@ core::Result<void> GridShieldSystem::initialize_crypto() noexcept {
     // For now: Generate placeholder
     GS_TRY(crypto_engine_->generate_keypair(server_public_key_));
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> GridShieldSystem::handle_tamper_event() noexcept {
@@ -320,7 +310,7 @@ core::Result<void> GridShieldSystem::handle_tamper_event() noexcept {
         return result.error();
     }
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> GridShieldSystem::perform_cross_layer_validation() noexcept {
@@ -337,7 +327,7 @@ core::Result<void> GridShieldSystem::perform_cross_layer_validation() noexcept {
         // PRODUCTION: Trigger additional security measures
     }
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 void GridShieldSystem::transition_state(core::SystemState new_state) noexcept {

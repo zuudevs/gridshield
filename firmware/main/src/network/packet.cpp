@@ -72,7 +72,7 @@ core::Result<void> SecurePacket::build(
              static_cast<int>(type),
              static_cast<unsigned long long>(meter_id),
              payload_len);
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> SecurePacket::parse(
@@ -136,18 +136,18 @@ core::Result<void> SecurePacket::parse(
     GS_TRY(verify_integrity(crypto));
     
     // Verify signature
-    uint8_t sign_data[sizeof(PacketHeader) + MAX_PAYLOAD_SIZE];
+    std::array<uint8_t, sizeof(PacketHeader) + MAX_PAYLOAD_SIZE> sign_data{};
 #if GS_PLATFORM_NATIVE
-    std::memcpy(sign_data, &header_, sizeof(PacketHeader));
-    std::memcpy(sign_data + sizeof(PacketHeader), payload_.data(), header_.payload_length);
+    std::memcpy(sign_data.data(), &header_, sizeof(PacketHeader));
+    std::memcpy(sign_data.data() + sizeof(PacketHeader), payload_.data(), header_.payload_length);
 #else
-    memcpy(sign_data, &header_, sizeof(PacketHeader));
-    memcpy(sign_data + sizeof(PacketHeader), payload_.data(), header_.payload_length);
+    memcpy(sign_data.data(), &header_, sizeof(PacketHeader));
+    memcpy(sign_data.data() + sizeof(PacketHeader), payload_.data(), header_.payload_length);
 #endif
     
     auto sig_verify = crypto.verify(
         server_keypair, 
-        sign_data, 
+        sign_data.data(), 
         sizeof(PacketHeader) + header_.payload_length,
         footer_.signature.data()
     );
@@ -158,19 +158,19 @@ core::Result<void> SecurePacket::parse(
     }
     
     is_valid_ = true;
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<size_t> SecurePacket::serialize(uint8_t* buffer, size_t buffer_size) const noexcept {
     if (GS_UNLIKELY(!is_valid_)) {
-        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidState));
+        return core::Result<size_t>{GS_MAKE_ERROR(core::ErrorCode::InvalidState)};
     }
     
     const size_t payload_len = header_.payload_length;
     const size_t required_size = sizeof(PacketHeader) + payload_len + sizeof(PacketFooter);
     
     if (GS_UNLIKELY(buffer_size < required_size)) {
-        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::BufferOverflow));
+        return core::Result<size_t>{GS_MAKE_ERROR(core::ErrorCode::BufferOverflow)};
     }
     
     // Write cursor pattern — single pass, no redundant offset math
@@ -184,7 +184,7 @@ core::Result<size_t> SecurePacket::serialize(uint8_t* buffer, size_t buffer_size
     
     memcpy(cursor, &footer_, sizeof(PacketFooter));
     
-    return core::Result<size_t>(required_size);
+    return core::Result<size_t>{required_size};
 }
 
 core::Result<void> SecurePacket::verify_integrity(security::ICryptoEngine& crypto) const noexcept {
@@ -202,27 +202,27 @@ core::Result<void> SecurePacket::verify_integrity(security::ICryptoEngine& crypt
         return GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation);
     }
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> SecurePacket::compute_signature(
     security::ICryptoEngine& crypto,
     const security::ECCKeyPair& keypair) noexcept {
     
-    uint8_t sign_data[sizeof(PacketHeader) + MAX_PAYLOAD_SIZE];
+    std::array<uint8_t, sizeof(PacketHeader) + MAX_PAYLOAD_SIZE> sign_data{};
     
     // Combine header and payload
 #if GS_PLATFORM_NATIVE
-    std::memcpy(sign_data, &header_, sizeof(PacketHeader));
-    std::memcpy(sign_data + sizeof(PacketHeader), payload_.data(), header_.payload_length);
+    std::memcpy(sign_data.data(), &header_, sizeof(PacketHeader));
+    std::memcpy(sign_data.data() + sizeof(PacketHeader), payload_.data(), header_.payload_length);
 #else
-    memcpy(sign_data, &header_, sizeof(PacketHeader));
-    memcpy(sign_data + sizeof(PacketHeader), payload_.data(), header_.payload_length);
+    memcpy(sign_data.data(), &header_, sizeof(PacketHeader));
+    memcpy(sign_data.data() + sizeof(PacketHeader), payload_.data(), header_.payload_length);
 #endif
     
     return crypto.sign(
         keypair, 
-        sign_data, 
+        sign_data.data(), 
         sizeof(PacketHeader) + header_.payload_length,
         footer_.signature.data()
     );
@@ -244,15 +244,15 @@ core::Result<void> PacketTransport::send_packet(
         return GS_MAKE_ERROR(core::ErrorCode::InvalidState);
     }
     
-    uint8_t buffer[sizeof(PacketHeader) + MAX_PAYLOAD_SIZE + sizeof(PacketFooter)];
+    std::array<uint8_t, sizeof(PacketHeader) + MAX_PAYLOAD_SIZE + sizeof(PacketFooter)> buffer{};
     
-    auto serialize_result = packet.serialize(buffer, sizeof(buffer));
+    auto serialize_result = packet.serialize(buffer.data(), sizeof(buffer));
     if (serialize_result.is_error()) {
         return serialize_result.error();
     }
     
     const size_t packet_size = serialize_result.value();
-    auto send_result = comm_.send(buffer, packet_size);
+    auto send_result = comm_.send(buffer.data(), packet_size);
     
     if (send_result.is_error()) {
         return send_result.error();
@@ -265,7 +265,7 @@ core::Result<void> PacketTransport::send_packet(
         return GS_MAKE_ERROR(core::ErrorCode::TransmissionFailed);
     }
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<SecurePacket> PacketTransport::receive_packet(
@@ -273,28 +273,28 @@ core::Result<SecurePacket> PacketTransport::receive_packet(
     const security::ECCKeyPair& keypair,
     uint32_t timeout_ms) noexcept {
     
-    uint8_t buffer[sizeof(PacketHeader) + MAX_PAYLOAD_SIZE + sizeof(PacketFooter)];
+    std::array<uint8_t, sizeof(PacketHeader) + MAX_PAYLOAD_SIZE + sizeof(PacketFooter)> buffer{};
     
-    auto recv_result = comm_.receive(buffer, sizeof(buffer), timeout_ms);
+    auto recv_result = comm_.receive(buffer.data(), sizeof(buffer), timeout_ms);
     if (recv_result.is_error()) {
-        return core::Result<SecurePacket>(recv_result.error());
+        return core::Result<SecurePacket>{recv_result.error()};
     }
     
     const size_t received_bytes = recv_result.value();
     const size_t min_size = sizeof(PacketHeader) + sizeof(PacketFooter);
     
     if (GS_UNLIKELY(received_bytes < min_size)) {
-        return core::Result<SecurePacket>(GS_MAKE_ERROR(core::ErrorCode::InvalidPacket));
+        return core::Result<SecurePacket>{GS_MAKE_ERROR(core::ErrorCode::InvalidPacket)};
     }
     
     SecurePacket packet;
-    auto parse_result = packet.parse(buffer, received_bytes, crypto, keypair);
+    auto parse_result = packet.parse(buffer.data(), received_bytes, crypto, keypair);
     
     if (parse_result.is_error()) {
         return core::Result<SecurePacket>(parse_result.error());
     }
     
-    return core::Result<SecurePacket>(GS_MOVE(packet));
+    return core::Result<SecurePacket>{GS_MOVE(packet)};
 }
 
 } // namespace gridshield::network

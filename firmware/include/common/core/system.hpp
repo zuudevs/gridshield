@@ -51,7 +51,7 @@ enum class OperationMode : uint8_t {
 // ============================================================================
 class GridShieldSystem {
 public:
-    GridShieldSystem() noexcept;
+    GridShieldSystem() noexcept = default;
     ~GridShieldSystem() noexcept;
     
     // Non-copyable, non-movable

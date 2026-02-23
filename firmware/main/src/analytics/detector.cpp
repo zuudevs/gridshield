@@ -74,9 +74,9 @@ core::Result<AnomalyReport> AnomalyDetector::analyze(
     const core::MeterReading& reading) noexcept {
     
     if (!initialized_) {
-        return core::Result<AnomalyReport>(
+        return core::Result<AnomalyReport>{
             GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)
-        );
+        };
     }
     
     AnomalyReport report;
@@ -147,7 +147,7 @@ core::Result<void> AnomalyDetector::reset_profile() noexcept {
 }
 
 AnomalySeverity AnomalyDetector::calculate_severity(
-    uint32_t deviation_percent) const noexcept {
+    uint32_t deviation_percent) noexcept {
     
     if (deviation_percent >= 80) {
         return AnomalySeverity::Critical;
@@ -157,9 +157,8 @@ AnomalySeverity AnomalyDetector::calculate_severity(
         return AnomalySeverity::Medium;
     } else if (deviation_percent >= 20) {
         return AnomalySeverity::Low;
-    } else {
-		return AnomalySeverity::None;
-	}
+    }
+	return AnomalySeverity::None;
 }
 
 uint32_t AnomalyDetector::calculate_expected_value(

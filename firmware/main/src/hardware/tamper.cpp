@@ -48,7 +48,7 @@ core::Result<void> TamperDetector::initialize(
     initialized_ = true;
     ESP_LOGI(TAG, "Tamper detector initialized (pin=%u, debounce=%ums)",
              config_.sensor_pin, config_.debounce_ms);
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> TamperDetector::start() noexcept {
@@ -90,7 +90,7 @@ core::timestamp_t TamperDetector::get_tamper_timestamp() const noexcept {
 
 core::Result<void> TamperDetector::acknowledge_tamper() noexcept {
     // Tamper acknowledged but not cleared (requires manual reset)
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> TamperDetector::reset() noexcept {
@@ -104,7 +104,7 @@ core::Result<void> TamperDetector::reset() noexcept {
     tamper_timestamp_ = 0;
     last_trigger_time_ = 0;
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> TamperDetector::poll() noexcept {
@@ -113,13 +113,13 @@ core::Result<void> TamperDetector::poll() noexcept {
     }
     
     if (!pending_tamper_ || is_tampered_) {
-        return core::Result<void>(); // Nothing to process
+        return core::Result<void>{}; // Nothing to process
     }
     
     // Check if debounce window has elapsed
     auto now = platform_->time->get_timestamp_ms();
     if (now - last_trigger_time_ < config_.debounce_ms) {
-        return core::Result<void>(); // Still within debounce window
+        return core::Result<void>{}; // Still within debounce window
     }
     
     // Re-read sensor after debounce period
@@ -127,14 +127,14 @@ core::Result<void> TamperDetector::poll() noexcept {
     if (read_result.is_error() || read_result.value()) {
         // False trigger or read error — discard
         pending_tamper_ = false;
-        return core::Result<void>();
+        return core::Result<void>{};
     }
     
     // Tamper confirmed after debounce
     confirm_tamper();
     pending_tamper_ = false;
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 void TamperDetector::interrupt_handler(void* context) noexcept {
