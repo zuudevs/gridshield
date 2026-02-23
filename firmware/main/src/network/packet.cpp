@@ -21,15 +21,6 @@ static const char *TAG = "GS_Packet";
 
 namespace gridshield::network {
 
-SecurePacket::SecurePacket() noexcept 
-    : is_valid_(false), next_sequence_(0) {
-#if GS_PLATFORM_NATIVE
-    std::memset(payload_, 0, MAX_PAYLOAD_SIZE);
-#else
-    memset(payload_, 0, MAX_PAYLOAD_SIZE);
-#endif
-}
-
 core::Result<void> SecurePacket::build(
     PacketType type, 
     core::meter_id_t meter_id,
@@ -58,9 +49,9 @@ core::Result<void> SecurePacket::build(
     // Copy payload
     if (payload != nullptr && payload_len > 0) {
 #if GS_PLATFORM_NATIVE
-        std::memcpy(payload_, payload, payload_len);
+        std::memcpy(payload_.data(), payload, payload_len);
 #else
-        memcpy(payload_, payload, payload_len);
+        memcpy(payload_.data(), payload, payload_len);
 #endif
     }
     
@@ -124,9 +115,9 @@ core::Result<void> SecurePacket::parse(
     // Copy payload
     const uint8_t* payload_ptr = buffer + sizeof(PacketHeader);
 #if GS_PLATFORM_NATIVE
-    std::memcpy(payload_, payload_ptr, header_.payload_length);
+    std::memcpy(payload_.data(), payload_ptr, header_.payload_length);
 #else
-    memcpy(payload_, payload_ptr, header_.payload_length);
+    memcpy(payload_.data(), payload_ptr, header_.payload_length);
 #endif
     
     // Parse footer
@@ -148,17 +139,17 @@ core::Result<void> SecurePacket::parse(
     uint8_t sign_data[sizeof(PacketHeader) + MAX_PAYLOAD_SIZE];
 #if GS_PLATFORM_NATIVE
     std::memcpy(sign_data, &header_, sizeof(PacketHeader));
-    std::memcpy(sign_data + sizeof(PacketHeader), payload_, header_.payload_length);
+    std::memcpy(sign_data + sizeof(PacketHeader), payload_.data(), header_.payload_length);
 #else
     memcpy(sign_data, &header_, sizeof(PacketHeader));
-    memcpy(sign_data + sizeof(PacketHeader), payload_, header_.payload_length);
+    memcpy(sign_data + sizeof(PacketHeader), payload_.data(), header_.payload_length);
 #endif
     
     auto sig_verify = crypto.verify(
         server_keypair, 
         sign_data, 
         sizeof(PacketHeader) + header_.payload_length,
-        footer_.signature
+        footer_.signature.data()
     );
     
     if (sig_verify.is_error() || !sig_verify.value()) {
@@ -188,7 +179,7 @@ core::Result<size_t> SecurePacket::serialize(uint8_t* buffer, size_t buffer_size
     memcpy(cursor, &header_, sizeof(PacketHeader));
     cursor += sizeof(PacketHeader);
     
-    memcpy(cursor, payload_, payload_len);
+    memcpy(cursor, payload_.data(), payload_len);
     cursor += payload_len;
     
     memcpy(cursor, &footer_, sizeof(PacketFooter));
@@ -198,7 +189,7 @@ core::Result<size_t> SecurePacket::serialize(uint8_t* buffer, size_t buffer_size
 
 core::Result<void> SecurePacket::verify_integrity(security::ICryptoEngine& crypto) const noexcept {
     uint8_t hash[security::SHA256_HASH_SIZE];
-    GS_TRY(crypto.hash_sha256(payload_, header_.payload_length, hash));
+    GS_TRY(crypto.hash_sha256(payload_.data(), header_.payload_length, hash));
     
     uint32_t computed_checksum;
 #if GS_PLATFORM_NATIVE
@@ -223,17 +214,17 @@ core::Result<void> SecurePacket::compute_signature(
     // Combine header and payload
 #if GS_PLATFORM_NATIVE
     std::memcpy(sign_data, &header_, sizeof(PacketHeader));
-    std::memcpy(sign_data + sizeof(PacketHeader), payload_, header_.payload_length);
+    std::memcpy(sign_data + sizeof(PacketHeader), payload_.data(), header_.payload_length);
 #else
     memcpy(sign_data, &header_, sizeof(PacketHeader));
-    memcpy(sign_data + sizeof(PacketHeader), payload_, header_.payload_length);
+    memcpy(sign_data + sizeof(PacketHeader), payload_.data(), header_.payload_length);
 #endif
     
     return crypto.sign(
         keypair, 
         sign_data, 
         sizeof(PacketHeader) + header_.payload_length,
-        footer_.signature
+        footer_.signature.data()
     );
 }
 

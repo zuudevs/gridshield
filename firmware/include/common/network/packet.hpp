@@ -71,7 +71,7 @@ struct PacketFooter {
 // ============================================================================
 class SecurePacket {
 public:
-    SecurePacket() noexcept;
+    SecurePacket() noexcept = default;
     
     core::Result<void> build(
         PacketType type, 
