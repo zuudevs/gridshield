@@ -38,7 +38,7 @@ struct RetryPolicy {
 struct RetryResult {
     uint8_t attempts{};
     bool succeeded{false};
-    core::ErrorCode last_error{core::ErrorCode::None};
+    core::ErrorCode last_error{core::ErrorCode::Success};
 };
 
 // ============================================================================
@@ -73,7 +73,7 @@ public:
             auto op_result = operation();
             if (op_result.is_ok()) {
                 result.succeeded = true;
-                result.last_error = core::ErrorCode::None;
+                result.last_error = core::ErrorCode::Success;
                 return result;
             }
 

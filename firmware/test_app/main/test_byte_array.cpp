@@ -49,7 +49,7 @@ static void test_byte_array_overflow(void) {
 static void test_byte_array_clear(void) {
     ByteArray<32> arr;
     const uint8_t data[] = {0xAA, 0xBB, 0xCC};
-    arr.append(data, 3);
+    (void)arr.append(data, 3);
     arr.clear();
     TEST_ASSERT_EQUAL(0, arr.size());
 }
@@ -57,7 +57,7 @@ static void test_byte_array_clear(void) {
 static void test_byte_array_data_pointer(void) {
     ByteArray<16> arr;
     const uint8_t data[] = {0x42, 0x43};
-    arr.append(data, 2);
+    (void)arr.append(data, 2);
 
     const uint8_t* ptr = arr.data();
     TEST_ASSERT_NOT_NULL(ptr);

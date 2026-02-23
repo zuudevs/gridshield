@@ -46,7 +46,7 @@ static void test_crypto_sign_verify(void) {
     engine.generate_keypair(kp);
 
     const uint8_t message[] = "GridShield test message";
-    uint8_t signature[ECCKeyPair::SIGNATURE_SIZE];
+    uint8_t signature[ECC_SIGNATURE_SIZE];
 
     auto sign_res = engine.sign(kp, message, sizeof(message), signature);
     TEST_ASSERT_TRUE(sign_res.is_ok());
@@ -63,7 +63,7 @@ static void test_crypto_verify_wrong_message(void) {
 
     const uint8_t message[] = "Original message";
     const uint8_t wrong[] = "Wrong message!!!";
-    uint8_t signature[ECCKeyPair::SIGNATURE_SIZE];
+    uint8_t signature[ECC_SIGNATURE_SIZE];
 
     engine.sign(kp, message, sizeof(message), signature);
 
@@ -77,7 +77,7 @@ static void test_crypto_sign_null_params(void) {
     ECCKeyPair kp;
     engine.generate_keypair(kp);
 
-    uint8_t signature[ECCKeyPair::SIGNATURE_SIZE];
+    uint8_t signature[ECC_SIGNATURE_SIZE];
 
     auto result = engine.sign(kp, nullptr, 10, signature);
     TEST_ASSERT_TRUE(result.is_error());

@@ -45,7 +45,7 @@ static void test_retry_succeed_first(void) {
     auto result = retry.execute(mock_operation);
     TEST_ASSERT_TRUE(result.succeeded);
     TEST_ASSERT_EQUAL(1, result.attempts);
-    TEST_ASSERT_EQUAL(core::ErrorCode::None, result.last_error);
+    TEST_ASSERT_EQUAL(core::ErrorCode::Success, result.last_error);
 }
 
 // ============================================================================

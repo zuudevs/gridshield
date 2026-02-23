@@ -312,4 +312,62 @@ private:
   core::StaticBuffer<uint8_t, 2048> rx_buffer_;
 };
 
+// ============================================================================
+// MOCK STORAGE
+// ============================================================================
+
+class MockStorage : public IPlatformStorage {
+public:
+    static constexpr size_t STORAGE_SIZE = 4096;
+
+    MockStorage() noexcept {
+#if GS_PLATFORM_NATIVE || GS_PLATFORM_ESP32
+        std::memset(storage_, 0, STORAGE_SIZE);
+#else
+        memset(storage_, 0, STORAGE_SIZE);
+#endif
+    }
+
+    core::Result<size_t> read(uint32_t address, uint8_t* buffer,
+                              size_t length) noexcept override {
+        if (GS_UNLIKELY(address + length > STORAGE_SIZE || buffer == nullptr)) {
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        }
+#if GS_PLATFORM_NATIVE || GS_PLATFORM_ESP32
+        std::memcpy(buffer, &storage_[address], length);
+#else
+        memcpy(buffer, &storage_[address], length);
+#endif
+        return core::Result<size_t>(length);
+    }
+
+    core::Result<size_t> write(uint32_t address, const uint8_t* data,
+                               size_t length) noexcept override {
+        if (GS_UNLIKELY(address + length > STORAGE_SIZE || data == nullptr)) {
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        }
+#if GS_PLATFORM_NATIVE || GS_PLATFORM_ESP32
+        std::memcpy(&storage_[address], data, length);
+#else
+        memcpy(&storage_[address], data, length);
+#endif
+        return core::Result<size_t>(length);
+    }
+
+    core::Result<void> erase(uint32_t address, size_t length) noexcept override {
+        if (GS_UNLIKELY(address + length > STORAGE_SIZE)) {
+            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
+        }
+#if GS_PLATFORM_NATIVE || GS_PLATFORM_ESP32
+        std::memset(&storage_[address], 0, length);
+#else
+        memset(&storage_[address], 0, length);
+#endif
+        return core::Result<void>();
+    }
+
+private:
+    uint8_t storage_[STORAGE_SIZE];
+};
+
 } // namespace gridshield::platform::mock
