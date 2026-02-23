@@ -3,8 +3,8 @@
  * @brief Unit tests for DegradationManager
  */
 
-#include "unity.h"
 #include "core/degradation.hpp"
+#include "unity.h"
 
 using namespace gridshield::core;
 
@@ -12,7 +12,8 @@ using namespace gridshield::core;
 // Default Policy
 // ============================================================================
 
-static void test_deg_default_healthy(void) {
+static void test_deg_default_healthy(void)
+{
     DegradationManager mgr;
     DegradationPolicy policy;
     mgr.set_policy(policy);
@@ -25,7 +26,8 @@ static void test_deg_default_healthy(void) {
 // Non-critical failure
 // ============================================================================
 
-static void test_deg_network_failure_continues(void) {
+static void test_deg_network_failure_continues(void)
+{
     DegradationManager mgr;
     DegradationPolicy policy;
     policy.allow_without_network = true;
@@ -41,7 +43,8 @@ static void test_deg_network_failure_continues(void) {
 // Critical failure — crypto
 // ============================================================================
 
-static void test_deg_crypto_failure_halts(void) {
+static void test_deg_crypto_failure_halts(void)
+{
     DegradationManager mgr;
     DegradationPolicy policy;
     policy.allow_without_crypto = false;
@@ -55,7 +58,8 @@ static void test_deg_crypto_failure_halts(void) {
 // Recovery
 // ============================================================================
 
-static void test_deg_recovery(void) {
+static void test_deg_recovery(void)
+{
     DegradationManager mgr;
     DegradationPolicy policy;
     mgr.set_policy(policy);
@@ -72,7 +76,8 @@ static void test_deg_recovery(void) {
 // Degraded state
 // ============================================================================
 
-static void test_deg_degraded_service(void) {
+static void test_deg_degraded_service(void)
+{
     DegradationManager mgr;
     DegradationPolicy policy;
     mgr.set_policy(policy);
@@ -80,15 +85,15 @@ static void test_deg_degraded_service(void) {
     mgr.report_degraded(ServiceId::Analytics);
     TEST_ASSERT_TRUE(mgr.is_service_available(ServiceId::Analytics));
     TEST_ASSERT_TRUE(mgr.is_degraded());
-    TEST_ASSERT_EQUAL(ServiceHealth::Degraded,
-                      mgr.get_health(ServiceId::Analytics));
+    TEST_ASSERT_EQUAL(ServiceHealth::Degraded, mgr.get_health(ServiceId::Analytics));
 }
 
 // ============================================================================
 // Failure count
 // ============================================================================
 
-static void test_deg_failure_count(void) {
+static void test_deg_failure_count(void)
+{
     DegradationManager mgr;
     DegradationPolicy policy;
     mgr.set_policy(policy);
@@ -103,7 +108,8 @@ static void test_deg_failure_count(void) {
 // Multiple service failures
 // ============================================================================
 
-static void test_deg_multiple_failures(void) {
+static void test_deg_multiple_failures(void)
+{
     DegradationManager mgr;
     DegradationPolicy policy;
     policy.allow_without_tamper = true;
@@ -123,7 +129,8 @@ static void test_deg_multiple_failures(void) {
 // Suite Registration
 // ============================================================================
 
-void test_degradation_suite(void) {
+void test_degradation_suite(void)
+{
     RUN_TEST(test_deg_default_healthy);
     RUN_TEST(test_deg_network_failure_continues);
     RUN_TEST(test_deg_crypto_failure_halts);

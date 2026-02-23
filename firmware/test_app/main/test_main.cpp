@@ -5,8 +5,8 @@
  * Runs all test suites on QEMU via: idf.py qemu monitor
  */
 
-#include <cstdio>
 #include "unity.h"
+#include <cstdio>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -27,7 +27,8 @@ extern void test_system_integration_suite(void);
 extern void test_degradation_suite(void);
 extern void test_telemetry_suite(void);
 
-extern "C" void app_main(void) {
+extern "C" void app_main(void)
+{
     // Small delay for QEMU UART stabilization
     vTaskDelay(pdMS_TO_TICKS(200));
 

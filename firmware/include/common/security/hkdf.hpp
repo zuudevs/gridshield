@@ -21,7 +21,7 @@ namespace gridshield::security {
 // ============================================================================
 // HKDF CONSTANTS
 // ============================================================================
-constexpr size_t HKDF_HASH_SIZE = SHA256_HASH_SIZE; // 32 bytes
+constexpr size_t HKDF_HASH_SIZE = SHA256_HASH_SIZE;          // 32 bytes
 constexpr size_t HKDF_MAX_OKM_LENGTH = 255 * HKDF_HASH_SIZE; // RFC 5869 limit
 
 // ============================================================================
@@ -38,9 +38,11 @@ constexpr size_t HKDF_MAX_OKM_LENGTH = 255 * HKDF_HASH_SIZE; // RFC 5869 limit
  * @param prk_out Output PRK buffer (must be HKDF_HASH_SIZE bytes)
  * @return Result<void>
  */
-core::Result<void> hkdf_extract(const uint8_t *salt, size_t salt_len,
-                                const uint8_t *ikm, size_t ikm_len,
-                                uint8_t *prk_out) noexcept;
+core::Result<void> hkdf_extract(const uint8_t* salt,
+                                size_t salt_len,
+                                const uint8_t* ikm,
+                                size_t ikm_len,
+                                uint8_t* prk_out) noexcept;
 
 /**
  * @brief HKDF-Expand: expand PRK to desired length output keying material.
@@ -53,9 +55,12 @@ core::Result<void> hkdf_extract(const uint8_t *salt, size_t salt_len,
  * @param okm_len Desired length of OKM (max HKDF_MAX_OKM_LENGTH)
  * @return Result<void>
  */
-core::Result<void> hkdf_expand(const uint8_t *prk, size_t prk_len,
-                               const uint8_t *info, size_t info_len,
-                               uint8_t *okm_out, size_t okm_len) noexcept;
+core::Result<void> hkdf_expand(const uint8_t* prk,
+                               size_t prk_len,
+                               const uint8_t* info,
+                               size_t info_len,
+                               uint8_t* okm_out,
+                               size_t okm_len) noexcept;
 
 /**
  * @brief One-shot HKDF: extract + expand in a single call.
@@ -70,9 +75,13 @@ core::Result<void> hkdf_expand(const uint8_t *prk, size_t prk_len,
  * @param okm_len  Desired output length
  * @return Result<void>
  */
-core::Result<void> hkdf(const uint8_t *salt, size_t salt_len,
-                        const uint8_t *ikm, size_t ikm_len,
-                        const uint8_t *info, size_t info_len,
-                        uint8_t *okm_out, size_t okm_len) noexcept;
+core::Result<void> hkdf(const uint8_t* salt,
+                        size_t salt_len,
+                        const uint8_t* ikm,
+                        size_t ikm_len,
+                        const uint8_t* info,
+                        size_t info_len,
+                        uint8_t* okm_out,
+                        size_t okm_len) noexcept;
 
 } // namespace gridshield::security

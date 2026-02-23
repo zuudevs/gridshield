@@ -4,9 +4,9 @@
  * @brief Consumption anomaly detection with profile learning
  * @version 0.4
  * @date 2026-02-03
- * 
+ *
  * @copyright Copyright (c) 2026
- * 
+ *
  */
 
 #pragma once
@@ -18,11 +18,19 @@
 namespace gridshield::analytics {
 
 constexpr size_t PROFILE_HISTORY_SIZE = 24; // 24 hours
+constexpr uint16_t DEFAULT_VARIANCE_THRESHOLD = 30;
+constexpr size_t MAX_RECENT_READINGS = 100;
+constexpr uint32_t MS_PER_HOUR = 3600000;
+constexpr uint8_t CONFIDENCE_MAX = 100;
+constexpr uint8_t CONFIDENCE_BASELINE = 50;
+constexpr uint32_t DEVIATION_FULL = 100;
+constexpr size_t MIN_LEARNING_READINGS = 10;
 
 // ============================================================================
 // ANOMALY CLASSIFICATION
 // ============================================================================
-enum class AnomalyType : uint8_t {
+enum class AnomalyType : uint8_t
+{
     None = 0,
     UnexpectedDrop = 1,
     UnexpectedSpike = 2,
@@ -31,7 +39,8 @@ enum class AnomalyType : uint8_t {
     ErraticBehavior = 5
 };
 
-enum class AnomalySeverity : uint8_t {
+enum class AnomalySeverity : uint8_t
+{
     None = 0,
     Low = 1,
     Medium = 2,
@@ -42,21 +51,23 @@ enum class AnomalySeverity : uint8_t {
 // ============================================================================
 // CONSUMPTION PROFILE
 // ============================================================================
-struct ConsumptionProfile {
-	std::array<uint32_t, PROFILE_HISTORY_SIZE> hourly_avg_wh{};
+struct ConsumptionProfile
+{
+    std::array<uint32_t, PROFILE_HISTORY_SIZE> hourly_avg_wh{};
     uint32_t daily_avg_wh{};
     uint32_t weekly_avg_wh{};
-    uint16_t variance_threshold{30};
+    uint16_t variance_threshold{DEFAULT_VARIANCE_THRESHOLD};
     uint8_t profile_confidence{};
     uint8_t reserved{};
-    
+
     GS_CONSTEXPR ConsumptionProfile() noexcept = default;
 };
 
 // ============================================================================
 // ANOMALY REPORT
 // ============================================================================
-struct AnomalyReport {
+struct AnomalyReport
+{
     core::timestamp_t timestamp{};
     AnomalyType type{};
     AnomalySeverity severity{};
@@ -64,22 +75,23 @@ struct AnomalyReport {
     uint32_t current_value{};
     uint32_t expected_value{};
     uint32_t deviation_percent{};
-    
+
     GS_CONSTEXPR AnomalyReport() noexcept = default;
 };
 
 // ============================================================================
 // ANOMALY DETECTOR INTERFACE
 // ============================================================================
-class IAnomalyDetector {
+class IAnomalyDetector
+{
 public:
     virtual ~IAnomalyDetector() noexcept = default;
-    
+
     virtual core::Result<void> initialize(const ConsumptionProfile& baseline_profile) noexcept = 0;
     virtual core::Result<void> update_profile(const core::MeterReading& reading) noexcept = 0;
-    
+
     virtual core::Result<AnomalyReport> analyze(const core::MeterReading& reading) noexcept = 0;
-    
+
     GS_NODISCARD virtual const ConsumptionProfile& get_profile() const noexcept = 0;
     virtual core::Result<void> reset_profile() noexcept = 0;
 };
@@ -87,50 +99,53 @@ public:
 // ============================================================================
 // ANOMALY DETECTOR IMPLEMENTATION
 // ============================================================================
-class AnomalyDetector final : public IAnomalyDetector {
+class AnomalyDetector final : public IAnomalyDetector
+{
 public:
     AnomalyDetector() noexcept = default;
     ~AnomalyDetector() noexcept override = default;
-    
+
     core::Result<void> initialize(const ConsumptionProfile& baseline_profile) noexcept override;
     core::Result<void> update_profile(const core::MeterReading& reading) noexcept override;
-    
+
     core::Result<AnomalyReport> analyze(const core::MeterReading& reading) noexcept override;
-    
+
     GS_NODISCARD const ConsumptionProfile& get_profile() const noexcept override;
     core::Result<void> reset_profile() noexcept override;
-    
+
 private:
-    GS_NODISCARD AnomalySeverity calculate_severity(uint32_t deviation_percent) noexcept;
+    GS_NODISCARD static AnomalySeverity calculate_severity(uint32_t deviation_percent) noexcept;
     GS_NODISCARD uint32_t calculate_expected_value(core::timestamp_t timestamp) const noexcept;
-    
+
     ConsumptionProfile profile_;
-    core::StaticBuffer<core::MeterReading, 100> recent_readings_;
+    core::StaticBuffer<core::MeterReading, MAX_RECENT_READINGS> recent_readings_;
     bool initialized_{false};
 };
 
 // ============================================================================
 // CROSS-LAYER VALIDATION
 // ============================================================================
-struct CrossLayerValidation {
+struct CrossLayerValidation
+{
     bool physical_tamper_detected{false};
     bool network_anomaly_detected{false};
     bool consumption_anomaly_detected{false};
     core::timestamp_t validation_timestamp{};
-    
+
     GS_CONSTEXPR CrossLayerValidation() noexcept = default;
-    
-    GS_NODISCARD bool requires_investigation() const noexcept {
+
+    GS_NODISCARD bool requires_investigation() const noexcept
+    {
         return (physical_tamper_detected && consumption_anomaly_detected) ||
                (network_anomaly_detected && consumption_anomaly_detected);
     }
-    
-    GS_NODISCARD core::Priority get_priority() const noexcept {
-        if (physical_tamper_detected && consumption_anomaly_detected && 
-            network_anomaly_detected) {
+
+    GS_NODISCARD core::Priority get_priority() const noexcept
+    {
+        if (physical_tamper_detected && consumption_anomaly_detected && network_anomaly_detected) {
             return core::Priority::Emergency;
         }
-        if (physical_tamper_detected || 
+        if (physical_tamper_detected ||
             (consumption_anomaly_detected && network_anomaly_detected)) {
             return core::Priority::Critical;
         }

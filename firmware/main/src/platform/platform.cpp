@@ -4,10 +4,10 @@
  * @brief Platform implementations
  * @version 0.4
  * @date 2026-02-09
- * 
+ *
  * @note Implementation is mostly header-only/inline for interfaces.
  * This file is kept for future non-inline platform-agnostic code.
- * 
+ *
  * @copyright Copyright (c) 2026
  *
  */

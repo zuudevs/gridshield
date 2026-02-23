@@ -4,147 +4,140 @@
  * @brief System orchestrator implementation (C++17)
  * @version 0.4
  * @date 2026-02-09
- * 
+ *
  * @copyright Copyright (c) 2026
  */
 
 #include "core/system.hpp"
 #include "esp_log.h"
 
-static const char *TAG = "GS_System";
+static const char* TAG = "GS_System";
 
 #if GS_PLATFORM_NATIVE
-    #include <new>
+#include <new>
 #endif
 
 namespace gridshield {
 
-GridShieldSystem::~GridShieldSystem() noexcept {
+namespace {
+constexpr uint32_t MOCK_ENERGY_WH = 1000;
+constexpr uint32_t MOCK_VOLTAGE_MV = 220000;
+constexpr uint32_t MOCK_CURRENT_MA = 4545;
+constexpr uint32_t MOCK_POWER_FACTOR = 950;
+
+constexpr uint8_t BITS_PER_BYTE = 8;
+constexpr uint8_t BYTE_MASK = 0xFF;
+} // namespace
+
+GridShieldSystem::~GridShieldSystem() noexcept
+{
     if (crypto_engine_ != nullptr) {
         delete crypto_engine_;
         crypto_engine_ = nullptr;
     }
-    
+
     if (packet_transport_ != nullptr) {
         delete packet_transport_;
         packet_transport_ = nullptr;
     }
 }
 
-core::Result<void> GridShieldSystem::initialize(
-    const SystemConfig& config,
-    platform::PlatformServices& platform) noexcept {
-    
+core::Result<void> GridShieldSystem::initialize(const SystemConfig& config,
+                                                platform::PlatformServices& platform) noexcept
+{
+
     if (initialized_) {
         return GS_MAKE_ERROR(core::ErrorCode::SystemAlreadyInitialized);
     }
-    
+
     if (!platform.is_valid()) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
-    
+
     config_ = config;
     platform_ = &platform;
-    
+
     transition_state(core::SystemState::Initializing);
-    ESP_LOGI(TAG, "Initializing (meter_id=0x%llx)",
-             static_cast<unsigned long long>(config_.meter_id));
-    
-    // Initialize hardware layer
+    ESP_LOGI(
+        TAG, "Initializing (meter_id=0x%llx)", static_cast<unsigned long long>(config_.meter_id));
+
+    // Initialize layers
     GS_TRY(tamper_detector_.initialize(config_.tamper_config, platform));
-    
-    // Initialize security layer
     GS_TRY(initialize_crypto());
-    
-    // Initialize network layer
-    if (platform_->comm != nullptr) {
-#if GS_PLATFORM_NATIVE
-        packet_transport_ = new (std::nothrow) network::PacketTransport(*platform_->comm);
-#else
-        packet_transport_ = new network::PacketTransport(*platform_->comm);
-#endif
-        if (packet_transport_ == nullptr) {
-            transition_state(core::SystemState::Error);
-            return GS_MAKE_ERROR(core::ErrorCode::ResourceExhausted);
-        }
-        
-        GS_TRY(platform_->comm->init());
-    }
-    
-    // Initialize analytics layer
+    GS_TRY(init_network_layer());
     GS_TRY(anomaly_detector_.initialize(config_.baseline_profile));
-    
+
     initialized_ = true;
     transition_state(core::SystemState::Ready);
     ESP_LOGI(TAG, "Initialization complete");
-    
+
     return core::Result<void>{};
 }
 
-core::Result<void> GridShieldSystem::start() noexcept {
+core::Result<void> GridShieldSystem::start() noexcept
+{
     if (!initialized_ || state_ != core::SystemState::Ready) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidState);
     }
-    
+
     // Start tamper monitoring
     GS_TRY(tamper_detector_.start());
-    
+
     transition_state(core::SystemState::Operating);
     ESP_LOGI(TAG, "System started — entering operating state");
     last_heartbeat_ = platform_->time->get_timestamp_ms();
     last_reading_ = last_heartbeat_;
-    
+
     return core::Result<void>{};
 }
 
-core::Result<void> GridShieldSystem::stop() noexcept {
+core::Result<void> GridShieldSystem::stop() noexcept
+{
     if (state_ != core::SystemState::Operating) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidState);
     }
-    
+
     GS_TRY(tamper_detector_.stop());
-    
+
     transition_state(core::SystemState::Ready);
-    
+
     return core::Result<void>{};
 }
 
-core::Result<void> GridShieldSystem::shutdown() noexcept {
+core::Result<void> GridShieldSystem::shutdown() noexcept
+{
     if (state_ == core::SystemState::Operating) {
-        auto result = stop();
-        if (result.is_error()) {
-            return result.error();
-        }
+        (void)stop(); // Attempt to stop, ignore error for shutdown
     }
-    
+
     if (platform_ != nullptr && platform_->comm != nullptr) {
-        GS_TRY(platform_->comm->shutdown());
+        (void)platform_->comm->shutdown();
     }
-    
+
     device_keypair_.clear();
     server_public_key_.clear();
-    
+
     transition_state(core::SystemState::Shutdown);
     initialized_ = false;
     ESP_LOGI(TAG, "System shutdown complete");
-    
+
     return core::Result<void>{};
 }
 
-core::Result<void> GridShieldSystem::process_cycle() noexcept {
-    if (state_ != core::SystemState::Operating && 
-        state_ != core::SystemState::Tampered) {
+core::Result<void> GridShieldSystem::process_cycle() noexcept
+{
+    if (state_ != core::SystemState::Operating && state_ != core::SystemState::Tampered) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidState);
     }
-    
+
     core::timestamp_t current_time = platform_->time->get_timestamp_ms();
-    
+
     // Process deferred tamper debounce (ISR sets flag, poll confirms)
     {
         auto poll_result = tamper_detector_.poll();
         (void)poll_result;
     }
-    
+
     // Check for tamper events (highest priority)
     if (tamper_detector_.is_tampered() && state_ != core::SystemState::Tampered) {
         auto result = handle_tamper_event();
@@ -152,7 +145,7 @@ core::Result<void> GridShieldSystem::process_cycle() noexcept {
             return result.error();
         }
     }
-    
+
     // Send heartbeat if interval elapsed
     if (current_time - last_heartbeat_ >= config_.heartbeat_interval_ms) {
         auto result = send_heartbeat();
@@ -160,37 +153,37 @@ core::Result<void> GridShieldSystem::process_cycle() noexcept {
         (void)result;
         last_heartbeat_ = current_time;
     }
-    
+
     // Process periodic reading
     if (current_time - last_reading_ >= config_.reading_interval_ms) {
         // PRODUCTION: Read actual meter hardware
         core::MeterReading reading;
         reading.timestamp = current_time;
-        reading.energy_wh = 1000;
-        reading.voltage_mv = 220000;
-        reading.current_ma = 4545;
-        reading.power_factor = 950;
-        
+        reading.energy_wh = MOCK_ENERGY_WH;
+        reading.voltage_mv = MOCK_VOLTAGE_MV;
+        reading.current_ma = MOCK_CURRENT_MA;
+        reading.power_factor = MOCK_POWER_FACTOR;
+
         auto result = send_meter_reading(reading);
         // Non-critical error
         (void)result;
         last_reading_ = current_time;
     }
-    
+
     // Perform cross-layer validation periodically
     auto validation_result = perform_cross_layer_validation();
     (void)validation_result;
-    
+
     return core::Result<void>{};
 }
 
-core::Result<void> GridShieldSystem::send_meter_reading(
-    const core::MeterReading& reading) noexcept {
-    
+core::Result<void> GridShieldSystem::send_meter_reading(const core::MeterReading& reading) noexcept
+{
+
     if (!initialized_ || crypto_engine_ == nullptr || packet_transport_ == nullptr) {
         return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
-    
+
     // Analyze for anomalies first
     auto analysis_result = anomaly_detector_.analyze(reading);
     if (analysis_result.is_ok()) {
@@ -199,83 +192,100 @@ core::Result<void> GridShieldSystem::send_meter_reading(
             validation_state_.consumption_anomaly_detected = true;
         }
     }
-    
+
     // Update consumption profile
     GS_TRY(anomaly_detector_.update_profile(reading));
-    
+
     // Build packet
     network::SecurePacket packet;
-    GS_TRY(packet.build(
-        network::PacketType::MeterData,
-        config_.meter_id,
-        core::Priority::Normal,
-        reinterpret_cast<const uint8_t*>(&reading),
-        sizeof(core::MeterReading),
-        *crypto_engine_,
-        device_keypair_
-    ));
-    
+    GS_TRY(packet.build(network::PacketType::MeterData,
+                        config_.meter_id,
+                        core::Priority::Normal,
+                        reinterpret_cast<const uint8_t*>(&reading),
+                        sizeof(core::MeterReading),
+                        *crypto_engine_,
+                        device_keypair_));
+
     // Send packet
     return packet_transport_->send_packet(packet, *crypto_engine_, device_keypair_);
 }
 
-core::Result<void> GridShieldSystem::send_tamper_alert() noexcept {
+core::Result<void> GridShieldSystem::send_tamper_alert() noexcept
+{
     if (!initialized_ || crypto_engine_ == nullptr || packet_transport_ == nullptr) {
         return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
-    
+
     core::TamperEvent event;
     event.timestamp = tamper_detector_.get_tamper_timestamp();
     event.event_type = static_cast<uint8_t>(tamper_detector_.get_tamper_type());
     event.severity = static_cast<uint8_t>(core::Priority::Emergency);
     event.sensor_id = config_.tamper_config.sensor_pin;
-    
+
     network::SecurePacket packet;
-    GS_TRY(packet.build(
-        network::PacketType::TamperAlert,
-        config_.meter_id,
-        core::Priority::Emergency,
-        reinterpret_cast<const uint8_t*>(&event),
-        sizeof(core::TamperEvent),
-        *crypto_engine_,
-        device_keypair_
-    ));
-    
+    GS_TRY(packet.build(network::PacketType::TamperAlert,
+                        config_.meter_id,
+                        core::Priority::Emergency,
+                        reinterpret_cast<const uint8_t*>(&event),
+                        sizeof(core::TamperEvent),
+                        *crypto_engine_,
+                        device_keypair_));
+
     return packet_transport_->send_packet(packet, *crypto_engine_, device_keypair_);
 }
 
-core::Result<void> GridShieldSystem::send_heartbeat() noexcept {
+core::Result<void> GridShieldSystem::send_heartbeat() noexcept
+{
     if (!initialized_ || crypto_engine_ == nullptr || packet_transport_ == nullptr) {
         return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
-    
-    std::array<uint8_t, 8> heartbeat_data;
+
+    std::array<uint8_t, sizeof(core::timestamp_t)> heartbeat_data;
     core::timestamp_t timestamp = platform_->time->get_timestamp_ms();
-    
-    // Serialize timestamp to bytes
+
+    // Serialize timestamp to bytes (little-endian)
     for (size_t i = 0; i < sizeof(timestamp); ++i) {
-        heartbeat_data[i] = static_cast<uint8_t>((timestamp >> (i * 8)) & 0xFF);
+        heartbeat_data[i] = static_cast<uint8_t>((timestamp >> (i * BITS_PER_BYTE)) & BYTE_MASK);
     }
-    
+
     network::SecurePacket packet;
-    GS_TRY(packet.build(
-        network::PacketType::Heartbeat,
-        config_.meter_id,
-        core::Priority::Low,
-        heartbeat_data.data(),
-        sizeof(heartbeat_data),
-        *crypto_engine_,
-        device_keypair_
-    ));
-    
+    GS_TRY(packet.build(network::PacketType::Heartbeat,
+                        config_.meter_id,
+                        core::Priority::Low,
+                        heartbeat_data.data(),
+                        sizeof(heartbeat_data),
+                        *crypto_engine_,
+                        device_keypair_));
+
     return packet_transport_->send_packet(packet, *crypto_engine_, device_keypair_);
 }
 
-core::Result<void> GridShieldSystem::initialize_crypto() noexcept {
+core::Result<void> GridShieldSystem::init_network_layer() noexcept
+{
+    if (platform_->comm == nullptr) {
+        return core::Result<void>{};
+    }
+
+#if GS_PLATFORM_NATIVE
+    packet_transport_ = new (std::nothrow) network::PacketTransport(*platform_->comm);
+#else
+    packet_transport_ = new network::PacketTransport(*platform_->comm);
+#endif
+
+    if (packet_transport_ == nullptr) {
+        transition_state(core::SystemState::Error);
+        return GS_MAKE_ERROR(core::ErrorCode::ResourceExhausted);
+    }
+
+    return platform_->comm->init();
+}
+
+core::Result<void> GridShieldSystem::initialize_crypto() noexcept
+{
     if (platform_->crypto == nullptr) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
-    
+
 #if GS_PLATFORM_NATIVE
     crypto_engine_ = new (std::nothrow) security::CryptoEngine(*platform_->crypto);
 #else
@@ -284,57 +294,61 @@ core::Result<void> GridShieldSystem::initialize_crypto() noexcept {
     if (crypto_engine_ == nullptr) {
         return GS_MAKE_ERROR(core::ErrorCode::ResourceExhausted);
     }
-    
+
     // Generate device keypair
     GS_TRY(crypto_engine_->generate_keypair(device_keypair_));
     ESP_LOGI(TAG, "Device keypair generated");
-    
+
     // PRODUCTION: Load server public key from secure storage
     // For now: Generate placeholder
     GS_TRY(crypto_engine_->generate_keypair(server_public_key_));
-    
+
     return core::Result<void>{};
 }
 
-core::Result<void> GridShieldSystem::handle_tamper_event() noexcept {
+core::Result<void> GridShieldSystem::handle_tamper_event() noexcept
+{
     transition_state(core::SystemState::Tampered);
     set_mode(OperationMode::TamperResponse);
     ESP_LOGW(TAG, "TAMPER EVENT — switching to TamperResponse mode");
-    
+
     validation_state_.physical_tamper_detected = true;
     validation_state_.validation_timestamp = platform_->time->get_timestamp_ms();
-    
+
     // Send immediate tamper alert
     auto result = send_tamper_alert();
     if (result.is_error()) {
         return result.error();
     }
-    
+
     return core::Result<void>{};
 }
 
-core::Result<void> GridShieldSystem::perform_cross_layer_validation() noexcept {
+core::Result<void> GridShieldSystem::perform_cross_layer_validation() noexcept
+{
     validation_state_.validation_timestamp = platform_->time->get_timestamp_ms();
-    
+
     // Check physical layer
     validation_state_.physical_tamper_detected = tamper_detector_.is_tampered();
-    
+
     // Network anomaly detection (placeholder)
     validation_state_.network_anomaly_detected = false;
-    
+
     // If multiple layers indicate attack, escalate priority
     if (validation_state_.requires_investigation()) {
         // PRODUCTION: Trigger additional security measures
     }
-    
+
     return core::Result<void>{};
 }
 
-void GridShieldSystem::transition_state(core::SystemState new_state) noexcept {
+void GridShieldSystem::transition_state(core::SystemState new_state) noexcept
+{
     state_ = new_state;
 }
 
-void GridShieldSystem::set_mode(OperationMode new_mode) noexcept {
+void GridShieldSystem::set_mode(OperationMode new_mode) noexcept
+{
     mode_ = new_mode;
 }
 

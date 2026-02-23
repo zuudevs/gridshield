@@ -3,19 +3,21 @@
  * @brief Unit tests for ByteArray<N>
  */
 
-#include "unity.h"
 #include "core/types.hpp"
+#include "unity.h"
 #include <cstring>
 
 using namespace gridshield::core;
 
-static void test_byte_array_initially_empty(void) {
+static void test_byte_array_initially_empty(void)
+{
     ByteArray<64> arr;
     TEST_ASSERT_EQUAL(0, arr.size());
     TEST_ASSERT_EQUAL(64, arr.capacity());
 }
 
-static void test_byte_array_append(void) {
+static void test_byte_array_append(void)
+{
     ByteArray<64> arr;
     const uint8_t data[] = {0xDE, 0xAD, 0xBE, 0xEF};
     TEST_ASSERT_TRUE(arr.append(data, 4));
@@ -26,7 +28,8 @@ static void test_byte_array_append(void) {
     TEST_ASSERT_EQUAL(0xEF, arr[3]);
 }
 
-static void test_byte_array_append_multiple(void) {
+static void test_byte_array_append_multiple(void)
+{
     ByteArray<64> arr;
     const uint8_t d1[] = {0x01, 0x02};
     const uint8_t d2[] = {0x03, 0x04, 0x05};
@@ -36,7 +39,8 @@ static void test_byte_array_append_multiple(void) {
     TEST_ASSERT_EQUAL(0x05, arr[4]);
 }
 
-static void test_byte_array_overflow(void) {
+static void test_byte_array_overflow(void)
+{
     ByteArray<4> arr;
     const uint8_t data[] = {0x01, 0x02, 0x03};
     TEST_ASSERT_TRUE(arr.append(data, 3));
@@ -46,7 +50,8 @@ static void test_byte_array_overflow(void) {
     TEST_ASSERT_EQUAL(3, arr.size()); // unchanged
 }
 
-static void test_byte_array_clear(void) {
+static void test_byte_array_clear(void)
+{
     ByteArray<32> arr;
     const uint8_t data[] = {0xAA, 0xBB, 0xCC};
     (void)arr.append(data, 3);
@@ -54,7 +59,8 @@ static void test_byte_array_clear(void) {
     TEST_ASSERT_EQUAL(0, arr.size());
 }
 
-static void test_byte_array_data_pointer(void) {
+static void test_byte_array_data_pointer(void)
+{
     ByteArray<16> arr;
     const uint8_t data[] = {0x42, 0x43};
     (void)arr.append(data, 2);
@@ -69,7 +75,8 @@ static void test_byte_array_data_pointer(void) {
 // Suite Registration
 // ============================================================================
 
-void test_byte_array_suite(void) {
+void test_byte_array_suite(void)
+{
     RUN_TEST(test_byte_array_initially_empty);
     RUN_TEST(test_byte_array_append);
     RUN_TEST(test_byte_array_append_multiple);

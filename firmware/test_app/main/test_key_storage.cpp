@@ -3,9 +3,9 @@
  * @brief Unit tests for KeyStorage
  */
 
-#include "unity.h"
-#include "security/key_storage.hpp"
 #include "platform/mock_platform.hpp"
+#include "security/key_storage.hpp"
+#include "unity.h"
 
 using namespace gridshield;
 using namespace gridshield::security;
@@ -16,7 +16,8 @@ using namespace gridshield::platform::mock;
 // Helpers
 // ============================================================================
 
-struct KeyStorageTestFixture {
+struct KeyStorageTestFixture
+{
     MockTime time;
     MockGPIO gpio;
     MockInterrupt interrupt;
@@ -25,7 +26,8 @@ struct KeyStorageTestFixture {
     MockStorage storage;
     PlatformServices services;
 
-    KeyStorageTestFixture() noexcept {
+    KeyStorageTestFixture() noexcept
+    {
         services.time = &time;
         services.gpio = &gpio;
         services.interrupt = &interrupt;
@@ -36,7 +38,8 @@ struct KeyStorageTestFixture {
 };
 
 // Generate a dummy keypair with known bytes
-static ECCKeyPair make_test_keypair(MockCrypto& crypto) {
+static ECCKeyPair make_test_keypair(MockCrypto& crypto)
+{
     ECCKeyPair kp;
     // Fill with deterministic data
     uint8_t pub[ECCKeyPair::PUBLIC_KEY_SIZE];
@@ -52,7 +55,8 @@ static ECCKeyPair make_test_keypair(MockCrypto& crypto) {
 // Save + Load
 // ============================================================================
 
-static void test_ks_save_and_load(void) {
+static void test_ks_save_and_load(void)
+{
     KeyStorageTestFixture f;
     KeyStorage ks(f.services);
 
@@ -71,7 +75,8 @@ static void test_ks_save_and_load(void) {
 // Erase
 // ============================================================================
 
-static void test_ks_erase(void) {
+static void test_ks_erase(void)
+{
     KeyStorageTestFixture f;
     KeyStorage ks(f.services);
 
@@ -91,7 +96,8 @@ static void test_ks_erase(void) {
 // Slots
 // ============================================================================
 
-static void test_ks_multiple_slots(void) {
+static void test_ks_multiple_slots(void)
+{
     KeyStorageTestFixture f;
     KeyStorage ks(f.services);
 
@@ -110,7 +116,8 @@ static void test_ks_multiple_slots(void) {
 // Save without keys
 // ============================================================================
 
-static void test_ks_save_empty_keypair(void) {
+static void test_ks_save_empty_keypair(void)
+{
     KeyStorageTestFixture f;
     KeyStorage ks(f.services);
 
@@ -123,7 +130,8 @@ static void test_ks_save_empty_keypair(void) {
 // Load from empty storage
 // ============================================================================
 
-static void test_ks_load_empty_storage(void) {
+static void test_ks_load_empty_storage(void)
+{
     KeyStorageTestFixture f;
     KeyStorage ks(f.services);
 
@@ -137,7 +145,8 @@ static void test_ks_load_empty_storage(void) {
 // Key round-trip integrity (pub/priv keys match)
 // ============================================================================
 
-static void test_ks_key_roundtrip_integrity(void) {
+static void test_ks_key_roundtrip_integrity(void)
+{
     KeyStorageTestFixture f;
     KeyStorage ks(f.services);
 
@@ -158,7 +167,8 @@ static void test_ks_key_roundtrip_integrity(void) {
 // Erase backup slot doesn't affect primary
 // ============================================================================
 
-static void test_ks_erase_backup_preserves_primary(void) {
+static void test_ks_erase_backup_preserves_primary(void)
+{
     KeyStorageTestFixture f;
     KeyStorage ks(f.services);
 
@@ -179,7 +189,8 @@ static void test_ks_erase_backup_preserves_primary(void) {
 // Suite Registration
 // ============================================================================
 
-void test_key_storage_suite(void) {
+void test_key_storage_suite(void)
+{
     RUN_TEST(test_ks_save_and_load);
     RUN_TEST(test_ks_erase);
     RUN_TEST(test_ks_multiple_slots);

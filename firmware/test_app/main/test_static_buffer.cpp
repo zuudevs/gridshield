@@ -3,8 +3,8 @@
  * @brief Unit tests for StaticBuffer<T, N>
  */
 
-#include "unity.h"
 #include "core/types.hpp"
+#include "unity.h"
 
 using namespace gridshield::core;
 
@@ -12,7 +12,8 @@ using namespace gridshield::core;
 // Basic Operations
 // ============================================================================
 
-static void test_buffer_initially_empty(void) {
+static void test_buffer_initially_empty(void)
+{
     StaticBuffer<int, 8> buf;
     TEST_ASSERT_TRUE(buf.empty());
     TEST_ASSERT_EQUAL(0, buf.size());
@@ -20,7 +21,8 @@ static void test_buffer_initially_empty(void) {
     TEST_ASSERT_FALSE(buf.full());
 }
 
-static void test_buffer_push_and_size(void) {
+static void test_buffer_push_and_size(void)
+{
     StaticBuffer<int, 4> buf;
     TEST_ASSERT_TRUE(buf.push(10));
     TEST_ASSERT_TRUE(buf.push(20));
@@ -31,7 +33,8 @@ static void test_buffer_push_and_size(void) {
     TEST_ASSERT_EQUAL(30, buf[2]);
 }
 
-static void test_buffer_push_overflow(void) {
+static void test_buffer_push_overflow(void)
+{
     StaticBuffer<int, 2> buf;
     TEST_ASSERT_TRUE(buf.push(1));
     TEST_ASSERT_TRUE(buf.push(2));
@@ -40,7 +43,8 @@ static void test_buffer_push_overflow(void) {
     TEST_ASSERT_EQUAL(2, buf.size());
 }
 
-static void test_buffer_pop_lifo(void) {
+static void test_buffer_pop_lifo(void)
+{
     StaticBuffer<int, 4> buf;
     buf.push(10);
     buf.push(20);
@@ -52,13 +56,15 @@ static void test_buffer_pop_lifo(void) {
     TEST_ASSERT_EQUAL(2, buf.size());
 }
 
-static void test_buffer_pop_empty(void) {
+static void test_buffer_pop_empty(void)
+{
     StaticBuffer<int, 4> buf;
     int val = 0;
     TEST_ASSERT_FALSE(buf.pop(val));
 }
 
-static void test_buffer_pop_front_fifo(void) {
+static void test_buffer_pop_front_fifo(void)
+{
     StaticBuffer<int, 4> buf;
     buf.push(10);
     buf.push(20);
@@ -72,13 +78,15 @@ static void test_buffer_pop_front_fifo(void) {
     TEST_ASSERT_EQUAL(30, buf[1]);
 }
 
-static void test_buffer_pop_front_empty(void) {
+static void test_buffer_pop_front_empty(void)
+{
     StaticBuffer<int, 4> buf;
     int val = 0;
     TEST_ASSERT_FALSE(buf.pop_front(val));
 }
 
-static void test_buffer_clear(void) {
+static void test_buffer_clear(void)
+{
     StaticBuffer<int, 4> buf;
     buf.push(1);
     buf.push(2);
@@ -92,7 +100,8 @@ static void test_buffer_clear(void) {
 // Struct Type (MeterReading)
 // ============================================================================
 
-static void test_buffer_with_meter_reading(void) {
+static void test_buffer_with_meter_reading(void)
+{
     StaticBuffer<MeterReading, 4> buf;
 
     MeterReading r;
@@ -111,7 +120,8 @@ static void test_buffer_with_meter_reading(void) {
 // Suite Registration
 // ============================================================================
 
-void test_static_buffer_suite(void) {
+void test_static_buffer_suite(void)
+{
     RUN_TEST(test_buffer_initially_empty);
     RUN_TEST(test_buffer_push_and_size);
     RUN_TEST(test_buffer_push_overflow);

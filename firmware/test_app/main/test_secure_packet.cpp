@@ -3,9 +3,9 @@
  * @brief Unit tests for SecurePacket build/serialize
  */
 
-#include "unity.h"
 #include "network/packet.hpp"
 #include "platform/mock_platform.hpp"
+#include "unity.h"
 
 using namespace gridshield;
 using namespace gridshield::network;
@@ -17,7 +17,8 @@ static platform::mock::MockCrypto mock_crypto;
 static CryptoEngine* crypto_engine = nullptr;
 static ECCKeyPair device_keypair;
 
-static void test_packet_setup(void) {
+static void test_packet_setup(void)
+{
     // Create crypto engine with mock platform crypto
     crypto_engine = new CryptoEngine(mock_crypto);
     TEST_ASSERT_NOT_NULL(crypto_engine);
@@ -31,18 +32,18 @@ static void test_packet_setup(void) {
 // Packet Construction
 // ============================================================================
 
-static void test_packet_build_meter_data(void) {
+static void test_packet_build_meter_data(void)
+{
     SecurePacket packet;
     const uint8_t payload[] = {0x01, 0x02, 0x03, 0x04};
 
-    auto result = packet.build(
-        PacketType::MeterData,
-        0x1234567890ABCDEF,
-        Priority::Normal,
-        payload, sizeof(payload),
-        *crypto_engine,
-        device_keypair
-    );
+    auto result = packet.build(PacketType::MeterData,
+                               0x1234567890ABCDEF,
+                               Priority::Normal,
+                               payload,
+                               sizeof(payload),
+                               *crypto_engine,
+                               device_keypair);
 
     TEST_ASSERT_TRUE(result.is_ok());
     TEST_ASSERT_TRUE(packet.is_valid());
@@ -55,18 +56,18 @@ static void test_packet_build_meter_data(void) {
 // Serialize + Roundtrip
 // ============================================================================
 
-static void test_packet_serialize(void) {
+static void test_packet_serialize(void)
+{
     SecurePacket packet;
     const uint8_t payload[] = {0xDE, 0xAD};
 
-    auto build_result = packet.build(
-        PacketType::Heartbeat,
-        0xAAAABBBBCCCCDDDD,
-        Priority::Low,
-        payload, sizeof(payload),
-        *crypto_engine,
-        device_keypair
-    );
+    auto build_result = packet.build(PacketType::Heartbeat,
+                                     0xAAAABBBBCCCCDDDD,
+                                     Priority::Low,
+                                     payload,
+                                     sizeof(payload),
+                                     *crypto_engine,
+                                     device_keypair);
     TEST_ASSERT_TRUE(build_result.is_ok());
 
     // Serialize to buffer
@@ -83,7 +84,8 @@ static void test_packet_serialize(void) {
 // Header Fields
 // ============================================================================
 
-static void test_packet_header_defaults(void) {
+static void test_packet_header_defaults(void)
+{
     PacketHeader h;
     TEST_ASSERT_EQUAL(MAGIC_HEADER, h.magic_header);
     TEST_ASSERT_EQUAL(PROTOCOL_VERSION, h.version);
@@ -91,7 +93,8 @@ static void test_packet_header_defaults(void) {
     TEST_ASSERT_EQUAL(Priority::Normal, h.priority);
 }
 
-static void test_packet_footer_defaults(void) {
+static void test_packet_footer_defaults(void)
+{
     PacketFooter f;
     TEST_ASSERT_EQUAL(MAGIC_FOOTER, f.magic_footer);
 }
@@ -100,25 +103,26 @@ static void test_packet_footer_defaults(void) {
 // Tamper Alert Packet
 // ============================================================================
 
-static void test_packet_tamper_alert(void) {
+static void test_packet_tamper_alert(void)
+{
     SecurePacket packet;
     const uint8_t alert_data[] = {0x01}; // tamper type
 
-    auto result = packet.build(
-        PacketType::TamperAlert,
-        0xFFFFFFFFFFFFFFFF,
-        Priority::Emergency,
-        alert_data, sizeof(alert_data),
-        *crypto_engine,
-        device_keypair
-    );
+    auto result = packet.build(PacketType::TamperAlert,
+                               0xFFFFFFFFFFFFFFFF,
+                               Priority::Emergency,
+                               alert_data,
+                               sizeof(alert_data),
+                               *crypto_engine,
+                               device_keypair);
 
     TEST_ASSERT_TRUE(result.is_ok());
     TEST_ASSERT_EQUAL(PacketType::TamperAlert, packet.header().type);
     TEST_ASSERT_EQUAL(Priority::Emergency, packet.header().priority);
 }
 
-static void test_packet_cleanup(void) {
+static void test_packet_cleanup(void)
+{
     if (crypto_engine) {
         delete crypto_engine;
         crypto_engine = nullptr;
@@ -129,7 +133,8 @@ static void test_packet_cleanup(void) {
 // Suite Registration
 // ============================================================================
 
-void test_secure_packet_suite(void) {
+void test_secure_packet_suite(void)
+{
     RUN_TEST(test_packet_setup);
     RUN_TEST(test_packet_build_meter_data);
     RUN_TEST(test_packet_serialize);

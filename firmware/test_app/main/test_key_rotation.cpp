@@ -3,9 +3,9 @@
  * @brief Unit tests for KeyRotationService
  */
 
-#include "unity.h"
-#include "security/key_rotation.hpp"
 #include "platform/mock_platform.hpp"
+#include "security/key_rotation.hpp"
+#include "unity.h"
 
 using namespace gridshield;
 using namespace gridshield::security;
@@ -16,7 +16,8 @@ using namespace gridshield::platform::mock;
 // Helpers
 // ============================================================================
 
-struct RotationFixture {
+struct RotationFixture
+{
     MockTime time;
     MockGPIO gpio;
     MockInterrupt interrupt;
@@ -25,7 +26,8 @@ struct RotationFixture {
     MockStorage storage;
     PlatformServices services;
 
-    RotationFixture() noexcept {
+    RotationFixture() noexcept
+    {
         services.time = &time;
         services.gpio = &gpio;
         services.interrupt = &interrupt;
@@ -39,7 +41,8 @@ struct RotationFixture {
 // Initialize If Needed
 // ============================================================================
 
-static void test_rotation_init_creates_primary(void) {
+static void test_rotation_init_creates_primary(void)
+{
     RotationFixture f;
     KeyStorage ks(f.services);
     CryptoEngine engine(f.crypto);
@@ -52,7 +55,8 @@ static void test_rotation_init_creates_primary(void) {
     TEST_ASSERT_TRUE(svc.has_primary());
 }
 
-static void test_rotation_init_skips_existing(void) {
+static void test_rotation_init_skips_existing(void)
+{
     RotationFixture f;
     KeyStorage ks(f.services);
     CryptoEngine engine(f.crypto);
@@ -72,15 +76,15 @@ static void test_rotation_init_skips_existing(void) {
     ECCKeyPair after;
     ks.load(after, KeySlot::Primary);
     TEST_ASSERT_EQUAL_MEMORY(
-        before.get_public_key(), after.get_public_key(),
-        ECCKeyPair::PUBLIC_KEY_SIZE);
+        before.get_public_key(), after.get_public_key(), ECCKeyPair::PUBLIC_KEY_SIZE);
 }
 
 // ============================================================================
 // Rotation
 // ============================================================================
 
-static void test_rotation_creates_backup(void) {
+static void test_rotation_creates_backup(void)
+{
     RotationFixture f;
     KeyStorage ks(f.services);
     CryptoEngine engine(f.crypto);
@@ -95,7 +99,8 @@ static void test_rotation_creates_backup(void) {
     TEST_ASSERT_TRUE(svc.has_primary());
 }
 
-static void test_rotation_backup_has_old_primary(void) {
+static void test_rotation_backup_has_old_primary(void)
+{
     RotationFixture f;
     KeyStorage ks(f.services);
     CryptoEngine engine(f.crypto);
@@ -113,11 +118,11 @@ static void test_rotation_backup_has_old_primary(void) {
 
     // Backup should contain the original primary key
     TEST_ASSERT_EQUAL_MEMORY(
-        original.get_public_key(), backup.get_public_key(),
-        ECCKeyPair::PUBLIC_KEY_SIZE);
+        original.get_public_key(), backup.get_public_key(), ECCKeyPair::PUBLIC_KEY_SIZE);
 }
 
-static void test_rotation_primary_is_new_key(void) {
+static void test_rotation_primary_is_new_key(void)
+{
     RotationFixture f;
     KeyStorage ks(f.services);
     CryptoEngine engine(f.crypto);
@@ -136,15 +141,15 @@ static void test_rotation_primary_is_new_key(void) {
     // Primary should differ after rotation (new key generated)
     // Compare public keys — extremely unlikely to be the same
     TEST_ASSERT_FALSE(
-        memcmp(before.get_public_key(), after.get_public_key(),
-               ECCKeyPair::PUBLIC_KEY_SIZE) == 0);
+        memcmp(before.get_public_key(), after.get_public_key(), ECCKeyPair::PUBLIC_KEY_SIZE) == 0);
 }
 
 // ============================================================================
 // Restore from Backup
 // ============================================================================
 
-static void test_restore_from_backup(void) {
+static void test_restore_from_backup(void)
+{
     RotationFixture f;
     KeyStorage ks(f.services);
     CryptoEngine engine(f.crypto);
@@ -166,11 +171,11 @@ static void test_restore_from_backup(void) {
     ks.load(restored, KeySlot::Primary);
 
     TEST_ASSERT_EQUAL_MEMORY(
-        original.get_public_key(), restored.get_public_key(),
-        ECCKeyPair::PUBLIC_KEY_SIZE);
+        original.get_public_key(), restored.get_public_key(), ECCKeyPair::PUBLIC_KEY_SIZE);
 }
 
-static void test_restore_no_backup_fails(void) {
+static void test_restore_no_backup_fails(void)
+{
     RotationFixture f;
     KeyStorage ks(f.services);
     CryptoEngine engine(f.crypto);
@@ -185,7 +190,8 @@ static void test_restore_no_backup_fails(void) {
 // Double Rotation
 // ============================================================================
 
-static void test_double_rotation(void) {
+static void test_double_rotation(void)
+{
     RotationFixture f;
     KeyStorage ks(f.services);
     CryptoEngine engine(f.crypto);
@@ -204,15 +210,15 @@ static void test_double_rotation(void) {
     ks.load(backup, KeySlot::Backup);
 
     TEST_ASSERT_EQUAL_MEMORY(
-        after_first.get_public_key(), backup.get_public_key(),
-        ECCKeyPair::PUBLIC_KEY_SIZE);
+        after_first.get_public_key(), backup.get_public_key(), ECCKeyPair::PUBLIC_KEY_SIZE);
 }
 
 // ============================================================================
 // Suite Registration
 // ============================================================================
 
-void test_key_rotation_suite(void) {
+void test_key_rotation_suite(void)
+{
     RUN_TEST(test_rotation_init_creates_primary);
     RUN_TEST(test_rotation_init_skips_existing);
     RUN_TEST(test_rotation_creates_backup);

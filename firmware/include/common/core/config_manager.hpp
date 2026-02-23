@@ -20,22 +20,24 @@
 
 namespace gridshield::core {
 
-class ConfigManager {
+class ConfigManager
+{
 public:
     static constexpr uint32_t CONFIG_MAGIC = 0x47534346; // "GSCF" (GridShield Config)
     static constexpr uint8_t CONFIG_VERSION = 1;
     static constexpr uint32_t CONFIG_ADDRESS = 512; // After key storage area
-    static constexpr size_t HEADER_SIZE = 8; // magic(4) + version(1) + reserved(3)
-    static constexpr size_t FOOTER_SIZE = 4; // crc32(4)
+    static constexpr size_t HEADER_SIZE = 8;        // magic(4) + version(1) + reserved(3)
+    static constexpr size_t FOOTER_SIZE = 4;        // crc32(4)
     static constexpr size_t TOTAL_SIZE = HEADER_SIZE + sizeof(SystemConfig) + FOOTER_SIZE;
 
-    explicit ConfigManager(platform::PlatformServices& platform) noexcept
-        : platform_(platform) {}
+    explicit ConfigManager(platform::PlatformServices& platform) noexcept : platform_(platform)
+    {}
 
     /**
      * @brief Save current config to NVS
      */
-    core::Result<void> save(const SystemConfig& config) noexcept {
+    core::Result<void> save(const SystemConfig& config) noexcept
+    {
         uint8_t buffer[TOTAL_SIZE];
         memset(buffer, 0, TOTAL_SIZE);
 
@@ -49,7 +51,8 @@ public:
 
         // CRC32
         auto crc_res = platform_.crypto->crc32(buffer, TOTAL_SIZE - FOOTER_SIZE);
-        if (crc_res.is_error()) return crc_res.error();
+        if (crc_res.is_error())
+            return crc_res.error();
 
         uint32_t crc = crc_res.value();
         memcpy(buffer + TOTAL_SIZE - FOOTER_SIZE, &crc, 4);
@@ -60,7 +63,8 @@ public:
     /**
      * @brief Load config from NVS
      */
-    core::Result<SystemConfig> load() noexcept {
+    core::Result<SystemConfig> load() noexcept
+    {
         uint8_t buffer[TOTAL_SIZE];
 
         auto read_res = platform_.storage->read(CONFIG_ADDRESS, buffer, TOTAL_SIZE);
@@ -72,8 +76,7 @@ public:
         uint32_t magic;
         memcpy(&magic, buffer, 4);
         if (magic != CONFIG_MAGIC) {
-            return core::Result<SystemConfig>(
-                GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation));
+            return core::Result<SystemConfig>(GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation));
         }
 
         // Verify CRC
@@ -85,8 +88,7 @@ public:
         uint32_t stored_crc;
         memcpy(&stored_crc, buffer + TOTAL_SIZE - FOOTER_SIZE, 4);
         if (crc_res.value() != stored_crc) {
-            return core::Result<SystemConfig>(
-                GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation));
+            return core::Result<SystemConfig>(GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation));
         }
 
         // Deserialize config
@@ -98,7 +100,8 @@ public:
     /**
      * @brief Load config from NVS, or return defaults if not present
      */
-    SystemConfig load_or_default(const SystemConfig& defaults) noexcept {
+    SystemConfig load_or_default(const SystemConfig& defaults) noexcept
+    {
         auto result = load();
         if (result.is_ok()) {
             return result.value();
@@ -110,7 +113,8 @@ public:
     /**
      * @brief Erase saved config from NVS
      */
-    core::Result<void> erase() noexcept {
+    core::Result<void> erase() noexcept
+    {
         return platform_.storage->erase(CONFIG_ADDRESS, TOTAL_SIZE);
     }
 

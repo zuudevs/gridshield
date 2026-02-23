@@ -3,9 +3,9 @@
  * @brief Unit tests for CryptoEngine (ECC + AES-GCM + SHA-256)
  */
 
-#include "unity.h"
-#include "security/crypto.hpp"
 #include "platform/mock_platform.hpp"
+#include "security/crypto.hpp"
+#include "unity.h"
 
 using namespace gridshield;
 using namespace gridshield::security;
@@ -17,7 +17,8 @@ using namespace gridshield::platform::mock;
 
 static MockCrypto g_mock_crypto;
 
-static CryptoEngine& get_engine() {
+static CryptoEngine& get_engine()
+{
     static CryptoEngine engine(g_mock_crypto);
     return engine;
 }
@@ -26,7 +27,8 @@ static CryptoEngine& get_engine() {
 // Keypair Generation
 // ============================================================================
 
-static void test_crypto_generate_keypair(void) {
+static void test_crypto_generate_keypair(void)
+{
     auto& engine = get_engine();
     ECCKeyPair kp;
 
@@ -40,7 +42,8 @@ static void test_crypto_generate_keypair(void) {
 // ECDSA Sign + Verify
 // ============================================================================
 
-static void test_crypto_sign_verify(void) {
+static void test_crypto_sign_verify(void)
+{
     auto& engine = get_engine();
     ECCKeyPair kp;
     engine.generate_keypair(kp);
@@ -56,7 +59,8 @@ static void test_crypto_sign_verify(void) {
     TEST_ASSERT_TRUE(verify_res.value());
 }
 
-static void test_crypto_verify_wrong_message(void) {
+static void test_crypto_verify_wrong_message(void)
+{
     auto& engine = get_engine();
     ECCKeyPair kp;
     engine.generate_keypair(kp);
@@ -72,7 +76,8 @@ static void test_crypto_verify_wrong_message(void) {
     TEST_ASSERT_FALSE(verify_res.value());
 }
 
-static void test_crypto_sign_null_params(void) {
+static void test_crypto_sign_null_params(void)
+{
     auto& engine = get_engine();
     ECCKeyPair kp;
     engine.generate_keypair(kp);
@@ -87,7 +92,8 @@ static void test_crypto_sign_null_params(void) {
 // SHA-256
 // ============================================================================
 
-static void test_crypto_hash_sha256(void) {
+static void test_crypto_hash_sha256(void)
+{
     auto& engine = get_engine();
 
     const uint8_t data[] = "Hello GridShield";
@@ -99,12 +105,16 @@ static void test_crypto_hash_sha256(void) {
     // Hash should be non-zero
     bool all_zero = true;
     for (size_t i = 0; i < SHA256_HASH_SIZE; ++i) {
-        if (hash[i] != 0) { all_zero = false; break; }
+        if (hash[i] != 0) {
+            all_zero = false;
+            break;
+        }
     }
     TEST_ASSERT_FALSE(all_zero);
 }
 
-static void test_crypto_hash_null_params(void) {
+static void test_crypto_hash_null_params(void)
+{
     auto& engine = get_engine();
     uint8_t hash[SHA256_HASH_SIZE];
 
@@ -116,7 +126,8 @@ static void test_crypto_hash_null_params(void) {
 // Random Bytes
 // ============================================================================
 
-static void test_crypto_random_bytes(void) {
+static void test_crypto_random_bytes(void)
+{
     auto& engine = get_engine();
 
     uint8_t buf[32];
@@ -128,12 +139,16 @@ static void test_crypto_random_bytes(void) {
     // Should have generated something non-zero
     bool all_zero = true;
     for (size_t i = 0; i < sizeof(buf); ++i) {
-        if (buf[i] != 0) { all_zero = false; break; }
+        if (buf[i] != 0) {
+            all_zero = false;
+            break;
+        }
     }
     TEST_ASSERT_FALSE(all_zero);
 }
 
-static void test_crypto_random_null_buffer(void) {
+static void test_crypto_random_null_buffer(void)
+{
     auto& engine = get_engine();
 
     auto result = engine.random_bytes(nullptr, 32);
@@ -144,7 +159,8 @@ static void test_crypto_random_null_buffer(void) {
 // Suite Registration
 // ============================================================================
 
-void test_crypto_engine_suite(void) {
+void test_crypto_engine_suite(void)
+{
     RUN_TEST(test_crypto_generate_keypair);
     RUN_TEST(test_crypto_sign_verify);
     RUN_TEST(test_crypto_verify_wrong_message);

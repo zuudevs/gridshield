@@ -15,6 +15,7 @@
 
 #include "core/error.hpp"
 #include "core/types.hpp"
+#include <algorithm>
 #include <array>
 
 namespace gridshield::core {
@@ -22,7 +23,8 @@ namespace gridshield::core {
 // ============================================================================
 // SERVICE IDENTIFIERS
 // ============================================================================
-enum class ServiceId : uint8_t {
+enum class ServiceId : uint8_t
+{
     Crypto = 0,
     Tamper = 1,
     Network = 2,
@@ -35,23 +37,26 @@ enum class ServiceId : uint8_t {
 // ============================================================================
 // SERVICE HEALTH
 // ============================================================================
-enum class ServiceHealth : uint8_t {
-    Healthy = 0,    // Fully operational
-    Degraded = 1,   // Partial functionality
-    Failed = 2,     // Non-functional
-    Disabled = 3    // Intentionally off
+enum class ServiceHealth : uint8_t
+{
+    Healthy = 0,  // Fully operational
+    Degraded = 1, // Partial functionality
+    Failed = 2,   // Non-functional
+    Disabled = 3  // Intentionally off
 };
 
 // ============================================================================
 // DEGRADATION POLICY
 // ============================================================================
-struct DegradationPolicy {
-    bool allow_without_crypto{false};    // CRITICAL — cannot operate
-    bool allow_without_tamper{true};     // Can operate, reduced security
-    bool allow_without_network{true};    // Can buffer data locally
-    bool allow_without_analytics{true};  // Can operate without anomaly detection
-    bool allow_without_storage{true};    // Can operate in-memory only
-    uint8_t max_network_failures{5};     // Disable network after N failures
+struct DegradationPolicy
+{
+    bool allow_without_crypto{false};   // CRITICAL — cannot operate
+    bool allow_without_tamper{true};    // Can operate, reduced security
+    bool allow_without_network{true};   // Can buffer data locally
+    bool allow_without_analytics{true}; // Can operate without anomaly detection
+    bool allow_without_storage{true};   // Can operate in-memory only
+    static constexpr uint8_t DEFAULT_MAX_NETWORK_FAILURES = 5;
+    uint8_t max_network_failures{DEFAULT_MAX_NETWORK_FAILURES}; // Disable network after N failures
 
     GS_CONSTEXPR DegradationPolicy() noexcept = default;
 };
@@ -59,32 +64,35 @@ struct DegradationPolicy {
 // ============================================================================
 // DEGRADATION MANAGER
 // ============================================================================
-class DegradationManager {
+class DegradationManager
+{
 public:
     DegradationManager() noexcept = default;
 
     /**
      * @brief Initialize with a degradation policy
      */
-    void set_policy(const DegradationPolicy& policy) noexcept {
+    void set_policy(const DegradationPolicy& policy) noexcept
+    {
         policy_ = policy;
         for (auto& hlt : health_) {
-			hlt = ServiceHealth::Healthy;
-		}
+            hlt = ServiceHealth::Healthy;
+        }
         for (auto& fct : failure_counts_) {
-			fct = 0;
-		}
+            fct = 0;
+        }
     }
 
     /**
      * @brief Report a subsystem failure
      * @return true if the system can continue operating
      */
-    bool report_failure(ServiceId service, ErrorCode error) noexcept {
+    bool report_failure(ServiceId service, ErrorCode error) noexcept
+    {
         auto idx = static_cast<uint8_t>(service);
         if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
-			return false;
-		}
+            return false;
+        }
 
         ++failure_counts_[idx];
         health_[idx] = ServiceHealth::Failed;
@@ -96,11 +104,12 @@ public:
     /**
      * @brief Report a subsystem recovery
      */
-    void report_recovery(ServiceId service) noexcept {
+    void report_recovery(ServiceId service) noexcept
+    {
         auto idx = static_cast<uint8_t>(service);
         if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
-			return;
-		}
+            return;
+        }
 
         health_[idx] = ServiceHealth::Healthy;
         failure_counts_[idx] = 0;
@@ -110,18 +119,20 @@ public:
     /**
      * @brief Mark a service as degraded (partial functionality)
      */
-    void report_degraded(ServiceId service) noexcept {
+    void report_degraded(ServiceId service) noexcept
+    {
         auto idx = static_cast<uint8_t>(service);
         if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
-			return;
-		}
+            return;
+        }
         health_[idx] = ServiceHealth::Degraded;
     }
 
     /**
      * @brief Check if the system can continue operating
      */
-    GS_NODISCARD bool can_continue() const noexcept {
+    GS_NODISCARD bool can_continue() const noexcept
+    {
         // Crypto is always required
         if (!policy_.allow_without_crypto &&
             health_[static_cast<uint8_t>(ServiceId::Crypto)] == ServiceHealth::Failed) {
@@ -149,47 +160,47 @@ public:
     /**
      * @brief Check if a specific service is available
      */
-    GS_NODISCARD bool is_service_available(ServiceId service) const noexcept {
+    GS_NODISCARD bool is_service_available(ServiceId service) const noexcept
+    {
         auto idx = static_cast<uint8_t>(service);
         if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
-			return false;
-		}
-        return health_[idx] == ServiceHealth::Healthy ||
-               health_[idx] == ServiceHealth::Degraded;
+            return false;
+        }
+        return health_[idx] == ServiceHealth::Healthy || health_[idx] == ServiceHealth::Degraded;
     }
 
     /**
      * @brief Get health of a specific service
      */
-    GS_NODISCARD ServiceHealth get_health(ServiceId service) const noexcept {
+    GS_NODISCARD ServiceHealth get_health(ServiceId service) const noexcept
+    {
         auto idx = static_cast<uint8_t>(service);
         if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
             return ServiceHealth::Failed;
-		}
+        }
         return health_[idx];
     }
 
     /**
      * @brief Get failure count for a service
      */
-    GS_NODISCARD uint16_t get_failure_count(ServiceId service) const noexcept {
+    GS_NODISCARD uint16_t get_failure_count(ServiceId service) const noexcept
+    {
         auto idx = static_cast<uint8_t>(service);
         if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
-			return 0;
-		}
+            return 0;
+        }
         return failure_counts_[idx];
     }
 
     /**
      * @brief Check if any service is degraded or failed
      */
-    GS_NODISCARD bool is_degraded() const noexcept {
-        for (const auto& hlt : health_) {
-            if (hlt != ServiceHealth::Healthy) {
-				return true;
-			}
-        }
-        return false;
+    GS_NODISCARD bool is_degraded() const noexcept
+    {
+        return std::any_of(health_.begin(), health_.end(), [](ServiceHealth hlt) {
+            return hlt != ServiceHealth::Healthy;
+        });
     }
 
 private:

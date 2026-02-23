@@ -3,9 +3,9 @@
  * @brief Integration tests — GridShieldSystem full lifecycle
  */
 
-#include "unity.h"
 #include "core/system.hpp"
 #include "platform/mock_platform.hpp"
+#include "unity.h"
 
 using namespace gridshield;
 using namespace gridshield::platform;
@@ -15,7 +15,8 @@ using namespace gridshield::platform::mock;
 // Helpers
 // ============================================================================
 
-struct SystemFixture {
+struct SystemFixture
+{
     MockTime time;
     MockGPIO gpio;
     MockInterrupt interrupt;
@@ -25,7 +26,8 @@ struct SystemFixture {
     PlatformServices services;
     GridShieldSystem system;
 
-    SystemFixture() noexcept {
+    SystemFixture() noexcept
+    {
         services.time = &time;
         services.gpio = &gpio;
         services.interrupt = &interrupt;
@@ -35,7 +37,8 @@ struct SystemFixture {
         comm.set_connected(true);
     }
 
-    SystemConfig make_config() {
+    SystemConfig make_config()
+    {
         SystemConfig config;
         config.meter_id = 0xDEADBEEF;
         config.heartbeat_interval_ms = 60000;
@@ -57,7 +60,8 @@ struct SystemFixture {
 // Full Lifecycle
 // ============================================================================
 
-static void test_integration_full_lifecycle(void) {
+static void test_integration_full_lifecycle(void)
+{
     SystemFixture f;
     auto config = f.make_config();
 
@@ -88,7 +92,8 @@ static void test_integration_full_lifecycle(void) {
 // Double Init Should Fail
 // ============================================================================
 
-static void test_integration_double_init(void) {
+static void test_integration_double_init(void)
+{
     SystemFixture f;
     auto config = f.make_config();
 
@@ -101,7 +106,8 @@ static void test_integration_double_init(void) {
 // Start Without Init
 // ============================================================================
 
-static void test_integration_start_without_init(void) {
+static void test_integration_start_without_init(void)
+{
     SystemFixture f;
     auto result = f.system.start();
     TEST_ASSERT_TRUE(result.is_error());
@@ -111,7 +117,8 @@ static void test_integration_start_without_init(void) {
 // Process Cycle Before Start
 // ============================================================================
 
-static void test_integration_cycle_before_start(void) {
+static void test_integration_cycle_before_start(void)
+{
     SystemFixture f;
     auto config = f.make_config();
     f.system.initialize(config, f.services);
@@ -124,7 +131,8 @@ static void test_integration_cycle_before_start(void) {
 // Reinitialize After Shutdown
 // ============================================================================
 
-static void test_integration_reinit_after_shutdown(void) {
+static void test_integration_reinit_after_shutdown(void)
+{
     SystemFixture f;
     auto config = f.make_config();
 
@@ -152,7 +160,8 @@ static void test_integration_reinit_after_shutdown(void) {
 // Invalid Platform Services
 // ============================================================================
 
-static void test_integration_invalid_platform(void) {
+static void test_integration_invalid_platform(void)
+{
     SystemFixture f;
     auto config = f.make_config();
 
@@ -165,7 +174,8 @@ static void test_integration_invalid_platform(void) {
 // Suite Registration
 // ============================================================================
 
-void test_system_integration_suite(void) {
+void test_system_integration_suite(void)
+{
     RUN_TEST(test_integration_full_lifecycle);
     RUN_TEST(test_integration_double_init);
     RUN_TEST(test_integration_start_without_init);

@@ -3,9 +3,9 @@
  * @brief Unit tests for TamperDetector
  */
 
-#include "unity.h"
 #include "hardware/tamper.hpp"
 #include "platform/mock_platform.hpp"
+#include "unity.h"
 
 using namespace gridshield;
 using namespace gridshield::hardware;
@@ -16,7 +16,8 @@ using namespace gridshield::platform::mock;
 // Helpers
 // ============================================================================
 
-struct TamperTestFixture {
+struct TamperTestFixture
+{
     MockTime time;
     MockGPIO gpio;
     MockInterrupt interrupt;
@@ -26,7 +27,8 @@ struct TamperTestFixture {
     PlatformServices services;
     TamperDetector detector;
 
-    TamperTestFixture() noexcept {
+    TamperTestFixture() noexcept
+    {
         services.time = &time;
         services.gpio = &gpio;
         services.interrupt = &interrupt;
@@ -36,7 +38,8 @@ struct TamperTestFixture {
     }
 };
 
-static TamperConfig make_config(uint8_t pin = 4, uint16_t debounce = 50) {
+static TamperConfig make_config(uint8_t pin = 4, uint16_t debounce = 50)
+{
     TamperConfig cfg;
     cfg.sensor_pin = pin;
     cfg.debounce_ms = debounce;
@@ -48,13 +51,15 @@ static TamperConfig make_config(uint8_t pin = 4, uint16_t debounce = 50) {
 // Initialization
 // ============================================================================
 
-static void test_tamper_initialize(void) {
+static void test_tamper_initialize(void)
+{
     TamperTestFixture f;
     auto result = f.detector.initialize(make_config(), f.services);
     TEST_ASSERT_TRUE(result.is_ok());
 }
 
-static void test_tamper_double_init(void) {
+static void test_tamper_double_init(void)
+{
     TamperTestFixture f;
     f.detector.initialize(make_config(), f.services);
     auto result = f.detector.initialize(make_config(), f.services);
@@ -66,7 +71,8 @@ static void test_tamper_double_init(void) {
 // Start / Stop
 // ============================================================================
 
-static void test_tamper_start_stop(void) {
+static void test_tamper_start_stop(void)
+{
     TamperTestFixture f;
     f.detector.initialize(make_config(), f.services);
 
@@ -77,7 +83,8 @@ static void test_tamper_start_stop(void) {
     TEST_ASSERT_TRUE(stop_res.is_ok());
 }
 
-static void test_tamper_start_without_init(void) {
+static void test_tamper_start_without_init(void)
+{
     TamperTestFixture f;
     auto result = f.detector.start();
     TEST_ASSERT_TRUE(result.is_error());
@@ -87,7 +94,8 @@ static void test_tamper_start_without_init(void) {
 // Tamper State
 // ============================================================================
 
-static void test_tamper_initial_state(void) {
+static void test_tamper_initial_state(void)
+{
     TamperTestFixture f;
     f.detector.initialize(make_config(), f.services);
     TEST_ASSERT_FALSE(f.detector.is_tampered());
@@ -99,7 +107,8 @@ static void test_tamper_initial_state(void) {
 // Poll (no ISR trigger)
 // ============================================================================
 
-static void test_tamper_poll_no_trigger(void) {
+static void test_tamper_poll_no_trigger(void)
+{
     TamperTestFixture f;
     f.detector.initialize(make_config(), f.services);
     f.detector.start();
@@ -113,7 +122,8 @@ static void test_tamper_poll_no_trigger(void) {
 // Reset
 // ============================================================================
 
-static void test_tamper_reset(void) {
+static void test_tamper_reset(void)
+{
     TamperTestFixture f;
     f.detector.initialize(make_config(), f.services);
     f.detector.start();
@@ -127,7 +137,8 @@ static void test_tamper_reset(void) {
 // Acknowledge
 // ============================================================================
 
-static void test_tamper_acknowledge(void) {
+static void test_tamper_acknowledge(void)
+{
     TamperTestFixture f;
     f.detector.initialize(make_config(), f.services);
     f.detector.start();
@@ -140,7 +151,8 @@ static void test_tamper_acknowledge(void) {
 // Suite Registration
 // ============================================================================
 
-void test_tamper_detector_suite(void) {
+void test_tamper_detector_suite(void)
+{
     RUN_TEST(test_tamper_initialize);
     RUN_TEST(test_tamper_double_init);
     RUN_TEST(test_tamper_start_stop);

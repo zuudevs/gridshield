@@ -13,8 +13,7 @@
 // ============================================================================
 // PLATFORM DETECTION
 // ============================================================================
-#if defined(ARDUINO) || defined(ESP32) || defined(ESP_PLATFORM) ||             \
-    defined(__AVR__)
+#if defined(ARDUINO) || defined(ESP32) || defined(ESP_PLATFORM) || defined(__AVR__)
 #define GS_PLATFORM_ARDUINO 1
 #define GS_PLATFORM_NATIVE 0
 #else
@@ -67,31 +66,34 @@
 // Manual move for AVR (C++17 compliant)
 namespace gridshield {
 namespace detail {
-template <typename T> struct remove_reference {
-  using type = T;
+template <typename T> struct remove_reference
+{
+    using type = T;
 };
 
-template <typename T> struct remove_reference<T &> {
-  using type = T;
+template <typename T> struct remove_reference<T&>
+{
+    using type = T;
 };
 
-template <typename T> struct remove_reference<T &&> {
-  using type = T;
+template <typename T> struct remove_reference<T&&>
+{
+    using type = T;
 };
 
-template <typename T>
-inline typename remove_reference<T>::type &&move_impl(T &&arg) noexcept {
-  return static_cast<typename remove_reference<T>::type &&>(arg);
+template <typename T> inline typename remove_reference<T>::type&& move_impl(T&& arg) noexcept
+{
+    return static_cast<typename remove_reference<T>::type&&>(arg);
 }
 
-template <typename T>
-inline T &&forward_impl(typename remove_reference<T>::type &arg) noexcept {
-  return static_cast<T &&>(arg);
+template <typename T> inline T&& forward_impl(typename remove_reference<T>::type& arg) noexcept
+{
+    return static_cast<T&&>(arg);
 }
 
-template <typename T>
-inline T &&forward_impl(typename remove_reference<T>::type &&arg) noexcept {
-  return static_cast<T &&>(arg);
+template <typename T> inline T&& forward_impl(typename remove_reference<T>::type&& arg) noexcept
+{
+    return static_cast<T&&>(arg);
 }
 } // namespace detail
 } // namespace gridshield

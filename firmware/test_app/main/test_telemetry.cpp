@@ -3,8 +3,8 @@
  * @brief Unit tests for SystemTelemetry
  */
 
-#include "unity.h"
 #include "core/telemetry.hpp"
+#include "unity.h"
 
 using namespace gridshield::core;
 
@@ -12,7 +12,8 @@ using namespace gridshield::core;
 // Initial State
 // ============================================================================
 
-static void test_telem_initial_zero(void) {
+static void test_telem_initial_zero(void)
+{
     SystemTelemetry telem;
     auto& c = telem.counters();
     TEST_ASSERT_EQUAL(0, c.packets_sent);
@@ -25,7 +26,8 @@ static void test_telem_initial_zero(void) {
 // Network counters
 // ============================================================================
 
-static void test_telem_network(void) {
+static void test_telem_network(void)
+{
     SystemTelemetry telem;
     telem.record_packet_sent(128);
     telem.record_packet_sent(64);
@@ -46,7 +48,8 @@ static void test_telem_network(void) {
 // Security counters
 // ============================================================================
 
-static void test_telem_security(void) {
+static void test_telem_security(void)
+{
     SystemTelemetry telem;
     telem.record_crypto_op();
     telem.record_crypto_op();
@@ -65,7 +68,8 @@ static void test_telem_security(void) {
 // Error counters
 // ============================================================================
 
-static void test_telem_errors(void) {
+static void test_telem_errors(void)
+{
     SystemTelemetry telem;
     telem.record_error(false);
     telem.record_error(true);
@@ -80,7 +84,8 @@ static void test_telem_errors(void) {
 // Cycle counters
 // ============================================================================
 
-static void test_telem_cycles(void) {
+static void test_telem_cycles(void)
+{
     SystemTelemetry telem;
     telem.record_cycle(false);
     telem.record_cycle(false);
@@ -95,7 +100,8 @@ static void test_telem_cycles(void) {
 // Boot + Uptime
 // ============================================================================
 
-static void test_telem_uptime(void) {
+static void test_telem_uptime(void)
+{
     SystemTelemetry telem;
     telem.record_boot(1000);
     telem.update_uptime(6000);
@@ -109,7 +115,8 @@ static void test_telem_uptime(void) {
 // Reset
 // ============================================================================
 
-static void test_telem_reset(void) {
+static void test_telem_reset(void)
+{
     SystemTelemetry telem;
     telem.record_packet_sent(100);
     telem.record_error(true);
@@ -124,7 +131,8 @@ static void test_telem_reset(void) {
 // Suite Registration
 // ============================================================================
 
-void test_telemetry_suite(void) {
+void test_telemetry_suite(void)
+{
     RUN_TEST(test_telem_initial_zero);
     RUN_TEST(test_telem_network);
     RUN_TEST(test_telem_security);

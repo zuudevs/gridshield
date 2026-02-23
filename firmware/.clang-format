@@ -1,0 +1,85 @@
+# =============================================================================
+# Konfigurasi clang-format oleh Zuu untuk Rara
+# Cocok untuk C/C++ Modern (C++11 sampai C++20)
+# (Versi Update untuk LLVM 21+)
+# =============================================================================
+
+# Gunakan gaya LLVM sebagai basis utama
+BasedOnStyle: LLVM
+
+# Bahasa yang digunakan
+Language: Cpp
+
+# Standar bahasa (C++11, C++14, C++17, C++20, atau Auto)
+Standard: Latest
+
+# --- INDENTASI & SPASI ---
+
+# Lebar indentasi (biasanya 4 spasi adalah standar emas)
+IndentWidth: 4
+
+# Gunakan spasi, bukan Tab (biar tampilan konsisten di semua editor)
+UseTab: Never
+
+# Lebar Tab (jika tetap ingin pakai tab di beberapa tempat)
+TabWidth: 4
+
+# Indentasi untuk visibilitas (public:, private:, dsb)
+# Nilai -4 artinya sejajar dengan kolom 'class'
+AccessModifierOffset: -4
+
+# Indentasi untuk 'case' di dalam switch
+IndentCaseLabels: true
+
+# --- BATAS BARIS (WRAPPING) ---
+
+# Batas kolom maksimum sebelum kode dipaksa pindah baris
+ColumnLimit: 100
+
+# Jika ada parameter fungsi yang panjang, pecah jadi satu baris per parameter
+BinPackParameters: false
+BinPackArguments: false
+
+# --- BRACES (KURUNG KURAWAL) ---
+
+# Gaya peletakan kurung kurawal. 
+# 'Attach' berarti { di baris yang sama dengan fungsi/if.
+# 'Allman' berarti { di baris baru (gaya jadul tapi bersih).
+# Kita pakai 'Custom' untuk kontrol penuh.
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: Never
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: false
+  AfterStruct: true
+  BeforeElse: false
+  BeforeCatch: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+
+# --- PEMERAPIAN LAINNYA ---
+
+# Urutkan include secara alfabetis (biar nggak berantakan)
+SortIncludes: true
+
+# Tambahkan spasi setelah 'if', 'for', 'while'
+SpaceBeforeParens: ControlStatements
+
+# Spasi di dalam kurung siku array [ 1, 2 ] -> false berarti [1, 2]
+SpacesInContainerLiterals: false
+
+# Spasi sebelum assignment (a = b)
+SpaceBeforeAssignmentOperators: true
+
+# Jangan biarkan fungsi pendek jadi satu baris
+AllowShortFunctionsOnASingleLine: None
+
+# Jangan biarkan blok 'if' pendek jadi satu baris
+AllowShortIfStatementsOnASingleLine: false
+
+# Pastikan pointer menempel ke tipe data (int* p, bukan int *p)
+PointerAlignment: Left

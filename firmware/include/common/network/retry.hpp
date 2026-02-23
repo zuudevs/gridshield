@@ -18,7 +18,8 @@ namespace gridshield::network {
 // ============================================================================
 // RETRY POLICY
 // ============================================================================
-struct RetryPolicy {
+struct RetryPolicy
+{
     uint8_t max_retries{3};
     uint32_t base_delay_ms{100};
     uint32_t max_delay_ms{5000};
@@ -26,16 +27,17 @@ struct RetryPolicy {
 
     GS_CONSTEXPR RetryPolicy() noexcept = default;
 
-    GS_CONSTEXPR RetryPolicy(uint8_t retries, uint32_t base_ms,
-                             uint32_t max_ms, uint8_t factor) noexcept
-        : max_retries(retries), base_delay_ms(base_ms),
-          max_delay_ms(max_ms), backoff_factor(factor) {}
+    GS_CONSTEXPR
+    RetryPolicy(uint8_t retries, uint32_t base_ms, uint32_t max_ms, uint8_t factor) noexcept
+        : max_retries(retries), base_delay_ms(base_ms), max_delay_ms(max_ms), backoff_factor(factor)
+    {}
 };
 
 // ============================================================================
 // RETRY RESULT
 // ============================================================================
-struct RetryResult {
+struct RetryResult
+{
     uint8_t attempts{};
     bool succeeded{false};
     core::ErrorCode last_error{core::ErrorCode::Success};
@@ -52,18 +54,19 @@ struct RetryResult {
  *   RetryExecutor retry(policy, *platform.time);
  *   auto result = retry.execute([&]() { return transport.send(...); });
  */
-class RetryExecutor {
+class RetryExecutor
+{
 public:
-    RetryExecutor(const RetryPolicy& policy,
-                  platform::IPlatformTime& time) noexcept
-        : policy_(policy), time_(time) {}
+    RetryExecutor(const RetryPolicy& policy, platform::IPlatformTime& time) noexcept
+        : policy_(policy), time_(time)
+    {}
 
     /**
      * @brief Execute a callable with retry logic
      * @tparam Func Callable returning core::Result<void>
      */
-    template <typename Func>
-    RetryResult execute(Func&& operation) noexcept {
+    template <typename Func> RetryResult execute(Func&& operation) noexcept
+    {
         RetryResult result;
         uint32_t delay = policy_.base_delay_ms;
 
@@ -97,8 +100,8 @@ public:
     /**
      * @brief Execute with retry, returning the Result directly
      */
-    template <typename Func>
-    core::Result<void> execute_result(Func&& operation) noexcept {
+    template <typename Func> core::Result<void> execute_result(Func&& operation) noexcept
+    {
         auto retry_result = execute(GS_FORWARD(Func, operation));
         if (retry_result.succeeded) {
             return core::Result<void>();
