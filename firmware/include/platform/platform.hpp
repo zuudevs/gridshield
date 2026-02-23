@@ -24,7 +24,7 @@ public:
     virtual ~IPlatformTime() noexcept = default;
     
     virtual core::timestamp_t get_timestamp_ms() noexcept = 0;
-    virtual void delay_ms(uint32_t _ms) noexcept = 0;
+    virtual void delay_ms(uint32_t ms) noexcept = 0;
 };
 
 // ============================================================================

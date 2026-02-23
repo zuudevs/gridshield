@@ -15,6 +15,7 @@
 #include "core/types.hpp"
 #include "platform/platform.hpp"
 #include "security/crypto.hpp"
+#include <array>
 
 namespace gridshield::network {
 
@@ -58,10 +59,10 @@ struct PacketHeader {
 };
 
 struct PacketFooter {
-    uint8_t signature[security::ECC_SIGNATURE_SIZE];
-    uint8_t magic_footer;
+    std::array<uint8_t, security::ECC_SIGNATURE_SIZE> signature{};
+    uint8_t magic_footer{MAGIC_FOOTER};
     
-    PacketFooter() noexcept : magic_footer(MAGIC_FOOTER) {
+    PacketFooter() noexcept {
 #if GS_PLATFORM_NATIVE
         std::memset(signature, 0, security::ECC_SIGNATURE_SIZE);
 #else
@@ -108,10 +109,10 @@ private:
         const security::ECCKeyPair& keypair) noexcept;
     
     PacketHeader header_;
-    uint8_t payload_[MAX_PAYLOAD_SIZE];
+    std::array<uint8_t, MAX_PAYLOAD_SIZE> payload_{};
     PacketFooter footer_;
-    bool is_valid_;
-    core::sequence_t next_sequence_;
+    bool is_valid_{false};
+    core::sequence_t next_sequence_{};
 };
 
 // ============================================================================
