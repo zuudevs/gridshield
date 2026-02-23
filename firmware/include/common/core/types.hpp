@@ -227,9 +227,9 @@ public:
   void clear() noexcept {
     size_ = 0;
 #if GS_PLATFORM_NATIVE
-    std::memset(data_, 0, N);
+    std::memset(data_.data(), 0, N);
 #else
-    memset(data_, 0, N);
+    memset(data_.data(), 0, N);
 #endif
   }
 
@@ -238,9 +238,9 @@ public:
       return false;
 	}
 #if GS_PLATFORM_NATIVE || GS_PLATFORM_ESP32
-    std::memcpy(data_ + size_, data, len);
+    std::memcpy(data_.data() + size_, data, len);
 #else
-    memcpy(data_ + size_, data, len);
+    memcpy(data_.data() + size_, data, len);
 #endif
     size_ += len;
     return true;
