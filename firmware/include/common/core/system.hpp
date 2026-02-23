@@ -13,6 +13,8 @@
 
 #include "core/error.hpp"
 #include "core/types.hpp"
+#include "core/degradation.hpp"
+#include "core/telemetry.hpp"
 #include "platform/platform.hpp"
 #include "hardware/tamper.hpp"
 #include "security/crypto.hpp"
@@ -78,6 +80,10 @@ public:
     core::Result<void> send_tamper_alert() noexcept;
     core::Result<void> send_heartbeat() noexcept;
     
+    // Degradation & Telemetry accessors
+    GS_NODISCARD const core::DegradationManager& degradation() const noexcept { return degradation_; }
+    GS_NODISCARD const core::SystemTelemetry& telemetry() const noexcept { return telemetry_; }
+    
 private:
     core::Result<void> initialize_crypto() noexcept;
     core::Result<void> handle_tamper_event() noexcept;
@@ -108,6 +114,10 @@ private:
     
     // Cross-layer validation
     analytics::CrossLayerValidation validation_state_;
+    
+    // Degradation & Telemetry
+    core::DegradationManager degradation_;
+    core::SystemTelemetry telemetry_;
 };
 
 } // namespace gridshield

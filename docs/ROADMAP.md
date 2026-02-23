@@ -82,7 +82,7 @@ GridShield aims to become the **industry-standard open-source security framework
   - [x] Watchdog timer integration
 
 - [x] **Testing Infrastructure**
-  - [x] Unit tests with Unity (ESP-IDF) — 90 tests, 12 suites
+  - [x] Unit tests with Unity (ESP-IDF) — 104 tests, 14 suites
   - [x] Integration tests via QEMU
   - [ ] Fuzzing for packet parser
   - [ ] Code coverage reports (>80%)
@@ -93,11 +93,11 @@ GridShield aims to become the **industry-standard open-source security framework
   - [x] GitHub Actions: build on push
   - [x] Automated QEMU test runs
   - [x] Lint + clang-tidy checks
-  - [ ] Release artifact packaging
+  - [x] Release artifact packaging
 
-- [ ] **Documentation**
-  - [ ] Security audit report
-  - [ ] Threat model documentation
+- [x] **Documentation**
+  - [x] Security audit report
+  - [x] Threat model documentation
   - [ ] API examples for all modules
 
 ---
@@ -306,10 +306,10 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ### Medium Priority
 
-- [ ] Optimize packet serialization (reduce copies)
+- [x] ~~Optimize packet serialization (reduce copies)~~ *(done v2.0.2)*
 - [x] ~~Add runtime configuration via NVS~~ *(done v2.0.1)*
-- [ ] Implement graceful degradation
-- [ ] Add telemetry and diagnostics
+- [x] ~~Implement graceful degradation~~ *(done v2.0.2)*
+- [x] ~~Add telemetry and diagnostics~~ *(done v2.0.2)*
 
 ### Low Priority
 
@@ -377,7 +377,8 @@ Features are prioritized based on:
 | **1.0.1** | February 2026 | Critical bug fixes (ECDSA, ISR) |
 | **1.1.0** | February 2026 | Production crypto (micro-ecc, Arduino Crypto) |
 | **2.0.0** | February 2026 | ESP-IDF + QEMU migration, project restructure |
-| **2.0.1** | February 2026 | C++17 modernization, ESP_LOG, config validation, 60 tests |
+| **2.0.1** | February 2026 | C++17 modernization, ESP_LOG, config validation, 60→90 tests |
+| **2.0.2** | February 2026 | Graceful degradation, telemetry, security docs, release pipeline, 104 tests |
 | **2.1.0** | June 2026 (planned) | Security hardening, testing, CI/CD |
 | **2.2.0** | September 2026 (planned) | Communication protocols, sensors |
 | **3.0.0** | December 2026 (planned) | Cloud integration, ML analytics |

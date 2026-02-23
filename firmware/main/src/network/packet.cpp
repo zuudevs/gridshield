@@ -175,26 +175,23 @@ core::Result<size_t> SecurePacket::serialize(uint8_t* buffer, size_t buffer_size
         return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidState));
     }
     
-    const size_t required_size = sizeof(PacketHeader) + 
-                                 header_.payload_length + 
-                                 sizeof(PacketFooter);
+    const size_t payload_len = header_.payload_length;
+    const size_t required_size = sizeof(PacketHeader) + payload_len + sizeof(PacketFooter);
     
     if (GS_UNLIKELY(buffer_size < required_size)) {
         return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::BufferOverflow));
     }
     
-    // Serialize header
-#if GS_PLATFORM_NATIVE
-    std::memcpy(buffer, &header_, sizeof(PacketHeader));
-    std::memcpy(buffer + sizeof(PacketHeader), payload_, header_.payload_length);
-    std::memcpy(buffer + sizeof(PacketHeader) + header_.payload_length, 
-           &footer_, sizeof(PacketFooter));
-#else
-    memcpy(buffer, &header_, sizeof(PacketHeader));
-    memcpy(buffer + sizeof(PacketHeader), payload_, header_.payload_length);
-    memcpy(buffer + sizeof(PacketHeader) + header_.payload_length, 
-           &footer_, sizeof(PacketFooter));
-#endif
+    // Write cursor pattern — single pass, no redundant offset math
+    uint8_t* cursor = buffer;
+    
+    memcpy(cursor, &header_, sizeof(PacketHeader));
+    cursor += sizeof(PacketHeader);
+    
+    memcpy(cursor, payload_, payload_len);
+    cursor += payload_len;
+    
+    memcpy(cursor, &footer_, sizeof(PacketFooter));
     
     return core::Result<size_t>(required_size);
 }

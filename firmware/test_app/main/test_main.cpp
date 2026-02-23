@@ -24,6 +24,8 @@ extern void test_crypto_engine_suite(void);
 extern void test_key_rotation_suite(void);
 extern void test_retry_suite(void);
 extern void test_system_integration_suite(void);
+extern void test_degradation_suite(void);
+extern void test_telemetry_suite(void);
 
 extern "C" void app_main(void) {
     // Small delay for QEMU UART stabilization
@@ -50,6 +52,8 @@ extern "C" void app_main(void) {
     test_key_rotation_suite();
     test_retry_suite();
     test_system_integration_suite();
+    test_degradation_suite();
+    test_telemetry_suite();
 
     int failures = UNITY_END();
 

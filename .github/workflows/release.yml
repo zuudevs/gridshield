@@ -1,0 +1,69 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5
+          target: esp32
+
+      - name: Build Firmware
+        working-directory: firmware
+        run: idf.py build
+
+      - name: Build Test App
+        working-directory: firmware/test_app
+        run: idf.py build
+
+      - name: Package Artifacts
+        run: |
+          mkdir -p release
+          VERSION=${GITHUB_REF_NAME}
+          
+          # Firmware binary
+          cp firmware/build/gridshield.bin release/gridshield-${VERSION}.bin
+          cp firmware/build/bootloader/bootloader.bin release/bootloader-${VERSION}.bin
+          cp firmware/build/partition_table/partition-table.bin release/partition-table-${VERSION}.bin
+          cp firmware/build/flasher_args.json release/flasher_args-${VERSION}.json
+          
+          # Docs bundle
+          tar czf release/gridshield-docs-${VERSION}.tar.gz docs/
+          
+          # Source archive
+          git archive --format=tar.gz --prefix=gridshield-${VERSION}/ HEAD > release/gridshield-src-${VERSION}.tar.gz
+          
+          # Build info
+          echo "Version: ${VERSION}" > release/BUILD_INFO.txt
+          echo "Date: $(date -u)" >> release/BUILD_INFO.txt
+          echo "Commit: ${GITHUB_SHA}" >> release/BUILD_INFO.txt
+          echo "ESP-IDF: v5.5" >> release/BUILD_INFO.txt
+
+      - name: Generate SHA256 Checksums
+        working-directory: release
+        run: sha256sum * > SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'beta') }}
