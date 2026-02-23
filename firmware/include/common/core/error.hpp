@@ -18,6 +18,7 @@
     #include <type_traits>
 #else
     #include <stdint.h>
+	#include <new>
 #endif
 
 namespace gridshield {
