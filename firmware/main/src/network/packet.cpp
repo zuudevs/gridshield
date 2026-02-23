@@ -57,7 +57,7 @@ core::Result<void> SecurePacket::build(
     
     // Compute checksum (first 4 bytes of SHA256)
     uint8_t hash[security::SHA256_HASH_SIZE];
-    GS_TRY(crypto.hash_sha256(payload_, payload_len, hash));
+    GS_TRY(crypto.hash_sha256(payload_.data(), payload_len, hash));
 #if GS_PLATFORM_NATIVE
     std::memcpy(&header_.checksum, hash, sizeof(uint32_t));
 #else
