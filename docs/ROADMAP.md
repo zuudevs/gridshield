@@ -3,8 +3,8 @@
 Future development plans and feature roadmap for GridShield AMI Security System.
 
 **Last Updated:** February 2026  
-**Current Version:** 1.0.0  
-**Target Release:** 2.0.0 (Q4 2026)
+**Current Version:** 2.0.0  
+**Next Target:** 2.1.0 (Q2 2026)
 
 ---
 
@@ -23,115 +23,95 @@ Future development plans and feature roadmap for GridShield AMI Security System.
 
 GridShield aims to become the **industry-standard open-source security framework** for Advanced Metering Infrastructure (AMI) systems, providing:
 
-- **Universal Compatibility** - Support for all major embedded platforms
-- **Production-Grade Cryptography** - Full integration with hardware security modules
-- **Machine Learning** - Advanced anomaly detection using ML models
-- **Cloud Integration** - Seamless connection to cloud analytics platforms
-- **Regulatory Compliance** - Meet international smart meter security standards
+- **Production-Grade Cryptography** — Full integration with hardware security modules
+- **Machine Learning** — Advanced anomaly detection using ML models
+- **Cloud Integration** — Seamless connection to cloud analytics platforms
+- **Regulatory Compliance** — Meet international smart meter security standards
 
 ---
 
 ## Current Status
 
-### ✅ Completed (v1.0.0)
+### ✅ Completed (v2.0.0)
 
 - [x] Multi-layer security architecture (Physical, Network, Analytics)
 - [x] C++17 codebase with zero heap allocation
-- [x] Platform abstraction layer (HAL)
-- [x] Native (PC) testing platform
-- [x] Arduino AVR support (Mega 2560)
+- [x] Platform abstraction layer (HAL) with mock implementations
 - [x] Result-based error handling (no exceptions)
-- [x] Tamper detection with ISR support
-- [x] Placeholder cryptography (ECDSA, SHA-256, AES-GCM)
-- [x] Secure packet protocol
-- [x] Statistical anomaly detection
-- [x] Cross-layer validation
-- [x] CMake build system with presets
-- [x] Comprehensive documentation
+- [x] Tamper detection with ISR + deferred debounce
+- [x] Production crypto: ECDSA (micro-ecc), SHA-256
+- [x] Secure packet protocol with signature verification
+- [x] Statistical anomaly detection + profile learning
+- [x] Cross-layer threat correlation
+- [x] **ESP-IDF v5.5 build system** (replaces CMake/PlatformIO)
+- [x] **ESP32 target platform** (Xtensa LX6)
+- [x] **QEMU simulation** (replaces Renode/Wokwi)
+- [x] GDB debugging support via QEMU
+- [x] Automation script (`scripts/script.ps1`)
+- [x] Comprehensive documentation (7 docs updated for v2.0.0)
 
 ### 🚧 In Progress
 
-- [x] Production crypto library integration (uECC, mbedTLS/Crypto)
-- [x] Arduino Crypto library integration (SHA-256/AES)
-- [ ] Unit test suite (GTest/Unity) - *Partial (Native only)*
-- [ ] Example projects
-- [ ] CI/CD pipeline
+- [x] Unit test suite (Unity for ESP-IDF) — 37 tests, 5 suites
+- [x] CI/CD pipeline (GitHub Actions) — 3-job workflow
+- [x] Backend integration (Python + FastAPI) — 8 API endpoints
+- [ ] Hardware testing with physical ESP32
 
 ---
 
 ## Roadmap Timeline
 
-### Q2 2026 - Security Hardening (v1.1.0)
+### Q2 2026 — Security Hardening & Testing (v2.1.0)
 
 **Target Release:** June 2026
 
 #### High Priority
 
-- [x] **Production Cryptography**
-  - [x] Integrate micro-ecc (uECC) for ECDSA
-  - [x] Integrate Arduino Crypto library for SHA-256
-  - [x] Implement AES-256-GCM encryption
-  - [x] Native Build System Standardization (PlatformIO deps)
-  - [ ] Hardware RNG integration (TRNG)
-  - [ ] Secure key derivation (PBKDF2/HKDF)
-
 - [ ] **Secure Key Storage**
-  - [ ] ATECC608 secure element driver
-  - [ ] EEPROM encrypted storage
+  - [ ] NVS (Non-Volatile Storage) encrypted key store
   - [ ] Key rotation mechanism
   - [ ] Backup key management
 
 - [ ] **Security Enhancements**
-  - [ ] Enable stack canaries
-  - [ ] Position-independent code (PIE)
-  - [ ] Secure boot verification
-  - [ ] Anti-rollback protection
+  - [ ] Hardware RNG integration (ESP32 TRNG)
+  - [ ] Secure key derivation (HKDF)
+  - [ ] ESP32 Secure Boot v2
+  - [ ] Flash encryption
   - [ ] Watchdog timer integration
+
+- [ ] **Testing Infrastructure**
+  - [ ] Unit tests with Unity (ESP-IDF)
+  - [ ] Integration tests via QEMU
+  - [ ] Fuzzing for packet parser
+  - [ ] Code coverage reports (>80%)
 
 #### Medium Priority
 
-- [ ] **Testing Infrastructure**
-  - [ ] Unit tests with Google Test
-  - [ ] Integration tests
-  - [ ] Hardware-in-loop (HIL) tests
-  - [ ] Fuzzing for packet parser
-  - [ ] Code coverage reports (>80%)
+- [ ] **CI/CD Pipeline**
+  - [ ] GitHub Actions: build on push
+  - [ ] Automated QEMU test runs
+  - [ ] Lint + clang-tidy checks
+  - [ ] Release artifact packaging
 
 - [ ] **Documentation**
   - [ ] Security audit report
   - [ ] Threat model documentation
   - [ ] API examples for all modules
-  - [ ] Video tutorials
 
 ---
 
-### Q3 2026 - Platform Expansion (v1.2.0)
+### Q3 2026 — Communication & Sensors (v2.2.0)
 
 **Target Release:** September 2026
 
 #### High Priority
 
-- [ ] **ESP32 Support**
-  - [ ] ESP-IDF platform implementation
-  - [ ] WiFi/BLE communication modules
-  - [ ] OTA update support
-  - [ ] Hardware acceleration (AES, SHA)
-  - [ ] Secure boot from flash
-
-- [ ] **STM32 Support**
-  - [ ] HAL driver implementation
-  - [ ] CubeMX integration
-  - [ ] Hardware crypto engine (AES, RNG)
-  - [ ] TrustZone integration (STM32L5/U5)
-
 - [ ] **Communication Protocols**
-  - [ ] LoRa/LoRaWAN driver
-  - [ ] NB-IoT driver (SIM7000)
-  - [ ] Zigbee support
-  - [ ] Modbus integration
-  - [ ] MQTT client
-
-#### Medium Priority
+  - [ ] WiFi HTTP/MQTT (ESP32 built-in)
+  - [ ] MQTT over TLS
+  - [ ] LoRa/LoRaWAN driver (SX1276/SX1278)
+  - [ ] Modbus RTU/TCP
+  - [ ] CoAP protocol support
 
 - [ ] **Real Sensor Integration**
   - [ ] ACS712 current sensor driver
@@ -140,15 +120,23 @@ GridShield aims to become the **industry-standard open-source security framework
   - [ ] DS18B20 temperature sensor
   - [ ] MPU6050 accelerometer (shock detection)
 
-- [ ] **Build System**
-  - [ ] PlatformIO support
-  - [ ] Docker build environment
-  - [ ] Cross-compilation toolchains
-  - [ ] Automated firmware packaging
+#### Medium Priority
+
+- [ ] **OTA Updates**
+  - [ ] Over-the-air firmware update
+  - [ ] Signed firmware images
+  - [ ] Rollback protection
+  - [ ] Delta update support
+
+- [ ] **Power Management**
+  - [ ] ESP32 deep sleep modes
+  - [ ] Wake-on-tamper
+  - [ ] Adaptive duty cycling
+  - [ ] Power consumption profiling
 
 ---
 
-### Q4 2026 - Cloud & Analytics (v2.0.0)
+### Q4 2026 — Cloud & Analytics (v3.0.0)
 
 **Target Release:** December 2026
 
@@ -157,20 +145,17 @@ GridShield aims to become the **industry-standard open-source security framework
 - [ ] **Cloud Integration**
   - [ ] AWS IoT Core connector
   - [ ] Azure IoT Hub connector
-  - [ ] Google Cloud IoT connector
-  - [ ] MQTT-TLS support
-  - [ ] CoAP protocol support
+  - [ ] MQTT-TLS with certificate management
+  - [ ] Device provisioning service
 
 - [ ] **Advanced Analytics**
   - [ ] Machine Learning anomaly detection
   - [ ] TensorFlow Lite Micro integration
-  - [ ] Behavioral profiling (LSTM/GRU)
   - [ ] Time-series forecasting
-  - [ ] Edge AI inference
+  - [ ] Edge AI inference on ESP32
 
 - [ ] **Dashboard & Monitoring**
-  - [ ] Web-based configuration portal
-  - [ ] Real-time monitoring dashboard
+  - [ ] Web-based real-time dashboard
   - [ ] Alert management system
   - [ ] Historical data visualization
   - [ ] Fleet management console
@@ -178,15 +163,13 @@ GridShield aims to become the **industry-standard open-source security framework
 #### Medium Priority
 
 - [ ] **Protocol Enhancements**
-  - [ ] Multi-hop mesh networking
-  - [ ] Time synchronization (NTP/PTP)
-  - [ ] Firmware update protocol
+  - [ ] Multi-hop mesh networking (ESP-NOW)
+  - [ ] Time synchronization (SNTP)
   - [ ] Remote configuration
   - [ ] Certificate management (X.509)
 
 - [ ] **Performance Optimization**
-  - [ ] ARM assembly optimizations
-  - [ ] SIMD acceleration (NEON)
+  - [ ] ESP32 hardware crypto acceleration (AES, SHA)
   - [ ] Memory pool allocator
   - [ ] Zero-copy packet processing
   - [ ] Profiling and benchmarking tools
@@ -206,7 +189,7 @@ GridShield aims to become the **industry-standard open-source security framework
   - [ ] Cipher suite negotiation
 
 - [ ] **Secure Communication**
-  - [ ] TLS 1.3 support
+  - [ ] TLS 1.3 support via mbedTLS (ESP-IDF built-in)
   - [ ] DTLS for UDP
   - [ ] Certificate pinning
   - [ ] Perfect forward secrecy (PFS)
@@ -216,24 +199,15 @@ GridShield aims to become the **industry-standard open-source security framework
   - [ ] Hierarchical key derivation
   - [ ] Key escrow and recovery
   - [ ] Hardware Security Module (HSM) integration
-  - [ ] PKCS#11 interface
   - [ ] Key lifecycle management
 
 #### Hardware Features
 
 - [ ] **Extended Tamper Detection**
-  - [ ] Ultrasonic intrusion detection
   - [ ] Capacitive touch detection
   - [ ] Light sensor (casing removal)
   - [ ] Gyroscope (orientation change)
   - [ ] Pressure sensor (enclosure integrity)
-
-- [ ] **Power Management**
-  - [ ] Deep sleep modes
-  - [ ] Wake-on-event
-  - [ ] Solar/battery power support
-  - [ ] Power consumption profiling
-  - [ ] Adaptive duty cycling
 
 - [ ] **Sensor Fusion**
   - [ ] Multi-sensor correlation
@@ -247,13 +221,11 @@ GridShield aims to become the **industry-standard open-source security framework
   - [ ] Isolation Forest algorithm
   - [ ] One-Class SVM
   - [ ] Autoencoder-based detection
-  - [ ] Ensemble methods
   - [ ] Adaptive thresholds
 
 - [ ] **Behavioral Analysis**
   - [ ] User consumption patterns
   - [ ] Seasonal decomposition
-  - [ ] Trend analysis
   - [ ] Appliance load disaggregation
   - [ ] Predictive maintenance
 
@@ -261,7 +233,6 @@ GridShield aims to become the **industry-standard open-source security framework
   - [ ] Attack signature database
   - [ ] Incident timeline reconstruction
   - [ ] Evidence preservation
-  - [ ] Chain of custody
   - [ ] Automated reporting
 
 ---
@@ -271,37 +242,33 @@ GridShield aims to become the **industry-standard open-source security framework
 #### Tooling
 
 - [ ] **Development Tools**
-  - [ ] VS Code extension
-  - [ ] CLion plugin
-  - [ ] Debugger integration (GDB/LLDB)
-  - [ ] Memory analyzer
-  - [ ] Code formatter (clang-format config)
+  - [ ] VS Code + ESP-IDF extension setup guide
+  - [x] GDB debugging via QEMU
+  - [x] Automation script (`script.ps1`)
+  - [x] Code formatter (`.clang-format` + `.clang-tidy`)
 
 - [ ] **Build & Deploy**
   - [ ] GitHub Actions workflows
-  - [ ] GitLab CI/CD
+  - [ ] Automated QEMU testing in CI
   - [ ] Artifact registry
   - [ ] Release automation
   - [ ] Semantic versioning
 
 - [ ] **Quality Assurance**
-  - [ ] Static analysis (Clang-Tidy, Cppcheck)
-  - [ ] Dynamic analysis (Valgrind, ASan)
+  - [ ] Static analysis (clang-tidy rules)
+  - [ ] Dynamic analysis (ASan via QEMU)
   - [ ] Mutation testing
-  - [ ] Performance regression testing
-  - [ ] Security scanning (SAST, DAST)
+  - [ ] Security scanning (SAST)
 
 #### Documentation
 
 - [ ] **Enhanced Documentation**
-  - [ ] Interactive API explorer
-  - [ ] Code playground (WebAssembly)
-  - [ ] Migration guides
+  - [ ] Migration guides (v1.x → v2.x)
   - [ ] Best practices guide
   - [ ] Security hardening checklist
+  - [ ] Example projects
 
 - [ ] **Community Resources**
-  - [ ] Sample projects repository
   - [ ] Video tutorial series
   - [ ] Blog post series
   - [ ] Case studies
@@ -311,37 +278,17 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ### Platform Integrations
 
-#### Embedded Platforms
+#### Additional MCU Support (Future)
 
-- [ ] **Additional MCU Support**
-  - [ ] Nordic nRF52/nRF53 (BLE)
-  - [ ] TI CC1352 (Zigbee/Thread)
-  - [ ] Raspberry Pi Pico (RP2040)
-  - [ ] Renesas RX/RA families
-  - [ ] NXP i.MX RT series
-
-- [ ] **RTOS Integration**
-  - [ ] FreeRTOS support
-  - [ ] Zephyr RTOS
-  - [ ] Azure RTOS (ThreadX)
-  - [ ] Mbed OS
-  - [ ] RIOT OS
+- [ ] STM32F4/L5 (ARM Cortex-M4, TrustZone)
+- [ ] Nordic nRF52/nRF53 (BLE)
+- [ ] TI CC1352 (Zigbee/Thread)
+- [ ] Raspberry Pi Pico (RP2040)
 
 #### Cloud Services
 
-- [ ] **IoT Platforms**
-  - [ ] ThingSpeak
-  - [ ] Blynk
-  - [ ] Ubidots
-  - [ ] Particle Cloud
-  - [ ] Losant
-
-- [ ] **Data Pipelines**
-  - [ ] Apache Kafka connector
-  - [ ] InfluxDB time-series storage
-  - [ ] Prometheus metrics export
-  - [ ] Elasticsearch integration
-  - [ ] Grafana dashboards
+- [ ] **IoT Platforms**: ThingSpeak, Blynk, Ubidots
+- [ ] **Data Pipelines**: Apache Kafka, InfluxDB, Prometheus, Grafana
 
 ---
 
@@ -349,24 +296,22 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ### High Priority
 
-- [ ] Replace placeholder crypto implementations with production libraries
-- [ ] Add comprehensive error logging
+- [x] ~~Replace placeholder crypto with production libraries~~ *(done v1.1.0)*
+- [ ] Add comprehensive error logging (ESP_LOGx)
 - [ ] Implement retry logic for network failures
-- [ ] Add configuration validation
-- [ ] Improve memory fragmentation handling
+- [ ] Add configuration validation in `app_main.cpp`
+- [ ] Remove unused `GS_RENODE_BUILD` guards (migration leftover)
 
 ### Medium Priority
 
-- [ ] Refactor StaticBuffer for better type safety
 - [ ] Optimize packet serialization (reduce copies)
-- [ ] Add runtime configuration hot-reload
+- [ ] Add runtime configuration via NVS
 - [ ] Implement graceful degradation
 - [ ] Add telemetry and diagnostics
 
 ### Low Priority
 
 - [ ] Improve code comments and inline documentation
-- [ ] Standardize naming conventions
 - [ ] Reduce header dependencies
 - [ ] Add static analysis annotations
 - [ ] Create architecture decision records (ADRs)
@@ -380,31 +325,16 @@ GridShield aims to become the **industry-standard open-source security framework
 - [ ] **Quantum-Resistant Security**
   - [ ] NIST post-quantum algorithms
   - [ ] Hybrid classical/quantum schemes
-  - [ ] Quantum key distribution (QKD) ready
 
 - [ ] **AI/ML Enhancements**
   - [ ] Federated learning for anomaly detection
   - [ ] Transfer learning for new deployments
-  - [ ] Reinforcement learning for adaptive security
   - [ ] Explainable AI (XAI) for audit trails
-
-- [ ] **Blockchain Integration**
-  - [ ] Distributed ledger for tamper logs
-  - [ ] Smart contracts for automated response
-  - [ ] Immutable audit trails
-  - [ ] Decentralized key management
 
 ### Ecosystem Development
 
-- [ ] **Commercial Offerings**
-  - [ ] Certified hardware kits
-  - [ ] Professional support packages
-  - [ ] Training and certification program
-  - [ ] Managed security service
-
 - [ ] **Standardization**
   - [ ] Publish security protocol specification
-  - [ ] Submit to IETF/IEEE
   - [ ] Industry consortium participation
   - [ ] Reference implementation certification
 
@@ -412,7 +342,6 @@ GridShield aims to become the **industry-standard open-source security framework
   - [ ] Utility company pilot programs
   - [ ] Hardware manufacturer collaborations
   - [ ] Academic research partnerships
-  - [ ] Government regulatory compliance
 
 ---
 
@@ -420,20 +349,20 @@ GridShield aims to become the **industry-standard open-source security framework
 
 We welcome contributions to the roadmap! Please:
 
-1. **Review existing items** - Check if your idea is already listed
-2. **Open a discussion** - Propose new features or changes
-3. **Submit PRs** - Implement items from the backlog
-4. **Provide feedback** - Help prioritize features
+1. **Review existing items** — Check if your idea is already listed
+2. **Open a discussion** — Propose new features or changes
+3. **Submit PRs** — Implement items from the backlog
+4. **Provide feedback** — Help prioritize features
 
 ### Priority Criteria
 
 Features are prioritized based on:
 
-1. **Security Impact** - Does it improve security posture?
-2. **User Value** - How many users benefit?
-3. **Effort** - Implementation complexity and time
-4. **Dependencies** - Prerequisite features or blockers
-5. **Compliance** - Regulatory or standard requirements
+1. **Security Impact** — Does it improve security posture?
+2. **User Value** — How many users benefit?
+3. **Effort** — Implementation complexity and time
+4. **Dependencies** — Prerequisite features or blockers
+5. **Compliance** — Regulatory or standard requirements
 
 ---
 
@@ -441,10 +370,14 @@ Features are prioritized based on:
 
 | Version | Release Date | Key Features |
 |---------|-------------|--------------|
-| **1.0.0** | February 2026 | Initial release with multi-layer security |
-| **1.1.0** | June 2026 (planned) | Production crypto, secure storage |
-| **1.2.0** | September 2026 (planned) | ESP32/STM32, LoRa/NB-IoT |
-| **2.0.0** | December 2026 (planned) | Cloud integration, ML analytics |
+| **0.1.0** | February 2026 | Initial structure, documentation |
+| **1.0.0** | February 2026 | Multi-layer security, CMake build |
+| **1.0.1** | February 2026 | Critical bug fixes (ECDSA, ISR) |
+| **1.1.0** | February 2026 | Production crypto (micro-ecc, Arduino Crypto) |
+| **2.0.0** | February 2026 | ESP-IDF + QEMU migration, project restructure |
+| **2.1.0** | June 2026 (planned) | Security hardening, testing, CI/CD |
+| **2.2.0** | September 2026 (planned) | Communication protocols, sensors |
+| **3.0.0** | December 2026 (planned) | Cloud integration, ML analytics |
 
 ---
 
@@ -462,4 +395,4 @@ Have ideas for the roadmap? We'd love to hear from you!
 
 This roadmap is part of the GridShield project (MIT License).
 
-**Institut Teknologi PLN - 2025**
+**Institut Teknologi PLN — 2025**

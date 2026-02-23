@@ -15,11 +15,11 @@ GridShield utilizes a carefully selected technology stack optimized for embedded
 | Layer | Technology | PIC |
 |---|---|---|
 | **Firmware** | C++17, ESP-IDF v5.5, ESP32 | Rafi |
-| **Simulation** | QEMU (ESP32 emulator) | All |
+| **Simulation** | QEMU (ESP32 emulator) | Rafi |
 | **Crypto** | micro-ecc (ECDSA secp256r1) | Rafi |
 | **Backend** | Python 3.11+, FastAPI, SQLite | Ichwan |
 | **Frontend** | Simple web dashboard | Ichwan |
-| **Hardware** | ESP32 DevKit V1, sensors | Cesar |
+| **Hardware** | ESP32 DevKit V1, sensors | Rafi |
 
 ---
 

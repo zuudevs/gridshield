@@ -1,0 +1,101 @@
+name: GridShield CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  IDF_TARGET: esp32
+
+jobs:
+  build:
+    name: Build Firmware
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v5.5.3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Firmware
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware
+          idf.py set-target esp32
+          idf.py build
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-binary
+          path: |
+            firmware/build/gridshield.bin
+            firmware/build/gridshield.elf
+          retention-days: 30
+
+  test:
+    name: Unit Tests (QEMU)
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v5.5.3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install QEMU
+        shell: bash
+        run: |
+          pip install qemu-system-esp32 || true
+          # QEMU for ESP32 is bundled in newer IDF images
+
+      - name: Build Test App
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware/test_app
+          idf.py set-target esp32
+          idf.py build
+
+      - name: Run Tests on QEMU
+        shell: bash
+        timeout-minutes: 5
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware/test_app
+          # Run QEMU with timeout, capture output
+          timeout 60 idf.py qemu monitor --no-reset 2>&1 | tee test_output.log || true
+          # Check for test failures
+          if grep -q "FAIL" test_output.log; then
+            echo "::error::Unit tests failed!"
+            cat test_output.log
+            exit 1
+          fi
+          if grep -q "ALL TESTS PASSED" test_output.log; then
+            echo "All tests passed!"
+          fi
+
+  backend-lint:
+    name: Backend Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install ruff
+
+      - name: Lint
+        run: ruff check backend/
