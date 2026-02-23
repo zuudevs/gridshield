@@ -27,9 +27,7 @@
 #include <string.h>
 #endif
 
-namespace gridshield {
-namespace platform {
-namespace mock {
+namespace gridshield::platform::mock {
 
 // ============================================================================
 // MOCK TIME
@@ -314,6 +312,4 @@ private:
   core::StaticBuffer<uint8_t, 2048> rx_buffer_;
 };
 
-} // namespace mock
-} // namespace platform
-} // namespace gridshield
+} // namespace gridshield::platform::mock

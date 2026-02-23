@@ -16,8 +16,7 @@
 #include "core/error.hpp"
 #include "security/crypto.hpp"
 
-namespace gridshield {
-namespace security {
+namespace gridshield::security {
 
 // ============================================================================
 // HKDF CONSTANTS
@@ -76,5 +75,4 @@ core::Result<void> hkdf(const uint8_t *salt, size_t salt_len,
                         const uint8_t *info, size_t info_len,
                         uint8_t *okm_out, size_t okm_len) noexcept;
 
-} // namespace security
-} // namespace gridshield
+} // namespace gridshield::security

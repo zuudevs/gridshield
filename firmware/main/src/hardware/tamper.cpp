@@ -11,17 +11,7 @@
 
 #include "hardware/tamper.hpp"
 
-namespace gridshield {
-namespace hardware {
-
-TamperDetector::TamperDetector() noexcept
-    : platform_(nullptr),
-      is_tampered_(false),
-      pending_tamper_(false),
-      tamper_type_(TamperType::None),
-      tamper_timestamp_(0),
-      last_trigger_time_(0),
-      initialized_(false) {}
+namespace gridshield::hardware {
 
 core::Result<void> TamperDetector::initialize(
     const TamperConfig& config, 
@@ -167,5 +157,4 @@ void TamperDetector::confirm_tamper() noexcept {
     }
 }
 
-} // namespace hardware
-} // namespace gridshield
+} // namespace gridshield::hardware

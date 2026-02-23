@@ -43,8 +43,7 @@ static int uecc_rng_adapter(uint8_t *dest, unsigned size) {
 #define USE_MBEDTLS_AES_GCM 1
 #endif
 
-namespace gridshield {
-namespace security {
+namespace gridshield::security {
 
 // ============================================================================
 // ECC KEY PAIR
@@ -365,5 +364,4 @@ core::Result<void> CryptoEngine::random_bytes(uint8_t *buffer,
   return platform_crypto_.random_bytes(buffer, length);
 }
 
-} // namespace security
-} // namespace gridshield
+} // namespace gridshield::security

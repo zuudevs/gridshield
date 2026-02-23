@@ -25,14 +25,13 @@ namespace gridshield {
 // SYSTEM CONFIGURATION
 // ============================================================================
 struct SystemConfig {
-    core::meter_id_t meter_id;
+    core::meter_id_t meter_id{};
     hardware::TamperConfig tamper_config;
     analytics::ConsumptionProfile baseline_profile;
-    uint32_t heartbeat_interval_ms;
-    uint32_t reading_interval_ms;
+    uint32_t heartbeat_interval_ms{60000};
+    uint32_t reading_interval_ms{5000};
     
-    GS_CONSTEXPR SystemConfig() noexcept
-        : meter_id(0), heartbeat_interval_ms(60000), reading_interval_ms(5000) {}
+    GS_CONSTEXPR SystemConfig() noexcept = default;
 };
 
 // ============================================================================

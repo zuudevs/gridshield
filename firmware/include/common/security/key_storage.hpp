@@ -16,8 +16,7 @@
 #include "security/crypto.hpp"
 #include "platform/platform.hpp"
 
-namespace gridshield {
-namespace security {
+namespace gridshield::security {
 
 enum class KeySlot : uint8_t {
     Primary = 0,
@@ -125,5 +124,6 @@ private:
     }
 
     platform::PlatformServices& platform_;
-} // namespace security
-} // namespace gridshield
+}; // class KeyStorage
+
+} // namespace gridshield::security

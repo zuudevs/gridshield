@@ -14,8 +14,7 @@
 #include "core/error.hpp"
 #include "core/types.hpp"
 
-namespace gridshield {
-namespace analytics {
+namespace gridshield::analytics {
 
 constexpr size_t PROFILE_HISTORY_SIZE = 24; // 24 hours
 
@@ -43,33 +42,29 @@ enum class AnomalySeverity : uint8_t {
 // CONSUMPTION PROFILE
 // ============================================================================
 struct ConsumptionProfile {
-    uint32_t hourly_avg_wh[PROFILE_HISTORY_SIZE];
-    uint32_t daily_avg_wh;
-    uint32_t weekly_avg_wh;
-    uint16_t variance_threshold;
-    uint8_t profile_confidence;
-    uint8_t reserved;
+    uint32_t hourly_avg_wh[PROFILE_HISTORY_SIZE]{};
+    uint32_t daily_avg_wh{};
+    uint32_t weekly_avg_wh{};
+    uint16_t variance_threshold{30};
+    uint8_t profile_confidence{};
+    uint8_t reserved{};
     
-    GS_CONSTEXPR ConsumptionProfile() noexcept
-        : hourly_avg_wh{}, daily_avg_wh(0), weekly_avg_wh(0),
-          variance_threshold(30), profile_confidence(0), reserved(0) {}
+    GS_CONSTEXPR ConsumptionProfile() noexcept = default;
 };
 
 // ============================================================================
 // ANOMALY REPORT
 // ============================================================================
 struct AnomalyReport {
-    core::timestamp_t timestamp;
-    AnomalyType type;
-    AnomalySeverity severity;
-    uint16_t confidence;
-    uint32_t current_value;
-    uint32_t expected_value;
-    uint32_t deviation_percent;
+    core::timestamp_t timestamp{};
+    AnomalyType type{};
+    AnomalySeverity severity{};
+    uint16_t confidence{};
+    uint32_t current_value{};
+    uint32_t expected_value{};
+    uint32_t deviation_percent{};
     
-    GS_CONSTEXPR AnomalyReport() noexcept
-        : timestamp(0), type(AnomalyType::None), severity(AnomalySeverity::None),
-          confidence(0), current_value(0), expected_value(0), deviation_percent(0) {}
+    GS_CONSTEXPR AnomalyReport() noexcept = default;
 };
 
 // ============================================================================
@@ -93,7 +88,7 @@ public:
 // ============================================================================
 class AnomalyDetector final : public IAnomalyDetector {
 public:
-    AnomalyDetector() noexcept;
+    AnomalyDetector() noexcept = default;
     ~AnomalyDetector() noexcept override = default;
     
     core::Result<void> initialize(const ConsumptionProfile& baseline_profile) noexcept override;
@@ -110,7 +105,7 @@ private:
     
     ConsumptionProfile profile_;
     core::StaticBuffer<core::MeterReading, 100> recent_readings_;
-    bool initialized_;
+    bool initialized_{false};
 };
 
 // ============================================================================
@@ -149,5 +144,4 @@ struct CrossLayerValidation {
     }
 };
 
-} // namespace analytics
-} // namespace gridshield
+} // namespace gridshield::analytics

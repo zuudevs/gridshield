@@ -19,8 +19,7 @@
 #include "core/types.hpp"
 #include "platform/platform.hpp"
 
-namespace gridshield {
-namespace security {
+namespace gridshield::security {
 
 // ============================================================================
 // CRYPTO CONSTANTS
@@ -160,5 +159,4 @@ private:
     platform::IPlatformCrypto& platform_crypto_;
 };
 
-} // namespace security
-} // namespace gridshield
+} // namespace gridshield::security

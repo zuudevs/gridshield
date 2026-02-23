@@ -15,8 +15,7 @@
 #include "core/types.hpp"
 #include "platform/platform.hpp"
 
-namespace gridshield {
-namespace hardware {
+namespace gridshield::hardware {
 
 // ============================================================================
 // TAMPER TYPES
@@ -35,14 +34,12 @@ enum class TamperType : uint8_t {
 // TAMPER CONFIGURATION
 // ============================================================================
 struct TamperConfig {
-    uint8_t sensor_pin;
-    uint8_t backup_power_pin;
-    uint16_t debounce_ms;
-    uint8_t sensitivity;
+    uint8_t sensor_pin{};
+    uint8_t backup_power_pin{};
+    uint16_t debounce_ms{50};
+    uint8_t sensitivity{128};
     
-    GS_CONSTEXPR TamperConfig() noexcept
-        : sensor_pin(0), backup_power_pin(0), 
-          debounce_ms(50), sensitivity(128) {}
+    GS_CONSTEXPR TamperConfig() noexcept = default;
 };
 
 // ============================================================================
@@ -73,7 +70,7 @@ public:
 // ============================================================================
 class TamperDetector final : public ITamperDetector {
 public:
-    TamperDetector() noexcept;
+    TamperDetector() noexcept = default;
     ~TamperDetector() noexcept override = default;
     
     core::Result<void> initialize(const TamperConfig& config, 
@@ -94,16 +91,15 @@ private:
     void confirm_tamper() noexcept;
     
     TamperConfig config_;
-    platform::PlatformServices* platform_;
+    platform::PlatformServices* platform_{};
     
     // Volatile for ISR safety
-    volatile bool is_tampered_;
-    volatile bool pending_tamper_;           // ISR sets this, poll() processes it
-    volatile TamperType tamper_type_;
-    volatile core::timestamp_t tamper_timestamp_;
-    volatile core::timestamp_t last_trigger_time_; // For debounce in poll()
-    volatile bool initialized_;
+    volatile bool is_tampered_{false};
+    volatile bool pending_tamper_{false};           // ISR sets this, poll() processes it
+    volatile TamperType tamper_type_{TamperType::None};
+    volatile core::timestamp_t tamper_timestamp_{};
+    volatile core::timestamp_t last_trigger_time_{}; // For debounce in poll()
+    volatile bool initialized_{false};
 };
 
-} // namespace hardware
-} // namespace gridshield
+} // namespace gridshield::hardware

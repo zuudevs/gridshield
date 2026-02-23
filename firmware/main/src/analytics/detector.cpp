@@ -11,11 +11,7 @@
 
 #include "analytics/detector.hpp"
 
-namespace gridshield {
-namespace analytics {
-
-AnomalyDetector::AnomalyDetector() noexcept 
-    : initialized_(false) {}
+namespace gridshield::analytics {
 
 core::Result<void> AnomalyDetector::initialize(
     const ConsumptionProfile& baseline_profile) noexcept {
@@ -180,5 +176,4 @@ uint32_t AnomalyDetector::calculate_expected_value(
     return profile_.daily_avg_wh;
 }
 
-} // namespace analytics
-} // namespace gridshield
+} // namespace gridshield::analytics

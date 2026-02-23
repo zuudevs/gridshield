@@ -16,8 +16,7 @@
 #include "platform/platform.hpp"
 #include "security/crypto.hpp"
 
-namespace gridshield {
-namespace network {
+namespace gridshield::network {
 
 // ============================================================================
 // PROTOCOL CONSTANTS
@@ -45,21 +44,17 @@ enum class PacketType : uint8_t {
 // ============================================================================
 #pragma pack(push, 1)
 struct PacketHeader {
-    uint8_t magic_header;
-    uint16_t version;
-    PacketType type;
-    core::Priority priority;
-    core::meter_id_t meter_id;
-    core::sequence_t sequence;
-    uint16_t payload_length;
-    core::timestamp_t timestamp;
-    uint32_t checksum;
+    uint8_t magic_header{MAGIC_HEADER};
+    uint16_t version{PROTOCOL_VERSION};
+    PacketType type{PacketType::Invalid};
+    core::Priority priority{core::Priority::Normal};
+    core::meter_id_t meter_id{};
+    core::sequence_t sequence{};
+    uint16_t payload_length{};
+    core::timestamp_t timestamp{};
+    uint32_t checksum{};
     
-    PacketHeader() noexcept
-        : magic_header(MAGIC_HEADER), version(PROTOCOL_VERSION),
-          type(PacketType::Invalid), priority(core::Priority::Normal),
-          meter_id(0), sequence(0), payload_length(0), 
-          timestamp(0), checksum(0) {}
+    PacketHeader() noexcept = default;
 };
 
 struct PacketFooter {
@@ -159,5 +154,4 @@ private:
     platform::IPlatformComm& comm_;
 };
 
-} // namespace network
-} // namespace gridshield
+} // namespace gridshield::network

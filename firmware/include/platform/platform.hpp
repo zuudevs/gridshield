@@ -14,8 +14,7 @@
 #include "core/error.hpp"
 #include "core/types.hpp"
 
-namespace gridshield {
-namespace platform {
+namespace gridshield::platform {
 
 // ============================================================================
 // TIME INTERFACE
@@ -123,16 +122,14 @@ public:
 // PLATFORM SERVICES AGGREGATOR
 // ============================================================================
 struct PlatformServices {
-    IPlatformTime* time;
-    IPlatformGPIO* gpio;
-    IPlatformInterrupt* interrupt;
-    IPlatformCrypto* crypto;
-    IPlatformStorage* storage;
-    IPlatformComm* comm;
+    IPlatformTime* time{};
+    IPlatformGPIO* gpio{};
+    IPlatformInterrupt* interrupt{};
+    IPlatformCrypto* crypto{};
+    IPlatformStorage* storage{};
+    IPlatformComm* comm{};
     
-    GS_CONSTEXPR PlatformServices() noexcept
-        : time(nullptr), gpio(nullptr), interrupt(nullptr),
-          crypto(nullptr), storage(nullptr), comm(nullptr) {}
+    GS_CONSTEXPR PlatformServices() noexcept = default;
     
     GS_NODISCARD GS_CONSTEXPR bool is_valid() const noexcept {
         return time != nullptr && gpio != nullptr && 
@@ -140,5 +137,4 @@ struct PlatformServices {
     }
 };
 
-} // namespace platform
-} // namespace gridshield
+} // namespace gridshield::platform

@@ -16,8 +16,7 @@
     #include <string.h>
 #endif
 
-namespace gridshield {
-namespace network {
+namespace gridshield::network {
 
 SecurePacket::SecurePacket() noexcept 
     : is_valid_(false), next_sequence_(0) {
@@ -298,5 +297,4 @@ core::Result<SecurePacket> PacketTransport::receive_packet(
     return core::Result<SecurePacket>(GS_MOVE(packet));
 }
 
-} // namespace network
-} // namespace gridshield
+} // namespace gridshield::network

@@ -15,8 +15,7 @@
 // mbedTLS (built into ESP-IDF)
 #include "mbedtls/md.h"
 
-namespace gridshield {
-namespace security {
+namespace gridshield::security {
 
 // ============================================================================
 // HMAC-SHA256 helper (wraps mbedTLS)
@@ -183,5 +182,4 @@ core::Result<void> hkdf(const uint8_t *salt, size_t salt_len,
   return result;
 }
 
-} // namespace security
-} // namespace gridshield
+} // namespace gridshield::security

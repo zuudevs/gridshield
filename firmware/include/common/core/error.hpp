@@ -21,8 +21,7 @@
 	#include <new>
 #endif
 
-namespace gridshield {
-namespace core {
+namespace gridshield::core {
 
 // ============================================================================
 // ERROR CODES
@@ -242,5 +241,4 @@ private:
         var = GS_MOVE(gs_result_.value()); \
     } while(0)
 
-} // namespace core
-} // namespace gridshield
+} // namespace gridshield::core

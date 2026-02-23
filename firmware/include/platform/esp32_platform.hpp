@@ -28,9 +28,7 @@
 // mbedTLS (built into ESP-IDF)
 #include "mbedtls/sha256.h"
 
-namespace gridshield {
-namespace platform {
-namespace esp32 {
+namespace gridshield::platform::esp32 {
 
 // ============================================================================
 // ESP32 CRYPTO — Hardware RNG + mbedTLS SHA-256 + CRC32
@@ -87,7 +85,7 @@ public:
   static constexpr size_t MAX_BLOB_SIZE = 4096;
   static constexpr const char *NVS_NAMESPACE = "gridshield";
 
-  Esp32Storage() noexcept : initialized_(false) {}
+  Esp32Storage() noexcept = default;
 
   /**
    * @brief Initialize NVS flash. Must be called once before use.
@@ -205,7 +203,7 @@ public:
   }
 
 private:
-  bool initialized_;
+  bool initialized_{false};
 };
 
 // ============================================================================
@@ -252,6 +250,4 @@ public:
   }
 };
 
-} // namespace esp32
-} // namespace platform
-} // namespace gridshield
+} // namespace gridshield::platform::esp32

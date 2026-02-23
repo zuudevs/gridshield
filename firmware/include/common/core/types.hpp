@@ -28,8 +28,7 @@
 
 #endif
 
-namespace gridshield {
-namespace core {
+namespace gridshield::core {
 
 // ============================================================================
 // TYPE ALIASES
@@ -73,17 +72,16 @@ enum class Priority : uint8_t {
 // METER READING (24 bytes - cache aligned)
 // ============================================================================
 struct GS_ALIGN(8) MeterReading {
-  timestamp_t timestamp; // 8 bytes
-  uint32_t energy_wh;    // 4 bytes
-  uint32_t voltage_mv;   // 4 bytes
-  uint16_t current_ma;   // 2 bytes
-  uint16_t power_factor; // 2 bytes (0-1000 scaled by 10)
-  uint8_t phase;         // 1 byte
-  uint8_t reserved[3];   // 3 bytes padding
 
-  constexpr MeterReading() noexcept
-      : timestamp(0), energy_wh(0), voltage_mv(0), current_ma(0),
-        power_factor(0), phase(0), reserved{0} {}
+  timestamp_t timestamp{}; // 8 bytes
+  uint32_t energy_wh{};    // 4 bytes
+  uint32_t voltage_mv{};   // 4 bytes
+  uint16_t current_ma{};   // 2 bytes
+  uint16_t power_factor{}; // 2 bytes (0-1000 scaled by 10)
+  uint8_t phase{};         // 1 byte
+  uint8_t reserved[3]{};   // 3 bytes padding
+
+  constexpr MeterReading() noexcept = default;
 };
 GS_STATIC_ASSERT(sizeof(MeterReading) == 24, "MeterReading must be 24 bytes");
 
@@ -91,14 +89,13 @@ GS_STATIC_ASSERT(sizeof(MeterReading) == 24, "MeterReading must be 24 bytes");
 // TAMPER EVENT (16 bytes)
 // ============================================================================
 struct GS_ALIGN(8) TamperEvent {
-  timestamp_t timestamp; // 8 bytes
-  uint32_t metadata;     // 4 bytes
-  uint16_t sensor_id;    // 2 bytes
-  uint8_t event_type;    // 1 byte
-  uint8_t severity;      // 1 byte
+  timestamp_t timestamp{}; // 8 bytes
+  uint32_t metadata{};     // 4 bytes
+  uint16_t sensor_id{};    // 2 bytes
+  uint8_t event_type{};    // 1 byte
+  uint8_t severity{};      // 1 byte
 
-  constexpr TamperEvent() noexcept
-      : timestamp(0), metadata(0), sensor_id(0), event_type(0), severity(0) {}
+  constexpr TamperEvent() noexcept = default;
 };
 GS_STATIC_ASSERT(sizeof(TamperEvent) == 16, "TamperEvent must be 16 bytes");
 
@@ -275,5 +272,4 @@ private:
   size_t size_;
 };
 
-} // namespace core
-} // namespace gridshield
+} // namespace gridshield::core

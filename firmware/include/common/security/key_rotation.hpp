@@ -9,8 +9,7 @@
 #include "security/key_storage.hpp"
 #include "security/crypto.hpp"
 
-namespace gridshield {
-namespace security {
+namespace gridshield::security {
 
 class KeyRotationService {
 public:
@@ -55,5 +54,4 @@ private:
     ICryptoEngine& crypto_;
 };
 
-} // namespace security
-} // namespace gridshield
+} // namespace gridshield::security

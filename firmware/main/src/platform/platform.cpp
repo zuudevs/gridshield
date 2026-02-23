@@ -14,11 +14,9 @@
 
 #include "../platform/platform.hpp"
 
-namespace gridshield {
-namespace platform {
+namespace gridshield::platform {
 
 // Empty implementation - destructors are defaulted in headers to avoid redefinition errors.
 // This is intentional.
 
-} // namespace platform
-} // namespace gridshield
+} // namespace gridshield::platform
