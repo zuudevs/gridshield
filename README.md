@@ -4,8 +4,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)](https://en.cppreference.com/w/cpp/17)
-[![CMake](https://img.shields.io/badge/CMake-3.20%2B-064F8C?logo=cmake)](https://cmake.org)
-[![Platform](https://img.shields.io/badge/Platform-Native%20%7C%20Arduino-green)](BUILD.md)
+[![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.5-E7352C?logo=espressif)](https://docs.espressif.com/projects/esp-idf/)
+[![Platform](https://img.shields.io/badge/Platform-ESP32%20%7C%20QEMU-green)](BUILD.md)
 
 ---
 
@@ -23,7 +23,7 @@ GridShield is a production-grade security solution designed to protect smart ele
 - Priority flagging for emergency transmission
 
 ### 🌐 Network Security Layer
-- **Lightweight ECC (secp256r1)** optimized for 8KB RAM
+- **Lightweight ECC (secp256r1)** via micro-ecc
 - ECDSA packet signing + SHA256 integrity checks
 - Replay protection with sequence numbering
 
@@ -34,101 +34,93 @@ GridShield is a production-grade security solution designed to protect smart ele
 
 ### 🎯 Production Ready
 - **Zero heap allocation** design (embedded-friendly)
-- Type-safe error handling (no exceptions)
+- Type-safe error handling via `Result<T>` monad (no exceptions)
 - Platform abstraction layer (HAL) for portability
-- Extensive test coverage with mock implementations
+- Mock implementations for simulation testing
 
 ## 🚀 Quick Start
 
-### Installation
+### Prerequisites
 
-```bash
+- **ESP-IDF v5.5+** — [Installation Guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/)
+- **QEMU** (for simulation, optional)
+
+### Build & Run
+
+```powershell
 # Clone repository
-git clone https://github.com/yourusername/gridshield.git
+git clone https://github.com/zuudevs/gridshield.git
 cd gridshield
 
-# Native build (PC testing)
-cmake --preset native-debug
-cmake --build --preset native-debug
-./bin/NATIVE/GridShield
+# Build firmware
+.\scripts\script.ps1 --build
+
+# Run in QEMU simulator
+.\scripts\script.ps1 --run
 ```
 
-### Basic Usage
+Or manually with ESP-IDF:
 
-```cpp
-#include "core/system.hpp"
-#include "platform_native.hpp"
-
-using namespace gridshield;
-
-int main() {
-    // Setup platform services
-    platform::native::NativeTime time;
-    platform::native::NativeGPIO gpio;
-    platform::PlatformServices services{&time, &gpio, ...};
-    
-    // Configure system
-    SystemConfig config;
-    config.meter_id = 0x1234567890ABCDEF;
-    config.tamper_config.sensor_pin = 2;
-    
-    // Initialize GridShield
-    GridShieldSystem system;
-    system.initialize(config, services);
-    system.start();
-    
-    // Main processing loop
-    while (true) {
-        system.process_cycle();
-        delay(100);
-    }
-}
+```bash
+cd firmware
+idf.py set-target esp32
+idf.py build
+idf.py qemu monitor          # requires QEMU
 ```
 
-## 📦 Target Platforms
+See [BUILD.md](BUILD.md) for full instructions.
+
+## 📦 Target Platform
 
 | Platform | MCU | Flash | RAM | Status |
 |----------|-----|-------|-----|--------|
-| **Arduino Mega** | ATmega2560 | 256 KB | 8 KB | ✅ Recommended |
-| **Arduino Uno** | ATmega328P | 32 KB | 2 KB | ⚠️ Too small |
-| **ESP32** | Xtensa | 4 MB | 520 KB | 🔜 Planned |
-| **Native (PC)** | x86/x64 | - | - | ✅ Testing |
+| **ESP32 DevKit V1** | Xtensa LX6 | 4 MB | 520 KB | ✅ Active |
+| **QEMU (Simulation)** | Emulated Xtensa | — | — | ✅ Active |
 
 ## 📚 Documentation
 
-- [**Quick Start Guide**](docs/QUICKSTART.md) - 5-minute tutorial
-- [**Build Instructions**](BUILD.md) - Compilation for all platforms
-- [**Architecture**](docs/ARCHITECTURE.md) - System design with diagrams
-- [**API Reference**](docs/API.md) - Function documentation
-- [**Roadmap**](docs/ROADMAP.md) - Planned features
+- [**Build Instructions**](BUILD.md) — Build & simulate with ESP-IDF + QEMU
+- [**Architecture**](docs/ARCHITECTURE.md) — System design with diagrams
+- [**API Reference**](docs/API.md) — Class & function documentation
+- [**Quick Start Guide**](docs/QUICKSTART.md) — Getting started tutorial
+- [**Tech Stack**](docs/TECHSTACK.md) — Technology choices
+- [**Changelog**](docs/CHANGELOG.md) — Version history
 
 ## 🏗️ Project Structure
 
 ```
 gridshield/
-├── include/
-│   ├── common/          # Platform-agnostic code
-│   │   ├── core/        # Result<T>, types, system orchestrator
-│   │   ├── security/    # Crypto engine (ECC, AES-GCM)
-│   │   ├── hardware/    # Tamper detector
-│   │   ├── network/     # Secure packet protocol
-│   │   └── analytics/   # Anomaly detection
-│   ├── platform/        # HAL interfaces
-│   ├── native/          # PC mock implementation
-│   └── arduino/         # AVR drivers
-├── src/
-│   ├── common/          # Core implementations
-│   ├── native/main.cpp         # PC entry point
-│   └── arduino/main.ino        # Arduino entry point
-└── docs/                # Documentation
+├── firmware/                    # ESP-IDF project
+│   ├── CMakeLists.txt           # Root build config
+│   ├── include/
+│   │   ├── common/              # Platform-agnostic headers
+│   │   │   ├── core/            # Result<T>, types, system orchestrator
+│   │   │   ├── security/        # Crypto engine (ECC, AES-GCM)
+│   │   │   ├── hardware/        # Tamper detector
+│   │   │   ├── network/         # Secure packet protocol
+│   │   │   ├── analytics/       # Anomaly detection
+│   │   │   └── utils/           # Macros, type traits
+│   │   └── platform/            # HAL interfaces + mock impls
+│   ├── main/
+│   │   ├── CMakeLists.txt       # Component build config
+│   │   ├── app_main.cpp         # ESP-IDF entry point (QEMU)
+│   │   └── src/                 # Implementation files
+│   │       ├── analytics/       # detector.cpp
+│   │       ├── core/            # system.cpp
+│   │       ├── hardware/        # tamper.cpp
+│   │       ├── network/         # packet.cpp
+│   │       ├── platform/        # platform.cpp
+│   │       └── security/        # crypto.cpp
+│   └── lib/
+│       └── micro-ecc/           # ECC library (secp256r1)
+├── scripts/
+│   └── script.ps1               # Build/run automation
+└── docs/                        # Documentation
 ```
 
 ## 🤝 Contributing
 
-We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Code style guidelines (C++17 best practices)
-- Pull request process
-- Testing requirements
+We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for code style guidelines and PR process.
 
 ## 🔒 Security
 
@@ -140,17 +132,17 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- **Muhammad Ichwan Fauzi** - team Leader, Project Manager
-- **Rafi Indra Pramudhito Zuhayr** - Firmware Implementation, System Architecture
-- **Cesar Ardika Bhayangkara** - Hardware Integration
+- **Muhammad Ichwan Fauzi** — Team Leader, Project Manager
+- **Rafi Indra Pramudhito Zuhayr** — Firmware Implementation, System Architecture
+- **Cesar Ardika Bhayangkara** — Hardware Integration
 
-**Institut Teknologi PLN** - 2025
+**Institut Teknologi PLN** — 2025
 
 ## 🌟 Acknowledgments
 
 - Inspired by NIST SP 800-53 security controls
 - Built with lessons from IoT security research
-- Cryptography references: uECC, mbedTLS
+- Cryptography: micro-ecc (secp256r1)
 
 ---
 

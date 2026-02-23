@@ -1,6 +1,6 @@
 # GridShield - Quick Start Guide
 
-Get GridShield running in **5 minutes** with this step-by-step tutorial.
+Get GridShield running in **5 minutes** with ESP-IDF and QEMU simulation.
 
 ---
 
@@ -8,408 +8,174 @@ Get GridShield running in **5 minutes** with this step-by-step tutorial.
 
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
-- [Hello World - Native PC](#hello-world---native-pc)
-- [Hello World - Arduino](#hello-world---arduino)
+- [Build & Run](#build--run)
+- [Understanding the Output](#understanding-the-output)
 - [Next Steps](#next-steps)
 
 ---
 
 ## Prerequisites
 
-**Choose your platform:**
+### ESP-IDF v5.5+
 
-### Option A: Native (PC Testing)
-```bash
-# Ubuntu/Debian
-sudo apt install cmake ninja-build g++
+Follow the official [ESP-IDF installation guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/).
 
-# macOS
-brew install cmake ninja
-
-# Windows
-choco install cmake ninja visualstudio2022buildtools
+**Windows (recommended path):**
+```
+C:\esp\v5.5.3\esp-idf\
 ```
 
-### Option B: Arduino (Production)
-```bash
-# Install Arduino CLI
-curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+### QEMU (Optional)
 
-# Install AVR core
-arduino-cli core install arduino:avr
+```powershell
+# Install via automation script
+.\scripts\script.ps1 --setup
+
+# Or manually
+python $IDF_PATH/tools/idf_tools.py install qemu-xtensa qemu-riscv32
 ```
 
 ---
 
 ## Installation
 
-**Clone and navigate to project:**
-
 ```bash
-git clone https://github.com/your-org/gridshield.git
+# Clone repository
+git clone https://github.com/zuudevs/gridshield.git
 cd gridshield
 ```
 
 ---
 
-## Hello World - Native PC
+## Build & Run
 
-### Step 1: Build the Project
+### Option A: Using Automation Script (Recommended)
+
+```powershell
+# Build firmware
+.\scripts\script.ps1 --build
+
+# Build + Run in QEMU
+.\scripts\script.ps1 --run
+```
+
+### Option B: Using ESP-IDF Directly
 
 ```bash
-# Configure
-cmake --preset native-debug
+cd firmware
+
+# Set target (first time only)
+idf.py set-target esp32
 
 # Build
-cmake --build --preset native-debug
+idf.py build
+
+# Run in QEMU
+idf.py qemu monitor
 ```
-
-**Expected output:**
-```
-[100%] Built target GridShield
-```
-
-### Step 2: Run the Demo
-
-```bash
-./bin/NATIVE/GridShield
-```
-
-**Expected output:**
-```
-═══════════════════════════════════════════
-  GridShield AMI Security System v1.0.0
-═══════════════════════════════════════════
-
-[Initialization]
-Meter ID: 0x1234567890ABCDEF
-✓ System initialized successfully
-✓ System started
-
-[Phase 1: Normal Operation]
-Cycle 1: ✓ Processing complete
-Cycle 2: ✓ Processing complete
-Cycle 3: ✓ Processing complete
-
-[Phase 2: Tamper Detection]
-Simulating physical tamper event...
-✓ Tamper event processed
-System State: ⚠️  TAMPERED (CRITICAL)
-
-[Phase 3: Consumption Anomaly Detection]
-Sending normal consumption readings...
-  Reading 1: 1000 Wh ✓
-  Reading 2: 1010 Wh ✓
-  Reading 3: 1020 Wh ✓
-Simulating anomalous consumption drop...
-  Anomalous reading: 100 Wh ⚠️
-  Analytics layer flagged potential manipulation
-
-[Shutdown]
-✓ System shutdown successful
-```
-
-**🎉 Success!** You've just run GridShield's multi-layer security demonstration.
 
 ---
 
-## Hello World - Arduino
+## Understanding the Output
 
-### Step 1: Compile the Firmware
+**Expected output when running in QEMU:**
 
-```bash
-arduino-cli compile --fqbn arduino:avr:mega src/arduino/main.ino
+```
+[GridShield] ==============================================
+[GridShield] GridShield v1.1 [ESP32 - QEMU Simulation]
+[GridShield] Platform: ESP-IDF + QEMU
+[GridShield] ==============================================
+
+[GridShield] [Init] Configuring system...
+[GridShield]   Meter ID: 0x1234567890ABCDEF
+[GridShield]   Tamper Pin: 4 | Debounce: 50ms
+[GridShield]   Max Cycles: 20
+
+[GridShield] System started successfully
+[GridShield] Entering main processing loop...
+
+[GridShield] Cycle 1/20 OK
+[GridShield] Cycle 2/20 OK
+...
+[GridShield] Cycle 20/20 OK
+[GridShield] Simulation complete — all cycles finished
 ```
 
-**Expected output:**
-```
-Sketch uses 45678 bytes (17.4%) of program storage space.
-Global variables use 3456 bytes (42.2%) of dynamic memory.
-```
-
-### Step 2: Upload to Arduino Mega
-
-**Connect your Arduino Mega via USB, then:**
-
-```bash
-# Windows
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/main.ino
-
-# Linux/macOS
-arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:mega src/arduino/main.ino
-```
-
-### Step 3: Monitor Serial Output
-
-```bash
-# Windows
-arduino-cli monitor -p COM3 -b 115200
-
-# Linux/macOS
-arduino-cli monitor -p /dev/ttyUSB0 -b 115200
-```
-
-**Expected output:**
-```
-=== GridShield v1.0 ===
-Booting...
-Initializing... OK
-Starting... OK
-System running.
-```
-
-**🎉 Success!** GridShield is now running on your Arduino Mega.
+**🎉 Success!** You've just run GridShield's multi-layer security system in QEMU.
 
 ---
 
-## Complete Example: Custom Security System
+## Debugging with GDB
 
-Here's a minimal example showing how to use GridShield in your own application:
+Use two terminals for interactive debugging:
 
-### Example 1: Basic Meter Reading System
+**Terminal 1 — Start QEMU with GDB server:**
 
-**File:** `examples/basic_meter.cpp`
+```powershell
+.\scripts\script.ps1 --debug
+```
+
+**Terminal 2 — Attach GDB:**
+
+```powershell
+.\scripts\script.ps1 --gdb
+```
+
+---
+
+## Code Overview
+
+### Entry Point
+
+The `app_main()` function in `firmware/main/app_main.cpp` is the ESP-IDF entry point:
 
 ```cpp
 #include "core/system.hpp"
-#include "platform_native.hpp"  // Use platform_arduino.hpp for Arduino
+#include "platform/mock_platform.hpp"
 
-#include <iostream>
+void app_main(void) {
+    // Setup mock platform services for QEMU
+    gridshield::platform::MockTime mock_time;
+    gridshield::platform::MockGPIO mock_gpio;
+    // ... more mock services ...
 
-using namespace gridshield;
-
-int main() {
-    // 1. Setup platform services
-    platform::native::NativeTime time;
-    platform::native::NativeGPIO gpio;
-    platform::native::NativeInterrupt interrupt;
-    platform::native::NativeCrypto crypto;
-    platform::native::NativeComm comm;
-    
-    platform::PlatformServices services;
-    services.time = &time;
-    services.gpio = &gpio;
-    services.interrupt = &interrupt;
-    services.crypto = &crypto;
-    services.comm = &comm;
-    
-    // 2. Initialize communication
-    auto init_result = comm.init();
-    if (init_result.is_error()) {
-        std::cerr << "Failed to initialize communication\n";
-        return 1;
-    }
-    
-    // 3. Configure system
-    SystemConfig config;
-    config.meter_id = 0xABCDEF1234567890;
-    config.heartbeat_interval_ms = 30000;  // 30 seconds
-    config.reading_interval_ms = 5000;     // 5 seconds
-    
-    // Configure tamper detection
-    config.tamper_config.sensor_pin = 2;
-    config.tamper_config.debounce_ms = 50;
-    
-    // Initialize baseline profile
-    for (size_t i = 0; i < analytics::PROFILE_HISTORY_SIZE; ++i) {
-        config.baseline_profile.hourly_avg_wh[i] = 1200;  // 1.2 kWh baseline
-    }
-    config.baseline_profile.variance_threshold = 25;  // 25% deviation threshold
-    
-    // 4. Create and initialize system
-    GridShieldSystem system;
-    
-    auto result = system.initialize(config, services);
-    if (result.is_error()) {
-        std::cerr << "System initialization failed\n";
-        return 1;
-    }
-    
-    // 5. Start the system
-    result = system.start();
-    if (result.is_error()) {
-        std::cerr << "System start failed\n";
-        return 1;
-    }
-    
-    std::cout << "GridShield system started successfully\n";
-    
-    // 6. Main processing loop
-    for (int i = 0; i < 10; ++i) {
-        result = system.process_cycle();
-        
-        if (result.is_error()) {
-            std::cerr << "Cycle error: " << static_cast<int>(result.error().code) << "\n";
-        } else {
-            std::cout << "Cycle " << (i + 1) << " completed\n";
-        }
-        
-        // Check system state
-        if (system.get_state() == core::SystemState::Tampered) {
-            std::cout << "⚠️  SECURITY ALERT: Tamper detected!\n";
-        }
-        
-        time.delay_ms(1000);  // 1 second delay
-    }
-    
-    // 7. Cleanup
-    system.shutdown();
-    
-    std::cout << "System shutdown complete\n";
-    return 0;
-}
-```
-
-**Build and run:**
-
-```bash
-# Add to CMakeLists.txt:
-# add_executable(basic_meter examples/basic_meter.cpp ${COMMON_SOURCES})
-
-cmake --preset native-debug
-cmake --build --preset native-debug
-./bin/NATIVE/basic_meter
-```
-
----
-
-### Example 2: Send Custom Meter Reading
-
-**File:** `examples/send_reading.cpp`
-
-```cpp
-#include "core/system.hpp"
-#include "platform_native.hpp"
-#include <iostream>
-
-using namespace gridshield;
-
-int main() {
-    // Setup (same as Example 1)
-    platform::native::NativeTime time;
-    platform::native::NativeGPIO gpio;
-    platform::native::NativeInterrupt interrupt;
-    platform::native::NativeCrypto crypto;
-    platform::native::NativeComm comm;
-    
-    platform::PlatformServices services;
-    services.time = &time;
-    services.gpio = &gpio;
-    services.interrupt = &interrupt;
-    services.crypto = &crypto;
-    services.comm = &comm;
-    
-    comm.init();
-    
-    SystemConfig config;
+    // Configure system
+    gridshield::SystemConfig config;
     config.meter_id = 0x1234567890ABCDEF;
-    
-    GridShieldSystem system;
+    config.tamper_config.sensor_pin = 4;
+
+    // Initialize and run
+    gridshield::GridShieldSystem system;
     system.initialize(config, services);
     system.start();
-    
-    // Create a meter reading
-    core::MeterReading reading;
-    reading.timestamp = time.get_timestamp_ms();
-    reading.energy_wh = 1500;        // 1.5 kWh consumed
-    reading.voltage_mv = 220000;     // 220V
-    reading.current_ma = 6818;       // 6.818A
-    reading.power_factor = 950;      // 0.95 power factor
-    reading.phase = 0;
-    
-    std::cout << "Sending meter reading...\n";
-    std::cout << "  Energy: " << reading.energy_wh << " Wh\n";
-    std::cout << "  Voltage: " << reading.voltage_mv / 1000.0 << " V\n";
-    std::cout << "  Current: " << reading.current_ma / 1000.0 << " A\n";
-    
-    // Send the reading (encrypted and signed)
-    auto result = system.send_meter_reading(reading);
-    
-    if (result.is_ok()) {
-        std::cout << "✓ Reading sent successfully\n";
-    } else {
-        std::cerr << "✗ Failed to send reading\n";
+
+    while (cycle < max_cycles) {
+        system.process_cycle();
+        vTaskDelay(pdMS_TO_TICKS(500));
+        ++cycle;
     }
-    
-    system.shutdown();
-    return 0;
 }
 ```
 
----
+### Key Concepts
 
-### Example 3: Anomaly Detection
-
-**File:** `examples/detect_anomaly.cpp`
-
+**Result<T> Monad** — Type-safe error handling without exceptions:
 ```cpp
-#include "analytics/detector.hpp"
-#include <iostream>
-
-using namespace gridshield;
-
-int main() {
-    // Create anomaly detector
-    analytics::AnomalyDetector detector;
-    
-    // Initialize with baseline profile
-    analytics::ConsumptionProfile baseline;
-    for (size_t i = 0; i < analytics::PROFILE_HISTORY_SIZE; ++i) {
-        baseline.hourly_avg_wh[i] = 1000 + (i * 20);  // Varying by hour
-    }
-    baseline.daily_avg_wh = 1200;
-    baseline.variance_threshold = 30;  // 30% threshold
-    baseline.profile_confidence = 85;
-    
-    detector.initialize(baseline);
-    
-    // Test normal reading
-    core::MeterReading normal_reading;
-    normal_reading.timestamp = 3600000;  // 1 hour
-    normal_reading.energy_wh = 1020;     // Close to expected 1000
-    
-    auto result = detector.analyze(normal_reading);
-    if (result.is_ok()) {
-        const auto& report = result.value();
-        std::cout << "Normal Reading Analysis:\n";
-        std::cout << "  Type: " << static_cast<int>(report.type) << "\n";
-        std::cout << "  Severity: " << static_cast<int>(report.severity) << "\n";
-        std::cout << "  Deviation: " << report.deviation_percent << "%\n";
-    }
-    
-    // Test suspicious reading (90% drop)
-    core::MeterReading suspicious_reading;
-    suspicious_reading.timestamp = 3600000;
-    suspicious_reading.energy_wh = 100;  // Far below expected 1000
-    
-    result = detector.analyze(suspicious_reading);
-    if (result.is_ok()) {
-        const auto& report = result.value();
-        std::cout << "\nSuspicious Reading Analysis:\n";
-        std::cout << "  Type: " << static_cast<int>(report.type) 
-                  << " (UnexpectedDrop)\n";
-        std::cout << "  Severity: " << static_cast<int>(report.severity) 
-                  << " (Critical)\n";
-        std::cout << "  Deviation: " << report.deviation_percent << "%\n";
-        std::cout << "  ⚠️  ANOMALY DETECTED!\n";
-    }
-    
-    return 0;
+auto result = system.process_cycle();
+if (result.is_ok()) {
+    // success
+} else {
+    auto error = result.error();
+    // handle error
 }
 ```
 
-**Expected output:**
-```
-Normal Reading Analysis:
-  Type: 0
-  Severity: 0
-  Deviation: 2%
-
-Suspicious Reading Analysis:
-  Type: 1 (UnexpectedDrop)
-  Severity: 4 (Critical)
-  Deviation: 90%
-  ⚠️  ANOMALY DETECTED!
+**Platform Abstraction Layer (HAL)** — Clean hardware interfaces:
+```cpp
+class IPlatformTime {
+    virtual timestamp_t get_timestamp_ms() = 0;
+    virtual void delay_ms(uint32_t ms) = 0;
+};
 ```
 
 ---
@@ -418,167 +184,41 @@ Suspicious Reading Analysis:
 
 ### 📚 Learn More
 
-- **[Architecture](ARCHITECTURE.md)** - Understand the system design
-- **[API Reference](API.md)** - Explore all available classes and functions
-- **[Build Guide](../BUILD.md)** - Advanced build configurations
+- [**Architecture**](ARCHITECTURE.md) — System design with diagrams
+- [**API Reference**](API.md) — Class & function docs
+- [**Build Guide**](../BUILD.md) — Advanced build configurations
 
-### 🔧 Customize Your System
+### 🔧 Customize
 
 **1. Configure Tamper Detection:**
-
 ```cpp
-config.tamper_config.sensor_pin = 3;           // Change pin
-config.tamper_config.debounce_ms = 100;        // Increase debounce
-config.tamper_config.sensitivity = 200;        // Adjust sensitivity
+config.tamper_config.sensor_pin = 3;
+config.tamper_config.debounce_ms = 100;
 ```
 
 **2. Adjust Anomaly Thresholds:**
-
 ```cpp
 config.baseline_profile.variance_threshold = 40;  // More lenient (40%)
 config.baseline_profile.variance_threshold = 15;  // Stricter (15%)
 ```
 
-**3. Change Communication Intervals:**
-
+**3. Change Cycle Count:**
 ```cpp
-config.heartbeat_interval_ms = 120000;  // 2 minutes
-config.reading_interval_ms = 10000;     // 10 seconds
-```
-
-### 🚀 Deploy to Production
-
-**1. Install Production Libraries:**
-
-```bash
-arduino-cli lib install Crypto  # SHA-256, AES
-```
-
-**2. Enable Real Cryptography:**
-
-Edit `src/common/security/crypto.cpp` and uncomment uECC integration.
-
-**3. Connect Hardware:**
-
-- Tamper switch on pin 2
-- Current sensor (ACS712) on A0
-- Voltage sensor (ZMPT101B) on A1
-- LoRa module on SPI pins
-
-**4. Upload and Monitor:**
-
-```bash
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/main.ino
-arduino-cli monitor -p COM3 -b 115200
+const int max_cycles = 100;  // Longer simulation
 ```
 
 ### 🐛 Troubleshooting
 
-**Build fails with "cannot find gs_macros.hpp":**
+**Build fails with "ESP-IDF not found":**
 ```bash
-# Ensure include directories are correct
-cmake --preset native-debug -DCMAKE_VERBOSE_MAKEFILE=ON
+# Ensure ESP-IDF environment is exported
+C:\esp\v5.5.3\esp-idf\export.bat  # Windows
+. $IDF_PATH/export.sh              # Linux/macOS
 ```
 
-**Arduino upload fails:**
-```bash
-# Check available ports
-arduino-cli board list
-
-# Try different baud rate
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega --upload-speed 57600 src/arduino/main.ino
-```
-
-**System crashes on Arduino:**
-- Check RAM usage: Must be < 8 KB for Mega
-- Reduce buffer sizes in `core/types.hpp`
-- Enable watchdog timer for auto-recovery
-
----
-
-## Code Templates
-
-### Minimal Arduino Sketch
-
-```cpp
-#include "core/system.hpp"
-#include "platform_arduino.hpp"
-
-using namespace gridshield;
-
-static platform::arduino::ArduinoTime arduino_time;
-static platform::arduino::ArduinoGPIO arduino_gpio;
-static platform::arduino::ArduinoInterrupt arduino_interrupt;
-static platform::arduino::ArduinoCrypto arduino_crypto;
-static platform::arduino::ArduinoSerial arduino_serial;
-
-static platform::PlatformServices services;
-static GridShieldSystem* system_ptr = nullptr;
-
-void setup() {
-    // Configure platform
-    services.time = &arduino_time;
-    services.gpio = &arduino_gpio;
-    services.interrupt = &arduino_interrupt;
-    services.crypto = &arduino_crypto;
-    services.comm = &arduino_serial;
-    
-    arduino_serial.init();
-    Serial.println("Initializing...");
-    
-    // Create system
-    system_ptr = new GridShieldSystem();
-    
-    SystemConfig config;
-    config.meter_id = 0x1234567890ABCDEF;
-    
-    system_ptr->initialize(config, services);
-    system_ptr->start();
-    
-    Serial.println("Ready!");
-}
-
-void loop() {
-    system_ptr->process_cycle();
-    delay(100);
-}
-```
-
-### Native PC Template
-
-```cpp
-#include "core/system.hpp"
-#include "platform_native.hpp"
-#include <iostream>
-
-int main() {
-    platform::native::NativeTime time;
-    platform::native::NativeGPIO gpio;
-    platform::native::NativeInterrupt interrupt;
-    platform::native::NativeCrypto crypto;
-    platform::native::NativeComm comm;
-    
-    platform::PlatformServices services;
-    services.time = &time;
-    services.gpio = &gpio;
-    services.interrupt = &interrupt;
-    services.crypto = &crypto;
-    services.comm = &comm;
-    
-    comm.init();
-    
-    GridShieldSystem system;
-    SystemConfig config;
-    config.meter_id = 0x1234567890ABCDEF;
-    
-    system.initialize(config, services);
-    system.start();
-    
-    // Your code here
-    
-    system.shutdown();
-    return 0;
-}
+**QEMU not found:**
+```powershell
+.\scripts\script.ps1 --setup
 ```
 
 ---
@@ -586,12 +226,11 @@ int main() {
 ## Support
 
 - **Documentation:** `docs/` folder
-- **Examples:** Check `examples/` directory (to be added)
 - **Issues:** Report bugs on GitHub
 - **Contact:** zuudevs@gmail.com
 
 ---
 
-**Ready to secure your AMI system?** Start with Example 1 and customize from there!
+**Ready to secure your AMI system?** Start building!
 
-**Institut Teknologi PLN - 2025**
+**Institut Teknologi PLN — 2025**

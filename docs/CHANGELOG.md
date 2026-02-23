@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-02-23
+
+### Changed
+- **Build System Migration**:
+  - Migrated from CMake/PlatformIO to **ESP-IDF v5.5** as the sole build system.
+  - Build command is now `idf.py build` (replaces `cmake --preset`).
+  - ESP32 is now the primary (and only) target MCU.
+- **Simulation Migration**:
+  - Replaced Renode simulator with **QEMU** (ESP32 emulation via ESP-IDF).
+  - Simulation command: `idf.py qemu monitor`.
+  - Added GDB debugging support via `idf.py qemu --gdb`.
+- **Project Structure Cleanup**:
+  - Merged `firmware_/renode/` into `firmware/` — single firmware directory.
+  - Renamed `qemu_main.cpp` → `app_main.cpp` (ESP-IDF convention).
+  - Flattened `main/common/` + `main/platform/` into `main/src/`.
+  - Trimmed `lib/micro-ecc/` — removed tests, scripts, examples.
+- **Entry Point**:
+  - `app_main()` now uses FreeRTOS `vTaskDelay()` instead of busy-wait loop.
+  - Added `GS_QEMU_BUILD=1` compile definition for QEMU-specific code paths.
+- **Documentation**:
+  - Updated all docs (`README.md`, `BUILD.md`, `QUICKSTART.md`, `ARCHITECTURE.md`, `TECHSTACK.md`) to reflect ESP-IDF + QEMU workflow.
+
+### Added
+- **Automation Script** (`scripts/script.ps1`):
+  - `--build` — Build firmware via ESP-IDF.
+  - `--run` — Run in QEMU with IDF Monitor.
+  - `--run-raw` — Run in QEMU raw console.
+  - `--debug` — Run QEMU with GDB server.
+  - `--gdb` — Attach GDB to running QEMU.
+  - `--setup` — Install QEMU via `idf_tools.py`.
+  - `--clean` — Full clean build artifacts.
+  - `--env` — Open shell with ESP-IDF environment.
+
+### Removed
+- Arduino/AVR support (CMake presets, platform_arduino.hpp, Arduino CLI).
+- PlatformIO build system and configurations.
+- Wokwi simulator integration.
+- Renode simulator and `renode_main.cpp`.
+- Native PC build target (`main.cpp`, `platform_native.hpp`).
+- `arduino.hpp` compatibility shim.
+
 ## [Unreleased]
 
 ### Added
@@ -24,7 +65,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation Consistency**:
   - Fixed incorrect `gridshield.ino` filename references to `main.ino` across all documentation.
   - Updated file references in `BUILD.md`, `QUICKSTART.md`, and `ARCHITECTURE.md`.
-  - Fixed `@file` header comments in `src/arduino/main.ino` and `src/arduino/main.cpp`.
 
 ### Planned
 - Implementation of Elliptic Curve Cryptography (ECC) on ESP32.
@@ -50,33 +90,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.1] - 2026-02-20
 
 ### Fixed
-- **[CRITICAL] ECDSA Signature Buffer Overflow** (`src/common/security/crypto.cpp`):
+- **[CRITICAL] ECDSA Signature Buffer Overflow** (`crypto.cpp`):
   OpenSSL `ECDSA_sign()` produces DER-encoded signatures (~72 bytes) but
   the output buffer was only 64 bytes. Replaced with `ECDSA_do_sign()` /
   `ECDSA_do_verify()` using raw BIGNUM r,s conversion to/from fixed 64-byte
   (r || s) format.
-- **[CRITICAL] ISR Blocking Delay** (`src/common/hardware/tamper.cpp`,
-  `include/common/hardware/tamper.hpp`):
-  `delay_ms()` was called inside the interrupt handler, causing Arduino to
-  hang indefinitely. Refactored to deferred debounce: ISR now only sets a
-  `pending_tamper_` flag, actual debounce confirmation is done via new
-  `poll()` method called from `process_cycle()`.
-- **Wrong Macro Names** (`include/platform/mock_platform.hpp`):
-  Replaced `PLATFORM_NATIVE` → `GS_PLATFORM_NATIVE` (8 locations) and
-  `MAKE_ERROR` → `GS_MAKE_ERROR` (8 locations) to match project convention.
-- **StaticBuffer Alignment** (`include/common/core/types.hpp`):
+- **[CRITICAL] ISR Blocking Delay** (`tamper.cpp`, `tamper.hpp`):
+  `delay_ms()` was called inside the interrupt handler, causing hang.
+  Refactored to deferred debounce: ISR now only sets `pending_tamper_`
+  flag, actual debounce confirmation done via `poll()` in `process_cycle()`.
+- **Wrong Macro Names** (`mock_platform.hpp`):
+  Replaced `PLATFORM_NATIVE` → `GS_PLATFORM_NATIVE` and
+  `MAKE_ERROR` → `GS_MAKE_ERROR` to match project convention.
+- **StaticBuffer Alignment** (`types.hpp`):
   Added `alignas(T)` to raw storage array in `StaticBuffer<T, N>` to
-  prevent undefined behavior with aligned types like `MeterReading`.
+  prevent undefined behavior with aligned types.
 
 ### Added
-- **Arduino Interrupt Implementation** (`include/arduino/platform_arduino.hpp`):
-  Replaced no-op `ArduinoInterrupt` with full implementation using static
-  trampoline ISRs for Arduino Mega 2560 (6 interrupt-capable pins). Bridges
-  Arduino's `void(*)()` ISR to the HAL's `void(*)(void*)` callback pattern.
-- **StaticBuffer::pop_front()** (`include/common/core/types.hpp`):
+- **StaticBuffer::pop_front()** (`types.hpp`):
   Added FIFO removal method. `AnomalyDetector::update_profile()` now
-  correctly drops the oldest reading instead of the newest when the
-  buffer is full.
+  correctly drops the oldest reading.
 
 ## [0.1.0] - 2026-02-09
 
@@ -96,5 +129,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Defined C++17 coding standards.
   - Established error handling patterns using `Result<T>`.
 
-[Unreleased]: https://github.com/yourusername/gridshield/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/yourusername/gridshield/releases/tag/v0.1.0
+[2.0.0]: https://github.com/zuudevs/gridshield/compare/v1.1.0...v2.0.0
+[1.1.0]: https://github.com/zuudevs/gridshield/compare/v1.0.1...v1.1.0
+[1.0.1]: https://github.com/zuudevs/gridshield/compare/v0.1.0...v1.0.1
+[0.1.0]: https://github.com/zuudevs/gridshield/releases/tag/v0.1.0

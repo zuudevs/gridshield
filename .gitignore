@@ -5,7 +5,14 @@
 /build/
 /build-*/
 /.cache/
-.pio
+
+# ESP-IDF
+firmware/build/
+firmware/lib/
+firmware/sdkconfig.old
+firmware/managed_components/
+firmware/dependencies.lock
+firmware/sdkconfig.defaults.*
 
 # =========================
 # Compiled object & binaries

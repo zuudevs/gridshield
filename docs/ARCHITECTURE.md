@@ -1,6 +1,6 @@
 # GridShield - System Architecture
 
-**Version:** 1.0.0  
+**Version:** 2.0.0  
 **Last Updated:** February 2026  
 **Authors:** M. Ichwan Fauzi, Rafi Indra Pramudhito Zuhayr, Cesar Ardika Bhayangkara
 
@@ -33,10 +33,11 @@ GridShield is a production-grade, multi-layer security system designed for Advan
 
 - **Language:** C++17 (embedded-friendly, no exceptions)
 - **Memory Model:** Zero heap allocation, predictable stack usage
-- **Platform Support:** Native (PC testing) + Arduino AVR (production)
+- **Platform Support:** ESP32 (ESP-IDF) + QEMU simulation
 - **Security:** ECC-based authentication, AES-GCM encryption, SHA-256 integrity
 - **Architecture:** Layered design with Hardware Abstraction Layer (HAL)
-- **Dependencies:** `rweather/Crypto` & `micro-ecc` (embedded on all platforms)
+- **Build System:** ESP-IDF v5.5 with `idf.py`
+- **Dependencies:** `micro-ecc` (ECDSA secp256r1)
 
 ---
 
@@ -286,8 +287,8 @@ Sensor Trigger → ISR Handler → Debounce → Validate → Set Flag → Emerge
 - Operates on backup power during main power loss
 
 **Files:**
-- `include/common/hardware/tamper.hpp`
-- `src/common/hardware/tamper.cpp`
+- `firmware/include/common/hardware/tamper.hpp`
+- `firmware/main/src/hardware/tamper.cpp`
 
 ---
 
@@ -318,10 +319,10 @@ Sensor Trigger → ISR Handler → Debounce → Validate → Set Flag → Emerge
 - **Hashing:** SHA-256 (32 bytes)
 
 **Files:**
-- `include/common/security/crypto.hpp`
-- `src/common/security/crypto.cpp`
-- `include/common/network/packet.hpp`
-- `src/common/network/packet.cpp`
+- `firmware/include/common/security/crypto.hpp`
+- `firmware/main/src/security/crypto.cpp`
+- `firmware/include/common/network/packet.hpp`
+- `firmware/main/src/network/packet.cpp`
 
 ---
 
@@ -358,8 +359,8 @@ if Deviation% > Threshold:
 - Adapts to seasonal/behavioral changes
 
 **Files:**
-- `include/common/analytics/detector.hpp`
-- `src/common/analytics/detector.cpp`
+- `firmware/include/common/analytics/detector.hpp`
+- `firmware/main/src/analytics/detector.cpp`
 
 ---
 
@@ -455,12 +456,12 @@ class IPlatformCrypto {
 ```
 
 **Implementations:**
-- **Native:** `platform_native.hpp` - Uses `rweather/Crypto` & C++ STL
-- **Arduino:** `platform_arduino.hpp` - Uses `rweather/Crypto` & Arduino API
+- **Mock (QEMU/Testing):** `mock_platform.hpp` — Uses `esp_random()`, `std::chrono`, FreeRTOS
+- **Hardware (Production):** To be implemented for real ESP32 peripherals
 
 **Benefits:**
 - Platform-agnostic core logic
-- Easy testing on PC
+- Easy simulation via QEMU
 - Simple hardware porting
 
 ---
@@ -630,62 +631,62 @@ graph TD
 
 ```
 gridshield/
-├── CMakeLists.txt                      # Root build configuration
-├── CMakePresets.json                   # Build presets (native, AVR)
-├── BUILD.md                            # Build instructions
 ├── README.md                           # Project overview
+├── BUILD.md                            # Build instructions
 │
-├── include/                            # Header files
-│   ├── common/                         # Platform-agnostic
-│   │   ├── utils/
-│   │   │   └── gs_macros.hpp           # C++17 macros (GS_MOVE, GS_LIKELY, etc.)
-│   │   ├── core/
-│   │   │   ├── error.hpp               # Result<T> monad, ErrorCode
-│   │   │   ├── types.hpp               # MeterReading, StaticBuffer, etc.
-│   │   │   └── system.hpp              # GridShieldSystem orchestrator
-│   │   ├── security/
-│   │   │   └── crypto.hpp              # CryptoEngine, ECCKeyPair
-│   │   ├── hardware/
-│   │   │   └── tamper.hpp              # TamperDetector
-│   │   ├── network/
-│   │   │   └── packet.hpp              # SecurePacket, PacketTransport
-│   │   └── analytics/
-│   │       └── detector.hpp            # AnomalyDetector
+├── firmware/                           # ESP-IDF project
+│   ├── CMakeLists.txt                  # Root ESP-IDF config
+│   ├── sdkconfig                       # ESP-IDF configuration
 │   │
-│   ├── platform/
-│   │   └── platform.hpp                # HAL interfaces (IPlatformTime, etc.)
+│   ├── include/                        # Header files
+│   │   ├── common/                     # Platform-agnostic
+│   │   │   ├── utils/
+│   │   │   │   ├── gs_macros.hpp       # C++17 macros (GS_MOVE, GS_LIKELY, etc.)
+│   │   │   │   ├── gs_typetraits.hpp   # Type traits utilities
+│   │   │   │   └── gs_utils.hpp        # General utilities
+│   │   │   ├── core/
+│   │   │   │   ├── error.hpp           # Result<T> monad, ErrorCode
+│   │   │   │   ├── types.hpp           # MeterReading, StaticBuffer, etc.
+│   │   │   │   └── system.hpp          # GridShieldSystem orchestrator
+│   │   │   ├── security/
+│   │   │   │   ├── crypto.hpp          # CryptoEngine, ECCKeyPair
+│   │   │   │   └── key_storage.hpp     # KeyStorage interface
+│   │   │   ├── hardware/
+│   │   │   │   └── tamper.hpp          # TamperDetector
+│   │   │   ├── network/
+│   │   │   │   └── packet.hpp          # SecurePacket, PacketTransport
+│   │   │   └── analytics/
+│   │   │       └── detector.hpp        # AnomalyDetector
+│   │   │
+│   │   └── platform/
+│   │       ├── platform.hpp            # HAL interfaces (IPlatformTime, etc.)
+│   │       └── mock_platform.hpp       # Mock implementations (QEMU/test)
 │   │
-│   ├── native/
-│   │   └── platform_native.hpp         # PC testing implementation
+│   ├── main/
+│   │   ├── CMakeLists.txt              # Component registration
+│   │   ├── app_main.cpp                # ESP-IDF entry point (QEMU)
+│   │   └── src/
+│   │       ├── core/system.cpp         # System orchestrator
+│   │       ├── hardware/tamper.cpp     # Tamper detection
+│   │       ├── security/crypto.cpp     # Cryptographic operations
+│   │       ├── network/packet.cpp      # Secure packet protocol
+│   │       ├── analytics/detector.cpp  # Anomaly detection
+│   │       └── platform/platform.cpp   # Platform common code
 │   │
-│   └── arduino/
-│       └── platform_arduino.hpp        # AVR production implementation
+│   └── lib/
+│       └── micro-ecc/                  # ECC library (secp256r1)
 │
-├── src/                                # Implementation files
-│   ├── common/
-│   │   ├── core/system.cpp
-│   │   ├── hardware/tamper.cpp
-│   │   ├── security/crypto.cpp
-│   │   ├── network/packet.cpp
-│   │   └── analytics/detector.cpp
-│   │
-│   ├── platform/platform.cpp           # HAL common code
-│   │
-│   ├── native/
-│   │   └── main.cpp                    # PC entry point (testing)
-│   │
-│   └── arduino/
-│       └── main.ino                    # Arduino entry point (production)
+├── scripts/
+│   └── script.ps1                      # Build/run automation
 │
-├── docs/                               # Documentation
-│   ├── ARCHITECTURE.md                 # This file
-│   ├── API.md                          # API reference
-│   ├── PROPOSAL.md                     # Project proposal
-│   └── requirements.md                 # System requirements
-│
-└── bin/                                # Build outputs
-    ├── NATIVE/GridShield               # PC executable
-    └── AVR/GridShield.hex              # Arduino firmware
+└── docs/                               # Documentation
+    ├── ARCHITECTURE.md                 # This file
+    ├── API.md                          # API reference
+    ├── CHANGELOG.md                    # Version history
+    ├── QUICKSTART.md                   # Getting started guide
+    ├── TECHSTACK.md                    # Technology choices
+    ├── ROADMAP.md                      # Planned features
+    └── REQUIREMENTS.md                 # System requirements
 ```
 
 ### Compilation Units
@@ -702,7 +703,7 @@ gridshield/
 - `crypto.cpp` - Cryptographic operations
 - `packet.cpp` - Network protocol
 - `detector.cpp` - Anomaly detection
-- `main.cpp` / `main.ino` - Entry points
+- `app_main.cpp` - ESP-IDF entry point (QEMU)
 
 ---
 
@@ -739,8 +740,8 @@ gridshield/
 | **Production Total** | **~85 KB** | Fits in 256 KB flash |
 
 **Target Hardware:**
-- **Arduino Mega 2560:** 256 KB flash, 8 KB RAM ✅
-- **Arduino Uno:** 32 KB flash, 2 KB RAM ❌ (insufficient)
+- **ESP32:** 4 MB flash, 520 KB RAM ✅
+- **QEMU (Emulated):** Simulated ESP32 ✅
 
 ---
 
@@ -748,13 +749,13 @@ gridshield/
 
 ### Step 1: Hardware Platform Selection
 
-**Recommended:** Arduino Mega 2560
-- MCU: ATmega2560 @ 16 MHz
-- Flash: 256 KB
-- RAM: 8 KB
-- EEPROM: 4 KB
+**Primary:** ESP32 DevKit V1
+- MCU: Xtensa LX6 @ 240 MHz
+- Flash: 4 MB
+- RAM: 520 KB
+- WiFi/Bluetooth: Integrated
 
-**Alternative:** ESP32
+**Simulation:** QEMU (ESP32 emulation via ESP-IDF)
 - MCU: Xtensa LX6 @ 240 MHz
 - Flash: 4 MB
 - RAM: 520 KB
@@ -849,18 +850,17 @@ float read_voltage_mv() {
 
 ### Step 6: Testing Strategy
 
-**Unit Testing (PC):**
+**QEMU Simulation:**
 ```bash
-cmake --preset native-debug
-cmake --build --preset native-debug
-./bin/NATIVE/GridShield
+cd firmware
+idf.py build
+idf.py qemu monitor
 ```
 
-**Integration Testing (Arduino):**
+**Hardware Testing (ESP32):**
 ```bash
-arduino-cli compile --fqbn arduino:avr:mega src/arduino/main.ino
-arduino-cli upload -p COM3 --fqbn arduino:avr:mega src/arduino/main.ino
-arduino-cli monitor -p COM3 -b 115200
+cd firmware
+idf.py flash monitor
 ```
 
 **Hardware-in-Loop (HIL):**
@@ -872,21 +872,21 @@ arduino-cli monitor -p COM3 -b 115200
 
 ## Performance Benchmarks
 
-**Target MCU:** ATmega2560 @ 16 MHz
+**Target MCU:** ESP32 Xtensa LX6 @ 240 MHz
 
 | Operation | Time | Notes |
 |-----------|------|-------|
-| Tamper detection (ISR) | <5 ms | Interrupt-driven |
-| SHA-256 hash (512B) | ~15 ms | Software implementation |
-| ECC signature | ~50 ms | uECC library |
-| AES-256 encrypt (512B) | ~20 ms | Crypto library |
-| Anomaly analysis | <10 ms | Statistical computation |
-| **Full cycle** | **<100 ms** | Sensor → Encrypt → Transmit |
+| Tamper detection (ISR) | <1 ms | Interrupt-driven |
+| SHA-256 hash (512B) | ~2 ms | Hardware-accelerated |
+| ECC signature | ~15 ms | uECC library |
+| AES-256 encrypt (512B) | ~3 ms | Hardware-accelerated |
+| Anomaly analysis | <5 ms | Statistical computation |
+| **Full cycle** | **<30 ms** | Sensor → Encrypt → Transmit |
 
-**Power Consumption:**
-- Active (processing): ~50 mA @ 5V
-- Sleep (between cycles): <1 mA
-- Tamper alert (backup power): ~20 mA for 5 seconds
+**Power Consumption (ESP32):**
+- Active (processing): ~80 mA @ 3.3V
+- Light sleep: ~0.8 mA
+- Deep sleep: ~10 µA
 
 ---
 
@@ -963,7 +963,7 @@ enum class PacketType : uint8_t {
 ## References
 
 - [C++17 Standard](https://en.cppreference.com/w/cpp/17)
-- [Arduino Language Reference](https://www.arduino.cc/reference/en/)
+- [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/)
 - [micro-ecc Library](https://github.com/kmackay/micro-ecc)
-- [Arduino Crypto Library](https://github.com/rweather/arduinolibs)
-- [CMake Documentation](https://cmake.org/documentation/)
+- [QEMU ESP32 Documentation](https://github.com/espressif/qemu)
+- [FreeRTOS](https://www.freertos.org/)

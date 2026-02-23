@@ -1,6 +1,9 @@
 # PROJECT PROPOSAL
 # GRIDSHIELD: MULTI-LAYER SECURITY MODEL FOR AMI SYSTEM PROTECTION
 
+**Version:** 2.0.0  
+**Last Updated:** February 2026  
+
 **Prepared By:**
 * Muhammad Ichwan Fauzi (202331227)
 * Rafi Indra Pramudhito Zuhayr (202331291)
@@ -21,9 +24,12 @@ GridShield offers a *Multi-Layer* security architecture specifically designed fo
 2.  **Network Security:** Implementation of *Lightweight Cryptography* based on ECC (Elliptic Curve Cryptography) optimized using **Modern C++ (C++17)** for memory efficiency on *embedded systems*.
 3.  **Smart Analytics:** Real-time anomaly detection of consumption patterns on the server side.
 
+**Target Platform:** ESP32 (Xtensa LX6 @ 240 MHz) — development via **PlatformIO** + simulasi **Wokwi**.
+
 ### 1.3 Competitive Advantages
 Unlike closed vendor solutions (*proprietary*), GridShield is:
-* **Resource-Constrained Friendly:** Algorithms optimized for affordable microcontrollers (Arduino Mega, with ESP32/STM32 support planned).
+* **Resource-Constrained Friendly:** Algorithms optimized for ESP32 microcontroller with hardware crypto acceleration.
+* **Simulation-Ready:** Full development cycle via PlatformIO + Wokwi tanpa perlu hardware fisik.
 * **Cross-Layer Validation:** Verifies physical data against digital patterns.
 * **Cost-Effective:** Implementation costs significantly lower than global vendor security licenses.
 
@@ -31,10 +37,18 @@ Unlike closed vendor solutions (*proprietary*), GridShield is:
 
 ## CHAPTER II: TEAM IDENTITY AND QUALIFICATIONS
 
-### 2.1 Team Composition
-* **Muhammad Ichwan Fauzi (Lead/Network Security):** Focus on system architecture, *threat modeling*, and security protocol integration.
-* **Rafi Indra Pramudhito Zuhayr (Software Engineer):** Specialist in *Low-Level Programming* (C/C++). Responsible for memory optimization, cryptographic algorithm implementation in *firmware*, and *embedded* system code efficiency.
-* **Cesar Ardika Bhayangkara (Hardware Engineer):** Focus on electronic circuit design, physical sensor integration, and *hardware* communication (UART/SPI/I2C).
+### 2.1 Team Composition & Core Roles
+
+| PIC | Core Domain | Key Roles (Weight) |
+|---|---|---|
+| **M. Ichwan Fauzi** | Data & Server | Data Scientist (11%), Server Engineer (5%), QA (5%), UI/UX (4%), DBA (3%) |
+| **Rafi Indra P. Zuhayr** | Firmware & Security | Software Engineer (14%), Embedded Firmware (8%), Cybersecurity (6%), System Architect (3%) |
+| **Cesar Ardika B.** | Hardware & Power | PCB Design (9%), Electrical Engineer (6%), Power Systems (5%), Supply Chain (3%) |
+
+**Role Details:**
+* **Ichwan (Data & Server — 28%):** Mengembangkan algoritma deteksi anomali Layer 3, mengelola backend server (Python + SQLite), merancang dashboard monitoring, dan melakukan QA/testing.
+* **Rafi (Firmware & Security — 37%):** Membangun logika inti sistem C++17 pada ESP32, mengimplementasikan kriptografi ECC (Layer 2), menangani firmware ISR/GPIO (Layer 1), dan mengelola arsitektur sistem.
+* **Cesar (Hardware & Power — 23%):** Merancang PCB modul keamanan, mengintegrasikan sensor fisik (tamper detection), mengelola sistem daya cadangan, dan mengatur pengadaan komponen.
 
 ---
 
@@ -43,16 +57,21 @@ Unlike closed vendor solutions (*proprietary*), GridShield is:
 ### 3.1 Problem Description
 * **Sophisticated Physical Manipulation:** Internal meter component modification.
 * **False Data Injection (FDI):** Data packet manipulation during transmission.
-* **Hardware Limitations:** Smart Meters have small CPU and RAM, unable to run standard PC encryption (RSA/AES-256 is too heavy).
+* **Hardware Limitations:** Smart Meters have limited resources, requiring lightweight cryptography (RSA terlalu berat, ECC lebih cocok).
 
 ### 3.2 Solution Architecture (GridShield)
-*Defense-in-Depth* approach:
-* **Layer 1 (Physical):** Tamper sensors detect casing opening -> Triggers *Priority Flag* -> Sends emergency signal via backup capacitor.
-* **Layer 2 (Network - Firmware):** Uses C++17 for strict manual memory management. Replaces RSA with ECC (Elliptic Curve) which has shorter keys but equivalent security, suitable for narrow IoT *bandwidth*.
-* **Layer 3 (Application):** *Anomaly Detection Engine* comparing *real-time* load with customer historical profiles.
+*Defense-in-Depth* approach with **ESP32** as target platform:
+* **Layer 1 (Physical) — PIC: Cesar + Rafi:** Tamper sensors detect casing opening → Triggers *Priority Flag* → ISR handler dengan debounce logic.
+* **Layer 2 (Network - Firmware) — PIC: Rafi:** C++17 firmware pada ESP32. ECDSA signing (micro-ecc) + SHA-256 hashing untuk integritas data.
+* **Layer 3 (Application) — PIC: Ichwan:** Statistical anomaly detection engine comparing real-time consumption with 24-hour historical profile.
+
+**Development & Simulation:**
+* **Build System:** PlatformIO (unified toolchain)
+* **Simulator:** Wokwi (GPIO, interrupt, serial — tanpa hardware fisik)
+* **Backend:** Python + FastAPI + SQLite (lightweight, sesuai POC scope)
 
 ### 3.3 Technology Readiness Level (TRL)
-Currently at **TRL 4 (Validated in Lab Environment)**. Firmware implementation complete for Arduino Mega 2560, cryptographic algorithms validated, anomaly detection engine functional.
+Currently at **TRL 4 (Validated in Lab/Simulation Environment)**. Firmware implementation for ESP32 via PlatformIO, cryptographic algorithms validated dengan micro-ecc, anomaly detection engine functional.
 
 ---
 
@@ -71,17 +90,22 @@ Currently at **TRL 4 (Validated in Lab Environment)**. Firmware implementation c
 
 ## CHAPTER V: IMPLEMENTATION PLAN AND REQUIREMENTS
 
-### 5.1 Work Plan (Sprint Program)
+### 5.1 Work Plan (Sprint Program by PIC)
+
 Targets during incubation period:
-* **Week 1 (Design):** Finalization of *Threat Modeling* and *hardware* schematic.
-* **Week 2 (Dev - Security):** ECC algorithm coding on Arduino Mega using C++17.
-* **Week 3 (Dev - Analytic):** Backend anomaly detection creation (Python/Go).
-* **Week 4 (Integration):** Combining Hardware + Firmware + Cloud modules for MVP Demo.
+
+| Week | Rafi (Firmware & Security) | Ichwan (Data & Server) | Cesar (Hardware & Power) |
+|---|---|---|---|
+| **1** | Setup PlatformIO + Wokwi, arsitektur core system | Setup Python backend + SQLite | Desain schematic + sensor selection |
+| **2** | Implementasi Layer 2 (ECC + packet protocol) | Setup MQTT/serial receiver + DB schema | Integrasi sensor tamper di Wokwi |
+| **3** | Implementasi Layer 1 (ISR + debounce) | Implementasi Layer 3 (anomaly engine) + dashboard | PCB layout + power backup circuit |
+| **4** | Integrasi 3 layer + QA firmware | QA backend + demo preparation | Hardware assembly + final testing |
 
 ### 5.2 Support Requirements
 * **Mentoring:** Cyber Security / Industrial IoT Practitioners.
 * **Data Access:** Dummy electricity load profile dataset (anonymized).
-* **Facilities:** Access to Power/Computer Systems Lab.
+* **Tools:** PlatformIO + Wokwi (free tier cukup untuk POC).
+* **Facilities:** Access to Power/Computer Systems Lab (untuk hardware testing final).
 
 ---
 
@@ -89,21 +113,22 @@ Targets during incubation period:
 
 | No | Component | Description | Estimated Cost (Rp) |
 | :--- | :--- | :--- | :--- |
-| 1 | **Hardware Components** | Arduino Mega, Sensors (Hall/Limit Switch), PCB, Dummy Casing | 1,500,000 |
+| 1 | **Hardware Components** | ESP32 DevKit V1 (×2), Sensors (Hall/Limit Switch), PCB, Dummy Casing | 1,200,000 |
 | 2 | **Cloud & Server** | VPS/Cloud rental for Backend (3 Months) | 600,000 |
-| 3 | **Connectivity** | IoT Data Package / LoRa Module | 400,000 |
-| 4 | **Research Operations** | Transportation, Report Printing, Team Consumables | 1,000,000 |
-| **TOTAL** | | | **Rp 3,500,000** |
+| 3 | **Connectivity** | WiFi (built-in ESP32) — no additional module needed | 0 |
+| 4 | **Development Tools** | PlatformIO + Wokwi (free tier) | 0 |
+| 5 | **Research Operations** | Transportation, Report Printing, Team Consumables | 1,000,000 |
+| **TOTAL** | | | **Rp 2,800,000** |
 
 ---
 
 ## CHAPTER VII: CONCLUSION
 
-GridShield is not just a security tool, but a strategic solution to save national revenue from modern electricity theft. With a team combining *hardware*, low-level *software engineering* (C++17), and cybersecurity expertise, we are confident in delivering a valid prototype ready for further development.
+GridShield is not just a security tool, but a strategic solution to save national revenue from modern electricity theft. With a team combining *hardware engineering* (Cesar), low-level *software engineering* C++17 (Rafi), and *data science* anomaly detection (Ichwan) — all targeting **ESP32** via **PlatformIO + Wokwi** — we are confident in delivering a valid, simulation-ready prototype that can be deployed to real hardware with minimal changes.
 
 ---
 
 **Document Information:**
-- **Version:** 1.1.0
+- **Version:** 2.0.0
 - **Last Updated:** February 2026
 - **Language:** Translated from Indonesian (original)
