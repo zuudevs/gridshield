@@ -18,6 +18,7 @@
 #include "core/error.hpp"
 #include "core/types.hpp"
 #include "platform/platform.hpp"
+#include <array>
 
 namespace gridshield::security {
 
@@ -41,7 +42,7 @@ public:
     static constexpr size_t PRIVATE_KEY_SIZE = ECC_KEY_SIZE;
     static constexpr size_t PUBLIC_KEY_SIZE = ECC_PUBLIC_KEY_SIZE;
 
-    ECCKeyPair() noexcept;
+    ECCKeyPair() noexcept = default;
     ~ECCKeyPair() noexcept;
     
     // Non-copyable, movable
@@ -63,10 +64,10 @@ public:
     void clear() noexcept;
     
 private:
-    uint8_t private_key_[ECC_KEY_SIZE];
-    uint8_t public_key_[ECC_PUBLIC_KEY_SIZE];
-    bool has_private_;
-    bool has_public_;
+    std::array<uint8_t, ECC_KEY_SIZE> private_key_{};
+    std::array<uint8_t, ECC_PUBLIC_KEY_SIZE> public_key_{};
+    bool has_private_{false};
+    bool has_public_{false};
 };
 
 // ============================================================================

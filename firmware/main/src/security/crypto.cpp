@@ -51,10 +51,6 @@ namespace gridshield::security {
 // ============================================================================
 // ECC KEY PAIR
 // ============================================================================
-ECCKeyPair::ECCKeyPair() noexcept : has_private_(false), has_public_(false) {
-  clear();
-}
-
 ECCKeyPair::~ECCKeyPair() noexcept { clear(); }
 
 ECCKeyPair::ECCKeyPair(ECCKeyPair &&other) noexcept
@@ -136,11 +132,11 @@ core::Result<void> ECCKeyPair::load_public_key(const uint8_t *key,
 }
 
 const uint8_t *ECCKeyPair::get_private_key() const noexcept {
-  return has_private_ ? private_key_ : nullptr;
+  return has_private_ ? private_key_.data() : nullptr;
 }
 
 const uint8_t *ECCKeyPair::get_public_key() const noexcept {
-  return has_public_ ? public_key_ : nullptr;
+  return has_public_ ? public_key_.data() : nullptr;
 }
 
 bool ECCKeyPair::has_private_key() const noexcept { return has_private_; }
@@ -148,12 +144,12 @@ bool ECCKeyPair::has_private_key() const noexcept { return has_private_; }
 bool ECCKeyPair::has_public_key() const noexcept { return has_public_; }
 
 void ECCKeyPair::clear() noexcept {
-  volatile uint8_t *vptr = private_key_;
+  volatile uint8_t *vptr = private_key_.data();
   for (size_t i = 0; i < ECC_KEY_SIZE; ++i) {
     vptr[i] = 0;
   }
 
-  vptr = public_key_;
+  vptr = public_key_.data();
   for (size_t i = 0; i < ECC_PUBLIC_KEY_SIZE; ++i) {
     vptr[i] = 0;
   }

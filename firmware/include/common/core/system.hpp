@@ -93,24 +93,24 @@ private:
     void set_mode(OperationMode new_mode) noexcept;
     
     SystemConfig config_;
-    platform::PlatformServices* platform_;
+    platform::PlatformServices* platform_{};
     
     // Layer components
     hardware::TamperDetector tamper_detector_;
-    security::CryptoEngine* crypto_engine_;
+    security::CryptoEngine* crypto_engine_{};
     security::ECCKeyPair device_keypair_;
     security::ECCKeyPair server_public_key_;
-    network::PacketTransport* packet_transport_;
+    network::PacketTransport* packet_transport_{};
     analytics::AnomalyDetector anomaly_detector_;
     
     // State management
-    core::SystemState state_;
-    OperationMode mode_;
-    bool initialized_;
+    core::SystemState state_{core::SystemState::Uninitialized};
+    OperationMode mode_{OperationMode::Normal};
+    bool initialized_{false};
     
     // Timing
-    core::timestamp_t last_heartbeat_;
-    core::timestamp_t last_reading_;
+    core::timestamp_t last_heartbeat_{};
+    core::timestamp_t last_reading_{};
     
     // Cross-layer validation
     analytics::CrossLayerValidation validation_state_;

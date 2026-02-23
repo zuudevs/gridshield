@@ -105,12 +105,7 @@ GS_STATIC_ASSERT(sizeof(TamperEvent) == 16, "TamperEvent must be 16 bytes");
 // ============================================================================
 template <typename T, size_t N> class StaticBuffer {
 public:
-  StaticBuffer() : size_(0) {
-    // Zero-initialize storage (optional, untuk keamanan)
-    for (size_t i = 0; i < N * sizeof(T); ++i) {
-      storage_[i] = 0;
-    }
-  }
+  StaticBuffer() noexcept = default;
 
   ~StaticBuffer() { clear(); }
 
@@ -176,7 +171,7 @@ public:
     if (size_ == 0) {
       return false;
 	}
-    T *front = reinterpret_cast<T *>(&storage_[0]);
+    T *front = reinterpret_cast<T *>(storage_.data());
     item = GS_MOVE(*front);
     front->~T();
 
@@ -217,7 +212,7 @@ private:
 #if GS_PLATFORM_NATIVE || GS_PLATFORM_ESP32
   alignas(T) std::array<uint8_t, N * sizeof(T)> storage_{};
 #else
-  char storage_[N * sizeof(T)];
+  char storage_[N * sizeof(T)]{};
 #endif
   size_t size_{};
 };
@@ -227,13 +222,7 @@ private:
 // ============================================================================
 template <size_t N> class ByteArray {
 public:
-  ByteArray() noexcept {
-#if GS_PLATFORM_NATIVE
-    std::memset(data_, 0, N);
-#else
-    memset(data_, 0, N);
-#endif
-  }
+  ByteArray() noexcept = default;
 
   void clear() noexcept {
     size_ = 0;
@@ -244,7 +233,7 @@ public:
 #endif
   }
 
-  GS_NODISCARD inline bool append(const uint8_t *data, size_t len) noexcept {
+  GS_NODISCARD bool append(const uint8_t *data, size_t len) noexcept {
     if (GS_UNLIKELY(size_ + len > N)) {
       return false;
 	}

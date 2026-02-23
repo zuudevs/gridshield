@@ -24,7 +24,7 @@ core::Result<void> AnomalyDetector::initialize(
     recent_readings_.clear();
     initialized_ = true;
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<void> AnomalyDetector::update_profile(
@@ -67,7 +67,7 @@ core::Result<void> AnomalyDetector::update_profile(
         }
     }
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 core::Result<AnomalyReport> AnomalyDetector::analyze(
@@ -102,7 +102,7 @@ core::Result<AnomalyReport> AnomalyDetector::analyze(
                                          static_cast<uint32_t>(diff);
         
         report.deviation_percent = 
-            (abs_diff * 100) / static_cast<uint32_t>(report.expected_value);
+            (abs_diff * 100) / report.expected_value;
     } else {
         report.deviation_percent = 0;
     }
@@ -128,7 +128,7 @@ core::Result<AnomalyReport> AnomalyDetector::analyze(
         report.confidence = 0;
     }
     
-    return core::Result<AnomalyReport>(GS_MOVE(report));
+    return core::Result<AnomalyReport>{GS_MOVE(report)};
 }
 
 const ConsumptionProfile& AnomalyDetector::get_profile() const noexcept {
@@ -143,7 +143,7 @@ core::Result<void> AnomalyDetector::reset_profile() noexcept {
     profile_ = ConsumptionProfile();
     recent_readings_.clear();
     
-    return core::Result<void>();
+    return core::Result<void>{};
 }
 
 AnomalySeverity AnomalyDetector::calculate_severity(
@@ -157,8 +157,9 @@ AnomalySeverity AnomalyDetector::calculate_severity(
         return AnomalySeverity::Medium;
     } else if (deviation_percent >= 20) {
         return AnomalySeverity::Low;
-    }
-    return AnomalySeverity::None;
+    } else {
+		return AnomalySeverity::None;
+	}
 }
 
 uint32_t AnomalyDetector::calculate_expected_value(

@@ -14,12 +14,12 @@
 
 #if GS_PLATFORM_NATIVE
     #include <cstdint>
-    #include <new>
     #include <type_traits>
 #else
     #include <stdint.h>
-	#include <new>
 #endif
+
+#include <new>
 
 namespace gridshield::core {
 
@@ -84,12 +84,13 @@ struct ErrorContext {
     uint32_t line;
     const char* file;
     
-    constexpr ErrorContext(ErrorCode c, uint32_t ln = 0, const char* f = nullptr) noexcept
-        : code(c), line(ln), file(f) {}
+    constexpr ErrorContext(ErrorCode errc_, uint32_t ln_ = 0, const char* file_ = nullptr) noexcept
+        : code(errc_), line(ln_), file(file_) {}
     
-    constexpr bool is_critical() const noexcept {
-        uint16_t code_val = static_cast<uint16_t>(code);
-        return code_val >= 200 && code_val < 400;
+    [[nodiscard]] constexpr bool is_critical() const noexcept {
+        auto code_val = static_cast<uint16_t>(code);
+        return code_val >= static_cast<uint16_t>(ErrorCode::HardwareFailure) && 
+			   code_val < static_cast<uint16_t>(ErrorCode::NetworkTimeout);
     }
 };
 
@@ -203,7 +204,9 @@ public:
     
     // Convert to Result<void>, discarding the value
     Result<void> as_void() noexcept {
-        if (has_value_) return Result<void>();
+        if (has_value_) {
+			return Result<void>{};
+		}
         return error_;
     }
     
@@ -238,7 +241,7 @@ private:
         if (GS_UNLIKELY(gs_result_.is_error())) { \
             return gs_result_.error(); \
         } \
-        var = GS_MOVE(gs_result_.value()); \
+        (var) = GS_MOVE(gs_result_.value()); \
     } while(0)
 
 } // namespace gridshield::core

@@ -15,6 +15,7 @@
 
 #include "core/error.hpp"
 #include "core/types.hpp"
+#include <array>
 
 namespace gridshield::core {
 
@@ -67,8 +68,12 @@ public:
      */
     void set_policy(const DegradationPolicy& policy) noexcept {
         policy_ = policy;
-        for (auto& h : health_) h = ServiceHealth::Healthy;
-        for (auto& c : failure_counts_) c = 0;
+        for (auto& hlt : health_) {
+			hlt = ServiceHealth::Healthy;
+		}
+        for (auto& fct : failure_counts_) {
+			fct = 0;
+		}
     }
 
     /**
@@ -77,7 +82,9 @@ public:
      */
     bool report_failure(ServiceId service, ErrorCode error) noexcept {
         auto idx = static_cast<uint8_t>(service);
-        if (idx >= static_cast<uint8_t>(ServiceId::Count)) return false;
+        if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
+			return false;
+		}
 
         ++failure_counts_[idx];
         health_[idx] = ServiceHealth::Failed;
@@ -91,7 +98,9 @@ public:
      */
     void report_recovery(ServiceId service) noexcept {
         auto idx = static_cast<uint8_t>(service);
-        if (idx >= static_cast<uint8_t>(ServiceId::Count)) return;
+        if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
+			return;
+		}
 
         health_[idx] = ServiceHealth::Healthy;
         failure_counts_[idx] = 0;
@@ -103,7 +112,9 @@ public:
      */
     void report_degraded(ServiceId service) noexcept {
         auto idx = static_cast<uint8_t>(service);
-        if (idx >= static_cast<uint8_t>(ServiceId::Count)) return;
+        if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
+			return;
+		}
         health_[idx] = ServiceHealth::Degraded;
     }
 
@@ -140,7 +151,9 @@ public:
      */
     GS_NODISCARD bool is_service_available(ServiceId service) const noexcept {
         auto idx = static_cast<uint8_t>(service);
-        if (idx >= static_cast<uint8_t>(ServiceId::Count)) return false;
+        if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
+			return false;
+		}
         return health_[idx] == ServiceHealth::Healthy ||
                health_[idx] == ServiceHealth::Degraded;
     }
@@ -150,8 +163,9 @@ public:
      */
     GS_NODISCARD ServiceHealth get_health(ServiceId service) const noexcept {
         auto idx = static_cast<uint8_t>(service);
-        if (idx >= static_cast<uint8_t>(ServiceId::Count))
+        if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
             return ServiceHealth::Failed;
+		}
         return health_[idx];
     }
 
@@ -160,7 +174,9 @@ public:
      */
     GS_NODISCARD uint16_t get_failure_count(ServiceId service) const noexcept {
         auto idx = static_cast<uint8_t>(service);
-        if (idx >= static_cast<uint8_t>(ServiceId::Count)) return 0;
+        if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
+			return 0;
+		}
         return failure_counts_[idx];
     }
 
@@ -168,8 +184,10 @@ public:
      * @brief Check if any service is degraded or failed
      */
     GS_NODISCARD bool is_degraded() const noexcept {
-        for (uint8_t i = 0; i < static_cast<uint8_t>(ServiceId::Count); ++i) {
-            if (health_[i] != ServiceHealth::Healthy) return true;
+        for (const auto& hlt : health_) {
+            if (hlt != ServiceHealth::Healthy) {
+				return true;
+			}
         }
         return false;
     }
@@ -178,9 +196,9 @@ private:
     static constexpr uint8_t MAX_SERVICES = static_cast<uint8_t>(ServiceId::Count);
 
     DegradationPolicy policy_;
-    ServiceHealth health_[MAX_SERVICES]{};
-    uint16_t failure_counts_[MAX_SERVICES]{};
-    ErrorCode last_errors_[MAX_SERVICES]{};
+    std::array<ServiceHealth, MAX_SERVICES> health_{};
+    std::array<uint16_t, MAX_SERVICES> failure_counts_{};
+    std::array<ErrorCode, MAX_SERVICES> last_errors_{};
 };
 
 } // namespace gridshield::core
