@@ -51,11 +51,11 @@ public:
 #endif
   }
 
-  void delay_ms(uint32_t ms) noexcept override {
+  void delay_ms(uint32_t milli_seconds) noexcept override {
 #if GS_PLATFORM_NATIVE || defined(GS_QEMU_BUILD)
-    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(milli_seconds));
 #else
-    delay(ms);
+    delay(milli_seconds);
 #endif
   }
 
@@ -298,6 +298,10 @@ public:
     for (size_t i = 0; i < len && !rx_buffer_.full(); i++) {
       rx_buffer_.push(data[i]);
     }
+  }
+
+  void set_connected(bool state) {
+    connected_ = state;
   }
 
   void clear_buffers() {

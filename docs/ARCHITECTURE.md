@@ -439,7 +439,7 @@ Uninitialized → Initializing → Ready → Operating
 ```cpp
 class IPlatformTime {
     virtual timestamp_t get_timestamp_ms() = 0;
-    virtual void delay_ms(uint32_t ms) = 0;
+    virtual void delay_ms(uint32_t milli_seconds) = 0;
 };
 
 class IPlatformGPIO {
