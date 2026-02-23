@@ -62,13 +62,7 @@ struct PacketFooter {
     std::array<uint8_t, security::ECC_SIGNATURE_SIZE> signature{};
     uint8_t magic_footer{MAGIC_FOOTER};
     
-    PacketFooter() noexcept {
-#if GS_PLATFORM_NATIVE
-        std::memset(signature, 0, security::ECC_SIGNATURE_SIZE);
-#else
-        memset(signature, 0, security::ECC_SIGNATURE_SIZE);
-#endif
-    }
+    PacketFooter() noexcept = default;
 };
 #pragma pack(pop)
 
@@ -97,7 +91,7 @@ public:
     core::Result<size_t> serialize(uint8_t* buffer, size_t buffer_size) const noexcept;
     
     GS_NODISCARD const PacketHeader& header() const noexcept { return header_; }
-    GS_NODISCARD const uint8_t* payload() const noexcept { return payload_; }
+    GS_NODISCARD const uint8_t* payload() const noexcept { return payload_.data(); }
     GS_NODISCARD uint16_t payload_length() const noexcept { return header_.payload_length; }
     
     GS_NODISCARD bool is_valid() const noexcept { return is_valid_; }

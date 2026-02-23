@@ -260,8 +260,8 @@ public:
   GS_NODISCARD constexpr size_t size() const noexcept { return size_; }
   GS_NODISCARD constexpr size_t capacity() const noexcept { return N; }
 
-  GS_NODISCARD uint8_t *data() noexcept { return data_; }
-  GS_NODISCARD const uint8_t *data() const noexcept { return data_; }
+  GS_NODISCARD uint8_t *data() noexcept { return data_.data(); }
+  GS_NODISCARD const uint8_t *data() const noexcept { return data_.data(); }
 
   GS_NODISCARD uint8_t &operator[](size_t idx) noexcept {
     GS_ASSERT(idx < size_);
