@@ -51,7 +51,7 @@ public:
 #endif
   }
 
-  void delay_ms(uint32_t ms) noexcept override {
+  void delay_ms(uint32_t _ms) noexcept override {
 #if GS_PLATFORM_NATIVE || defined(GS_QEMU_BUILD)
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 #else

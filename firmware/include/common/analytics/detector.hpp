@@ -13,6 +13,7 @@
 
 #include "core/error.hpp"
 #include "core/types.hpp"
+#include <array>
 
 namespace gridshield::analytics {
 
@@ -42,7 +43,7 @@ enum class AnomalySeverity : uint8_t {
 // CONSUMPTION PROFILE
 // ============================================================================
 struct ConsumptionProfile {
-    uint32_t hourly_avg_wh[PROFILE_HISTORY_SIZE]{};
+	std::array<uint32_t, PROFILE_HISTORY_SIZE> hourly_avg_wh{};
     uint32_t daily_avg_wh{};
     uint32_t weekly_avg_wh{};
     uint16_t variance_threshold{30};
