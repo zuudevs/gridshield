@@ -9,7 +9,6 @@
 # ESP-IDF
 firmware/build/
 firmware/test_app/build/
-firmware/lib/
 firmware/sdkconfig.old
 firmware/managed_components/
 firmware/dependencies.lock
