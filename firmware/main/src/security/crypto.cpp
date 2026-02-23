@@ -56,11 +56,11 @@ ECCKeyPair::~ECCKeyPair() noexcept { clear(); }
 ECCKeyPair::ECCKeyPair(ECCKeyPair &&other) noexcept
     : has_private_(other.has_private_), has_public_(other.has_public_) {
 #if GS_PLATFORM_NATIVE
-  std::memcpy(private_key_, other.private_key_, ECC_KEY_SIZE);
-  std::memcpy(public_key_, other.public_key_, ECC_PUBLIC_KEY_SIZE);
+  std::memcpy(private_key_.data(), other.private_key_.data(), ECC_KEY_SIZE);
+  std::memcpy(public_key_.data(), other.public_key_.data(), ECC_PUBLIC_KEY_SIZE);
 #else
-  memcpy(private_key_, other.private_key_, ECC_KEY_SIZE);
-  memcpy(public_key_, other.public_key_, ECC_PUBLIC_KEY_SIZE);
+  memcpy(private_key_.data(), other.private_key_.data(), ECC_KEY_SIZE);
+  memcpy(public_key_.data(), other.public_key_.data(), ECC_PUBLIC_KEY_SIZE);
 #endif
   other.clear();
 }
@@ -69,11 +69,11 @@ ECCKeyPair &ECCKeyPair::operator=(ECCKeyPair &&other) noexcept {
   if (this != &other) {
     clear();
 #if GS_PLATFORM_NATIVE
-    std::memcpy(private_key_, other.private_key_, ECC_KEY_SIZE);
+    std::memcpy(private_key_.data(), other.private_key_.data(), ECC_KEY_SIZE);
     std::memcpy(public_key_, other.public_key_, ECC_PUBLIC_KEY_SIZE);
 #else
-    memcpy(private_key_, other.private_key_, ECC_KEY_SIZE);
-    memcpy(public_key_, other.public_key_, ECC_PUBLIC_KEY_SIZE);
+    memcpy(private_key_.data(), other.private_key_.data(), ECC_KEY_SIZE);
+    memcpy(public_key_.data(), other.public_key_.data(), ECC_PUBLIC_KEY_SIZE);
 #endif
     has_private_ = other.has_private_;
     has_public_ = other.has_public_;
@@ -87,7 +87,7 @@ core::Result<void> ECCKeyPair::generate() noexcept {
   // micro-ecc secp256r1
   const struct uECC_Curve_t *curve = uECC_secp256r1();
 
-  if (!uECC_make_key(public_key_, private_key_, curve)) {
+  if (!uECC_make_key(public_key_.data(), private_key_.data(), curve)) {
     return GS_MAKE_ERROR(core::ErrorCode::KeyGenerationFailed);
   }
 
@@ -108,9 +108,9 @@ core::Result<void> ECCKeyPair::load_private_key(const uint8_t *key,
   }
 
 #if GS_PLATFORM_NATIVE
-  std::memcpy(private_key_, key, ECC_KEY_SIZE);
+  std::memcpy(private_key_.data(), key, ECC_KEY_SIZE);
 #else
-  memcpy(private_key_, key, ECC_KEY_SIZE);
+  memcpy(private_key_.data(), key, ECC_KEY_SIZE);
 #endif
   has_private_ = true;
   return core::Result<void>();
@@ -123,9 +123,9 @@ core::Result<void> ECCKeyPair::load_public_key(const uint8_t *key,
   }
 
 #if GS_PLATFORM_NATIVE
-  std::memcpy(public_key_, key, ECC_PUBLIC_KEY_SIZE);
+  std::memcpy(public_key_.data(), key, ECC_PUBLIC_KEY_SIZE);
 #else
-  memcpy(public_key_, key, ECC_PUBLIC_KEY_SIZE);
+  memcpy(public_key_.data(), key, ECC_PUBLIC_KEY_SIZE);
 #endif
   has_public_ = true;
   return core::Result<void>();
