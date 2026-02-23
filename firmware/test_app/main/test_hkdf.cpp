@@ -73,7 +73,7 @@ static void test_hkdf_invalid_params(void) {
     TEST_ASSERT_TRUE(res.is_error());
 }
 
-extern "C" void test_hkdf_suite(void) {
+void test_hkdf_suite(void) {
     RUN_TEST(test_hkdf_rfc5869_case1);
     RUN_TEST(test_hkdf_no_salt_no_info);
     RUN_TEST(test_hkdf_large_expansion);

@@ -67,17 +67,18 @@ GridShield aims to become the **industry-standard open-source security framework
 
 #### High Priority
 
-- [ ] **Secure Key Storage**
-  - [ ] NVS (Non-Volatile Storage) encrypted key store
-  - [ ] Key rotation mechanism
+- [x] **Secure Key Storage** (v2.1.0)
+  - [x] NVS (Non-Volatile Storage) encrypted key store
+  - [x] Key rotation mechanism
   - [ ] Backup key management
 
-- [ ] **Security Enhancements**
-  - [ ] Hardware RNG integration (ESP32 TRNG)
-  - [ ] Secure key derivation (HKDF)
+- [x] **Security Enhancements** (v2.1.0)
+  - [x] Hardware RNG integration (ESP32 TRNG)
+  - [x] Secure key derivation (HKDF)
+  - [x] AES-256-GCM via mbedTLS
   - [ ] ESP32 Secure Boot v2
   - [ ] Flash encryption
-  - [ ] Watchdog timer integration
+  - [x] Watchdog timer integration
 
 - [ ] **Testing Infrastructure**
   - [ ] Unit tests with Unity (ESP-IDF)
@@ -87,10 +88,10 @@ GridShield aims to become the **industry-standard open-source security framework
 
 #### Medium Priority
 
-- [ ] **CI/CD Pipeline**
-  - [ ] GitHub Actions: build on push
-  - [ ] Automated QEMU test runs
-  - [ ] Lint + clang-tidy checks
+- [x] **CI/CD Pipeline** (v2.1.0)
+  - [x] GitHub Actions: build on push
+  - [x] Automated QEMU test runs
+  - [x] Lint + clang-tidy checks
   - [ ] Release artifact packaging
 
 - [ ] **Documentation**
