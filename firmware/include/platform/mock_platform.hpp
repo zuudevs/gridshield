@@ -300,6 +300,10 @@ public:
     }
   }
 
+  void set_connected(bool state) {
+    connected_ = state;
+  }
+
   void clear_buffers() {
     tx_buffer_.clear();
     rx_buffer_.clear();
