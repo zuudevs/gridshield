@@ -99,3 +99,38 @@ jobs:
 
       - name: Lint
         run: ruff check backend/
+
+  clang-tidy:
+    name: C++ Lint (clang-tidy)
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v5.5.3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build + Generate compile_commands.json
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware
+          idf.py set-target esp32
+          idf.py build
+
+      - name: Install clang-tidy
+        run: apt-get update && apt-get install -y clang-tidy
+
+      - name: Run clang-tidy
+        shell: bash
+        run: |
+          cd firmware
+          find main/src -name '*.cpp' | xargs clang-tidy \
+            -p build \
+            --checks='-*,bugprone-*,performance-*,readability-*,modernize-*,-modernize-use-trailing-return-type' \
+            --warnings-as-errors='bugprone-*' \
+            2>&1 | tee clang_tidy_output.log
+          if grep -q 'error:' clang_tidy_output.log; then
+            echo '::error::clang-tidy found issues'
+            exit 1
+          fi

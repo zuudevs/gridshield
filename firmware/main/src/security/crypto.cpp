@@ -26,11 +26,6 @@
 #if defined(GS_PLATFORM_ARDUINO) || defined(GS_PLATFORM_NATIVE)
 // micro-ecc for ECDSA
 #include <uECC.h>
-#if !defined(GS_RENODE_BUILD) && !defined(GS_QEMU_BUILD)
-// Crypto library for AES-256-GCM (Arduino framework only)
-#include <AES.h>
-#include <GCM.h>
-#endif
 #define USE_EMBEDDED_CRYPTO 1
 
 static gridshield::platform::IPlatformCrypto *g_crypto_ptr = nullptr;
@@ -40,6 +35,12 @@ static int uecc_rng_adapter(uint8_t *dest, unsigned size) {
   }
   return 0;
 }
+#endif
+
+// mbedTLS AES-GCM (built into ESP-IDF, available on all builds)
+#if defined(GS_QEMU_BUILD) || defined(GS_PLATFORM_ARDUINO)
+#include "mbedtls/gcm.h"
+#define USE_MBEDTLS_AES_GCM 1
 #endif
 
 namespace gridshield {
@@ -270,13 +271,30 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(
         GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
   }
 
-#if defined(USE_EMBEDDED_CRYPTO) && !defined(GS_RENODE_BUILD) && !defined(GS_QEMU_BUILD)
-  // Use Crypto library GCM<AES256>
-  GCM<AES256> gcm;
-  gcm.setKey(key, AES_KEY_SIZE);
-  gcm.setIV(nonce, NONCE_SIZE);
-  gcm.encrypt(ciphertext_out, plaintext, pt_len);
-  gcm.computeTag(tag_out, AES_GCM_TAG_SIZE);
+#if defined(USE_MBEDTLS_AES_GCM)
+  // mbedTLS AES-256-GCM
+  mbedtls_gcm_context gcm;
+  mbedtls_gcm_init(&gcm);
+
+  int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, key,
+                               AES_KEY_SIZE * 8);
+  if (ret != 0) {
+    mbedtls_gcm_free(&gcm);
+    return core::Result<size_t>(
+        GS_MAKE_ERROR(core::ErrorCode::EncryptionFailed));
+  }
+
+  ret = mbedtls_gcm_crypt_and_tag(&gcm, MBEDTLS_GCM_ENCRYPT, pt_len,
+                                  nonce, NONCE_SIZE,
+                                  nullptr, 0, // no AAD
+                                  plaintext, ciphertext_out,
+                                  AES_GCM_TAG_SIZE, tag_out);
+  mbedtls_gcm_free(&gcm);
+
+  if (ret != 0) {
+    return core::Result<size_t>(
+        GS_MAKE_ERROR(core::ErrorCode::EncryptionFailed));
+  }
 
   return core::Result<size_t>(pt_len);
 
@@ -295,16 +313,28 @@ core::Result<size_t> CryptoEngine::decrypt_aes_gcm(
         GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
   }
 
-#if defined(USE_EMBEDDED_CRYPTO) && !defined(GS_RENODE_BUILD) && !defined(GS_QEMU_BUILD)
-  // Use Crypto library GCM<AES256>
-  GCM<AES256> gcm;
-  gcm.setKey(key, AES_KEY_SIZE);
-  gcm.setIV(nonce, NONCE_SIZE);
-  gcm.decrypt(plaintext_out, ciphertext, ct_len);
+#if defined(USE_MBEDTLS_AES_GCM)
+  // mbedTLS AES-256-GCM decrypt + auth
+  mbedtls_gcm_context gcm;
+  mbedtls_gcm_init(&gcm);
 
-  // Verify authentication tag
-  if (!gcm.checkTag(tag, AES_GCM_TAG_SIZE)) {
-    // Tag verification failed — data may be tampered
+  int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, key,
+                               AES_KEY_SIZE * 8);
+  if (ret != 0) {
+    mbedtls_gcm_free(&gcm);
+    return core::Result<size_t>(
+        GS_MAKE_ERROR(core::ErrorCode::DecryptionFailed));
+  }
+
+  ret = mbedtls_gcm_auth_decrypt(&gcm, ct_len,
+                                 nonce, NONCE_SIZE,
+                                 nullptr, 0, // no AAD
+                                 tag, AES_GCM_TAG_SIZE,
+                                 ciphertext, plaintext_out);
+  mbedtls_gcm_free(&gcm);
+
+  if (ret != 0) {
+    // Auth tag mismatch or decrypt error
     return core::Result<size_t>(
         GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation));
   }

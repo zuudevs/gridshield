@@ -34,6 +34,9 @@ idf_component_register(
         unity
         driver
         esp_timer
+        mbedtls
+        nvs_flash
+        esp_hw_support
 )
 
 # QEMU build flag + test flag

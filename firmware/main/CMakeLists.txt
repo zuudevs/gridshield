@@ -28,6 +28,9 @@ idf_component_register(
     REQUIRES
         driver
         esp_timer
+        mbedtls
+        nvs_flash
+        esp_hw_support
 )
 
 # Mark this as a QEMU build (disables Arduino-dependent code)

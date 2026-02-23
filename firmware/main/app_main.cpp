@@ -18,12 +18,13 @@
 #if defined(GS_QEMU_BUILD) // Only compile for QEMU simulation builds
 
 #include "core/system.hpp"
+#include "platform/esp32_platform.hpp"
 #include "platform/mock_platform.hpp"
 
 #include <cstdio>
 #include <cstring>
 
-// ESP-IDF includes for FreeRTOS delay
+// ESP-IDF includes
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -38,52 +39,16 @@ using namespace gridshield;
 static platform::mock::MockTime mock_time;
 static platform::mock::MockGPIO mock_gpio;
 static platform::mock::MockInterrupt mock_interrupt;
-static platform::mock::MockCrypto mock_crypto;
 static platform::mock::MockComm mock_comm;
 
-// Mock storage (simple RAM-backed storage)
-class QemuStorage final : public platform::IPlatformStorage {
-public:
-  static constexpr size_t STORAGE_SIZE = 4096;
+// Real ESP32 crypto (Hardware RNG + mbedTLS SHA-256 + CRC32)
+static platform::esp32::Esp32Crypto esp32_crypto;
 
-  QemuStorage() noexcept { memset(storage_, 0xFF, STORAGE_SIZE); }
+// Real ESP32 NVS storage (persists across reboots on real HW, RAM-backed on QEMU)
+static platform::esp32::Esp32Storage esp32_storage;
 
-  core::Result<size_t> read(uint32_t address, uint8_t *buffer,
-                            size_t length) noexcept override {
-    if (buffer == nullptr || length == 0)
-      return core::Result<size_t>(
-          GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
-    if (address + length > STORAGE_SIZE)
-      return core::Result<size_t>(
-          GS_MAKE_ERROR(core::ErrorCode::BufferOverflow));
-    memcpy(buffer, &storage_[address], length);
-    return core::Result<size_t>(length);
-  }
 
-  core::Result<size_t> write(uint32_t address, const uint8_t *data,
-                             size_t length) noexcept override {
-    if (data == nullptr || length == 0)
-      return core::Result<size_t>(
-          GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
-    if (address + length > STORAGE_SIZE)
-      return core::Result<size_t>(
-          GS_MAKE_ERROR(core::ErrorCode::BufferOverflow));
-    memcpy(&storage_[address], data, length);
-    return core::Result<size_t>(length);
-  }
 
-  core::Result<void> erase(uint32_t address, size_t length) noexcept override {
-    if (address + length > STORAGE_SIZE)
-      return GS_MAKE_ERROR(core::ErrorCode::BufferOverflow);
-    memset(&storage_[address], 0xFF, length);
-    return core::Result<void>();
-  }
-
-private:
-  uint8_t storage_[STORAGE_SIZE];
-};
-
-static QemuStorage qemu_storage;
 static platform::PlatformServices services;
 static GridShieldSystem *system_ptr = nullptr;
 
@@ -121,24 +86,34 @@ static SystemConfig create_config() {
 // ============================================================================
 void app_main(void) {
   log_info("==============================================");
-  log_info("GridShield v1.1 [ESP32 - QEMU Simulation]");
-  log_info("Platform: ESP-IDF + QEMU");
+  log_info("GridShield v2.1 [ESP32 - QEMU Simulation]");
+  log_info("Platform: ESP-IDF + QEMU + mbedTLS");
   log_info("==============================================");
 
-  // Assemble platform services
+  // Initialize NVS storage
+  auto nvs_result = esp32_storage.init();
+  if (nvs_result.is_error()) {
+    log_error("NVS init failed", static_cast<int>(nvs_result.error().code));
+    return;
+  }
+  log_info("NVS storage initialized");
+
+  // Initialize Watchdog Timer (30s timeout)
+  auto wdt_result = platform::esp32::Esp32Watchdog::init(30);
+  if (wdt_result.is_error()) {
+    log_error("Watchdog init failed", static_cast<int>(wdt_result.error().code));
+    // Non-fatal — continue without watchdog
+  } else {
+    log_info("Watchdog timer initialized (30s)");
+  }
+
+  // Assemble platform services (real crypto + NVS, mock GPIO/Interrupt/Comm)
   services.time = &mock_time;
   services.gpio = &mock_gpio;
   services.interrupt = &mock_interrupt;
-  services.crypto = &mock_crypto;
-  services.storage = &qemu_storage;
+  services.crypto = &esp32_crypto;
+  services.storage = &esp32_storage;
   services.comm = &mock_comm;
-
-  // Initialize mock communication
-  auto comm_result = mock_comm.init();
-  if (comm_result.is_error()) {
-    log_error("Comm init failed", static_cast<int>(comm_result.error().code));
-    return;
-  }
 
   // Create system
   system_ptr = new GridShieldSystem();
@@ -178,6 +153,9 @@ void app_main(void) {
       snprintf(buf, sizeof(buf), "Cycle %d/%d OK", cycle + 1, max_cycles);
       log_info(buf);
     }
+
+    // Feed watchdog
+    platform::esp32::Esp32Watchdog::feed();
 
     // Use FreeRTOS delay for proper QEMU time advancement
     vTaskDelay(pdMS_TO_TICKS(100));
