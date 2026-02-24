@@ -76,7 +76,7 @@ ECCKeyPair& ECCKeyPair::operator=(ECCKeyPair&& other) noexcept
         clear();
 #if GS_PLATFORM_NATIVE
         std::memcpy(private_key_.data(), other.private_key_.data(), ECC_KEY_SIZE);
-        std::memcpy(public_key_, other.public_key_, ECC_PUBLIC_KEY_SIZE);
+        std::memcpy(public_key_.data(), other.public_key_.data(), ECC_PUBLIC_KEY_SIZE);
 #else
         memcpy(private_key_.data(), other.private_key_.data(), ECC_KEY_SIZE);
         memcpy(public_key_.data(), other.public_key_.data(), ECC_PUBLIC_KEY_SIZE);
