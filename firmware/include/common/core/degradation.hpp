@@ -104,10 +104,10 @@ public:
     /**
      * @brief Report a subsystem recovery
      */
-    void report_recovery(ServiceId service) noexcept
+    void report_recovery(ServiceId service) noexcept // NOLINT(readability-convert-member-functions-to-static)
     {
         auto idx = static_cast<uint8_t>(service);
-        if (idx >= static_cast<uint8_t>(ServiceId::Count)) { // NOLINT(readability-convert-member-functions-to-static)
+        if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
             return;
         }
 
@@ -184,7 +184,7 @@ public:
     /**
      * @brief Get failure count for a service
      */
-    GS_NODISCARD uint16_t get_failure_count(ServiceId service) const noexcept
+    GS_NODISCARD uint16_t get_failure_count(ServiceId service) const noexcept // NOLINT(readability-convert-member-functions-to-static)
     {
         auto idx = static_cast<uint8_t>(service);
         if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
