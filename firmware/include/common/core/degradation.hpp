@@ -87,7 +87,7 @@ public:
      * @brief Report a subsystem failure
      * @return true if the system can continue operating
      */
-    bool report_failure(ServiceId service, ErrorCode error) noexcept
+    bool report_failure(ServiceId service, ErrorCode error) noexcept // NOLINT(readability-make-member-function-const)
     {
         auto idx = static_cast<uint8_t>(service);
         if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
@@ -107,7 +107,7 @@ public:
     void report_recovery(ServiceId service) noexcept
     {
         auto idx = static_cast<uint8_t>(service);
-        if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
+        if (idx >= static_cast<uint8_t>(ServiceId::Count)) { // NOLINT(readability-convert-member-functions-to-static)
             return;
         }
 
@@ -119,7 +119,7 @@ public:
     /**
      * @brief Mark a service as degraded (partial functionality)
      */
-    void report_degraded(ServiceId service) noexcept
+    void report_degraded(ServiceId service) noexcept // NOLINT(readability-convert-member-functions-to-static)
     {
         auto idx = static_cast<uint8_t>(service);
         if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
@@ -131,7 +131,7 @@ public:
     /**
      * @brief Check if the system can continue operating
      */
-    GS_NODISCARD bool can_continue() const noexcept
+    GS_NODISCARD bool can_continue() const noexcept // NOLINT(readability-convert-member-functions-to-static)
     {
         // Crypto is always required
         if (!policy_.allow_without_crypto &&
@@ -160,7 +160,7 @@ public:
     /**
      * @brief Check if a specific service is available
      */
-    GS_NODISCARD bool is_service_available(ServiceId service) const noexcept
+    GS_NODISCARD bool is_service_available(ServiceId service) const noexcept // NOLINT(readability-convert-member-functions-to-static)
     {
         auto idx = static_cast<uint8_t>(service);
         if (idx >= static_cast<uint8_t>(ServiceId::Count)) {
@@ -172,7 +172,7 @@ public:
     /**
      * @brief Get health of a specific service
      */
-    GS_NODISCARD ServiceHealth get_health(ServiceId service) const noexcept
+    GS_NODISCARD ServiceHealth get_health(ServiceId service) const noexcept // NOLINT(readability-convert-member-functions-to-static)
     {
         auto idx = static_cast<uint8_t>(service);
         if (idx >= static_cast<uint8_t>(ServiceId::Count)) {

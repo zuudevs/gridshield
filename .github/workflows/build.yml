@@ -110,13 +110,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build + Generate compile_commands.json
+      - name: Generate compile_commands.json
         shell: bash
         run: |
           . $IDF_PATH/export.sh
           cd firmware
           idf.py set-target esp32
-          idf.py build
+          idf.py reconfigure
 
       - name: Install clang-tidy
         run: apt-get update && apt-get install -y clang-tidy
