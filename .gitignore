@@ -7,7 +7,6 @@
 /.cache/
 
 # ESP-IDF
-firmware/.cache
 firmware/build/
 firmware/test_app/build/
 firmware/sdkconfig.old
@@ -34,35 +33,31 @@ backend/app/__pycache__/
 # =========================
 # Documents & media (generated)
 # =========================
-*.pdf
 *.docx
 *.xlsx
 *.pptx
+*.pdf
 *.png
 *.jpg
 *.jpeg
 *.gif
-docs/PROMPT
 
 # =========================
 # IDE & editor files
 # =========================
-.vscode/
 .idea/
 *.swp
 *.swo
 *~
 .clangd/
-compile_commands.json
+.cache/
+.vscode/
+
 
 # =========================
-# CMake
+# CMake (covered by build directories)
 # =========================
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-*.cmake
-!CMakeLists.txt
+# CMakeCache.txt, CMakeFiles/, cmake_install.cmake are in build/
 
 # =========================
 # Configuration files

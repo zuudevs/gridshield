@@ -10,6 +10,7 @@
 
 #include "security/hkdf.hpp"
 
+#include <array>
 #include <cstring>
 
 // mbedTLS (built into ESP-IDF)
@@ -54,10 +55,10 @@ core::Result<void> hkdf_extract(const uint8_t* salt,
     }
 
     // If salt is not provided, use a string of HashLen zeros
-    uint8_t zero_salt[HKDF_HASH_SIZE];
+    std::array<uint8_t, HKDF_HASH_SIZE> zero_salt{};
     if (salt == nullptr || salt_len == 0) {
-        memset(zero_salt, 0, HKDF_HASH_SIZE);
-        salt = zero_salt;
+        memset(zero_salt.data(), 0, HKDF_HASH_SIZE);
+        salt = zero_salt.data();
         salt_len = HKDF_HASH_SIZE;
     }
 
@@ -90,7 +91,7 @@ core::Result<void> hkdf_expand(const uint8_t* prk,
         return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
     }
 
-    uint8_t t_block[HKDF_HASH_SIZE]; // T(i)
+    std::array<uint8_t, HKDF_HASH_SIZE> t_block{}; // T(i)
     size_t t_len = 0;                // Length of T(i-1), 0 for first iteration
 
     size_t offset = 0;
@@ -115,7 +116,7 @@ core::Result<void> hkdf_expand(const uint8_t* prk,
 
         // T(i-1)
         if (t_len > 0) {
-            ret = mbedtls_md_hmac_update(&ctx, t_block, t_len);
+            ret = mbedtls_md_hmac_update(&ctx, t_block.data(), t_len);
             if (ret != 0) {
                 mbedtls_md_free(&ctx);
                 return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
@@ -138,7 +139,7 @@ core::Result<void> hkdf_expand(const uint8_t* prk,
             return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
         }
 
-        ret = mbedtls_md_hmac_finish(&ctx, t_block);
+        ret = mbedtls_md_hmac_finish(&ctx, t_block.data());
         mbedtls_md_free(&ctx);
 
         if (ret != 0) {
@@ -149,13 +150,13 @@ core::Result<void> hkdf_expand(const uint8_t* prk,
 
         // Copy to output
         size_t copy_len = (okm_len - offset < HKDF_HASH_SIZE) ? (okm_len - offset) : HKDF_HASH_SIZE;
-        memcpy(okm_out + offset, t_block, copy_len);
+        memcpy(okm_out + offset, t_block.data(), copy_len);
         offset += copy_len;
         ++counter;
     }
 
     // Zeroize sensitive intermediate data
-    volatile uint8_t* vptr = t_block;
+    volatile uint8_t* vptr = t_block.data();
     for (size_t i = 0; i < HKDF_HASH_SIZE; ++i) {
         vptr[i] = 0;
     }
@@ -175,17 +176,17 @@ core::Result<void> hkdf(const uint8_t* salt,
                         uint8_t* okm_out,
                         size_t okm_len) noexcept
 {
-    uint8_t prk[HKDF_HASH_SIZE];
+    std::array<uint8_t, HKDF_HASH_SIZE> prk{};
 
-    auto result = hkdf_extract(salt, salt_len, ikm, ikm_len, prk);
+    auto result = hkdf_extract(salt, salt_len, ikm, ikm_len, prk.data());
     if (result.is_error()) {
         return result;
     }
 
-    result = hkdf_expand(prk, HKDF_HASH_SIZE, info, info_len, okm_out, okm_len);
+    result = hkdf_expand(prk.data(), HKDF_HASH_SIZE, info, info_len, okm_out, okm_len);
 
     // Zeroize PRK
-    volatile uint8_t* vptr = prk;
+    volatile uint8_t* vptr = prk.data();
     for (size_t i = 0; i < HKDF_HASH_SIZE; ++i) {
         vptr[i] = 0;
     }
