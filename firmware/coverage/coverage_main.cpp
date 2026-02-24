@@ -9,6 +9,11 @@
 #include "unity.h"
 #include <cstdio>
 
+// Global Unity counters (declared extern in unity.h)
+int unity_test_count = 0;
+int unity_test_failures = 0;
+int unity_current_failed = 0;
+
 // Test suite declarations (same as test_app/main/test_main.cpp)
 extern void test_result_suite(void);
 extern void test_static_buffer_suite(void);

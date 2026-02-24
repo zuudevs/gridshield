@@ -5,6 +5,9 @@
  * Provides a minimal Unity-compatible API for running tests natively
  * (outside ESP-IDF). This allows reusing the existing test_*.cpp files
  * without modifications.
+ *
+ * NOTE: Counters use `extern` linkage so all translation units share
+ * the same counters. They are defined in coverage_main.cpp.
  */
 
 #pragma once
@@ -14,13 +17,15 @@
 #include <cstring>
 
 // ============================================================================
-// Unity-compatible macros and functions
+// Shared counters (defined in coverage_main.cpp)
 // ============================================================================
+extern int unity_test_count;
+extern int unity_test_failures;
+extern int unity_current_failed;
 
-static int unity_test_count = 0;
-static int unity_test_failures = 0;
-static int unity_current_failed = 0;
-
+// ============================================================================
+// Unity-compatible functions
+// ============================================================================
 inline void UnityBegin(const char* /*file*/)
 {
     unity_test_count = 0;
@@ -112,6 +117,13 @@ inline int UnityEnd()
         }                                                                                          \
     } while (0)
 
+#define TEST_ASSERT_NOT_EQUAL(expected, actual)                                                    \
+    do {                                                                                           \
+        if ((expected) == (actual)) {                                                              \
+            UNITY_FAIL("Expected NOT " #expected);                                                 \
+        }                                                                                          \
+    } while (0)
+
 #define TEST_ASSERT_EQUAL_UINT8(expected, actual)                                                  \
     TEST_ASSERT_EQUAL((uint8_t)(expected), (uint8_t)(actual))
 
@@ -157,13 +169,6 @@ inline int UnityEnd()
     do {                                                                                           \
         if (memcmp((expected), (actual), (len)) != 0) {                                            \
             UNITY_FAIL("Memory blocks differ");                                                    \
-        }                                                                                          \
-    } while (0)
-
-#define TEST_ASSERT_NOT_EQUAL(expected, actual)                                                    \
-    do {                                                                                           \
-        if ((expected) == (actual)) {                                                              \
-            UNITY_FAIL("Expected NOT " #expected);                                                 \
         }                                                                                          \
     } while (0)
 

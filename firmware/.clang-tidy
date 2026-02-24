@@ -15,4 +15,4 @@ Checks: >
 
 WarningsAsErrors: 'bugprone-*'
 
-HeaderFilterRegex: 'main/.*|include/.*'
+HeaderFilterRegex: '^(main/.*|include/.*)'
