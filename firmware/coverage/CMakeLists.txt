@@ -93,3 +93,12 @@ target_compile_options(gridshield_tests PRIVATE
 target_link_options(gridshield_tests PRIVATE
     --coverage
 )
+
+# Link mbedtls (system-installed via libmbedtls-dev)
+find_package(MbedTLS QUIET)
+if(MbedTLS_FOUND)
+    target_link_libraries(gridshield_tests PRIVATE MbedTLS::mbedtls MbedTLS::mbedcrypto)
+else()
+    # Fallback: link directly
+    target_link_libraries(gridshield_tests PRIVATE mbedtls mbedcrypto mbedx509)
+endif()

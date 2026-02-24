@@ -160,6 +160,30 @@ inline int UnityEnd()
         }                                                                                          \
     } while (0)
 
+#define TEST_ASSERT_NOT_EQUAL(expected, actual)                                                    \
+    do {                                                                                           \
+        if ((expected) == (actual)) {                                                              \
+            UNITY_FAIL("Expected NOT " #expected);                                                 \
+        }                                                                                          \
+    } while (0)
+
+#define TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, actual, len)                                        \
+    TEST_ASSERT_EQUAL_MEMORY(expected, actual, len)
+
+#define TEST_ASSERT_TRUE_MESSAGE(cond, msg)                                                        \
+    do {                                                                                           \
+        if (!(cond)) {                                                                             \
+            UNITY_FAIL(msg);                                                                       \
+        }                                                                                          \
+    } while (0)
+
+#define TEST_ASSERT_FALSE_MESSAGE(cond, msg)                                                       \
+    do {                                                                                           \
+        if ((cond)) {                                                                              \
+            UNITY_FAIL(msg);                                                                       \
+        }                                                                                          \
+    } while (0)
+
 #define TEST_FAIL_MESSAGE(msg) UNITY_FAIL(msg)
 #define TEST_PASS()                                                                                \
     do {                                                                                           \

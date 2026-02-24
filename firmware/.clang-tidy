@@ -15,4 +15,4 @@ Checks: >
 
 WarningsAsErrors: 'bugprone-*'
 
-HeaderFilterRegex: 'firmware/(main|include)/.*'
+HeaderFilterRegex: 'main/.*|include/.*|components/.*'

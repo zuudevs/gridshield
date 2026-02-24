@@ -150,7 +150,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc g++ cmake lcov bc
+          sudo apt-get install -y gcc g++ cmake lcov bc libmbedtls-dev
 
       - name: Build & Run Coverage
         run: |
