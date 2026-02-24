@@ -119,7 +119,7 @@ jobs:
           idf.py reconfigure
 
       - name: Install clang-tidy
-        run: apt-get update && apt-get install -y clang-tidy
+        run: apt-get update && apt-get install -y clang-tidy gcc-arm-none-eabi
 
       - name: Sanitize compile_commands.json
         shell: bash
