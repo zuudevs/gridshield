@@ -133,9 +133,11 @@ jobs:
           find main/src -name '*.cpp' | xargs clang-tidy \
             -p build \
             --extra-arg=-Wno-unknown-warning-option \
+            --extra-arg=-isystem --extra-arg=stubs \
             2>&1 | tee clang_tidy_output.log
-          if grep -q 'error:' clang_tidy_output.log; then
-            echo '::error::clang-tidy found issues'
+          # Fail only on errors in OUR code (main/src or include/), not system headers
+          if grep -E '(main/src|include/).*error:' clang_tidy_output.log; then
+            echo '::error::clang-tidy found issues in project code'
             exit 1
           fi
 
