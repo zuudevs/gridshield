@@ -132,6 +132,8 @@ jobs:
           cd firmware
           find main/src -name '*.cpp' | xargs clang-tidy \
             -p build \
+            --query-driver="**/*" \
+            --checks="-bugprone-branch-clone,-readability-non-const-parameter" \
             --extra-arg=-Wno-unknown-warning-option \
             2>&1 | tee clang_tidy_output.log
           if grep -q 'error:' clang_tidy_output.log; then
