@@ -42,6 +42,7 @@ GridShieldSystem::~GridShieldSystem() noexcept
     }
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 core::Result<void> GridShieldSystem::initialize(const SystemConfig& config,
                                                 platform::PlatformServices& platform) noexcept
 {
@@ -280,6 +281,7 @@ core::Result<void> GridShieldSystem::init_network_layer() noexcept
     return platform_->comm->init();
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 core::Result<void> GridShieldSystem::initialize_crypto() noexcept
 {
     if (platform_->crypto == nullptr) {

@@ -26,6 +26,15 @@ constexpr uint8_t CONFIDENCE_BASELINE = 50;
 constexpr uint32_t DEVIATION_FULL = 100;
 constexpr size_t MIN_LEARNING_READINGS = 10;
 
+// Severity deviation thresholds (percent)
+constexpr uint32_t SEVERITY_CRITICAL_THRESHOLD = 80;
+constexpr uint32_t SEVERITY_HIGH_THRESHOLD = 60;
+constexpr uint32_t SEVERITY_MEDIUM_THRESHOLD = 40;
+constexpr uint32_t SEVERITY_LOW_THRESHOLD = 20;
+
+// Confidence score for high-certainty detections
+constexpr uint16_t CONFIDENCE_HIGH = 95;
+
 // ============================================================================
 // ANOMALY CLASSIFICATION
 // ============================================================================

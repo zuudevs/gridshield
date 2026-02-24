@@ -17,11 +17,7 @@
 
 static const char* TAG = "GS_Crypto";
 
-#if GS_PLATFORM_NATIVE
 #include <cstring>
-#else
-#include <string.h>
-#endif
 
 // ============================================================================
 // PRODUCTION LIBRARIES (Standardized on embedded libs for portability)
@@ -34,7 +30,7 @@ static const char* TAG = "GS_Crypto";
 static gridshield::platform::IPlatformCrypto* g_crypto_ptr = nullptr;
 static int uecc_rng_adapter(uint8_t* dest, unsigned size)
 {
-    if (g_crypto_ptr) {
+    if (g_crypto_ptr != nullptr) {
         return g_crypto_ptr->random_bytes(dest, size).is_ok() ? 1 : 0;
     }
     return 0;
@@ -46,6 +42,10 @@ static int uecc_rng_adapter(uint8_t* dest, unsigned size)
 #include "mbedtls/gcm.h"
 #define USE_MBEDTLS_AES_GCM 1
 #endif
+
+namespace {
+constexpr uint8_t BITS_PER_BYTE = 8;
+} // namespace
 
 namespace gridshield::security {
 
@@ -94,7 +94,7 @@ core::Result<void> ECCKeyPair::generate() noexcept
     // micro-ecc secp256r1
     const struct uECC_Curve_t* curve = uECC_secp256r1();
 
-    if (!uECC_make_key(public_key_.data(), private_key_.data(), curve)) {
+    if (uECC_make_key(public_key_.data(), private_key_.data(), curve) == 0) {
         return GS_MAKE_ERROR(core::ErrorCode::KeyGenerationFailed);
     }
 
@@ -110,6 +110,7 @@ core::Result<void> ECCKeyPair::generate() noexcept
 
 core::Result<void> ECCKeyPair::load_private_key(const uint8_t* key, size_t length) noexcept
 {
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(key == nullptr || length != ECC_KEY_SIZE)) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
@@ -125,6 +126,7 @@ core::Result<void> ECCKeyPair::load_private_key(const uint8_t* key, size_t lengt
 
 core::Result<void> ECCKeyPair::load_public_key(const uint8_t* key, size_t length) noexcept
 {
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(key == nullptr || length != ECC_PUBLIC_KEY_SIZE)) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
@@ -197,19 +199,21 @@ core::Result<void> CryptoEngine::sign(const ECCKeyPair& keypair,
                                       uint8_t* signature_out) noexcept
 {
 
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(!keypair.has_private_key() || message == nullptr || signature_out == nullptr)) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
 
     // Hash message
-    uint8_t hash[SHA256_HASH_SIZE];
-    GS_TRY(hash_sha256(message, msg_len, hash));
+    std::array<uint8_t, SHA256_HASH_SIZE> hash{};
+    GS_TRY(hash_sha256(message, msg_len, hash.data()));
 
 #if defined(USE_EMBEDDED_CRYPTO)
     // micro-ecc ECDSA
     const struct uECC_Curve_t* curve = uECC_secp256r1();
 
-    if (!uECC_sign(keypair.get_private_key(), hash, SHA256_HASH_SIZE, signature_out, curve)) {
+    if (uECC_sign(keypair.get_private_key(), hash.data(), SHA256_HASH_SIZE, signature_out, curve) ==
+        0) {
         return GS_MAKE_ERROR(core::ErrorCode::SignatureInvalid);
     }
 
@@ -227,12 +231,13 @@ core::Result<bool> CryptoEngine::verify(const ECCKeyPair& keypair,
                                         const uint8_t* signature) noexcept
 {
 
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(!keypair.has_public_key() || message == nullptr || signature == nullptr)) {
         return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
     }
 
-    uint8_t hash[SHA256_HASH_SIZE];
-    auto result = hash_sha256(message, msg_len, hash);
+    std::array<uint8_t, SHA256_HASH_SIZE> hash{};
+    auto result = hash_sha256(message, msg_len, hash.data());
     if (result.is_error()) {
         return core::Result<bool>(result.error());
     }
@@ -241,7 +246,8 @@ core::Result<bool> CryptoEngine::verify(const ECCKeyPair& keypair,
     // micro-ecc verify
     const struct uECC_Curve_t* curve = uECC_secp256r1();
 
-    int valid = uECC_verify(keypair.get_public_key(), hash, SHA256_HASH_SIZE, signature, curve);
+    int valid =
+        uECC_verify(keypair.get_public_key(), hash.data(), SHA256_HASH_SIZE, signature, curve);
 
     return core::Result<bool>(valid != 0);
 
@@ -255,6 +261,7 @@ core::Result<void> CryptoEngine::derive_shared_secret(const ECCKeyPair& our_keyp
                                                       uint8_t* shared_secret_out) noexcept
 {
 
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(!our_keypair.has_private_key() || their_public_key == nullptr ||
                     shared_secret_out == nullptr)) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
@@ -264,8 +271,8 @@ core::Result<void> CryptoEngine::derive_shared_secret(const ECCKeyPair& our_keyp
     // micro-ecc ECDH
     const struct uECC_Curve_t* curve = uECC_secp256r1();
 
-    if (!uECC_shared_secret(
-            their_public_key, our_keypair.get_private_key(), shared_secret_out, curve)) {
+    if (uECC_shared_secret(
+            their_public_key, our_keypair.get_private_key(), shared_secret_out, curve) == 0) {
         return GS_MAKE_ERROR(core::ErrorCode::CryptoFailure);
     }
 
@@ -284,6 +291,7 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(const uint8_t* key,
                                                    uint8_t* tag_out) noexcept
 {
 
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(key == nullptr || nonce == nullptr || plaintext == nullptr ||
                     ciphertext_out == nullptr || tag_out == nullptr || pt_len == 0)) {
         return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
@@ -294,12 +302,13 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(const uint8_t* key,
     mbedtls_gcm_context gcm;
     mbedtls_gcm_init(&gcm);
 
-    int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, key, AES_KEY_SIZE * 8);
+    int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, key, AES_KEY_SIZE * BITS_PER_BYTE);
     if (ret != 0) {
         mbedtls_gcm_free(&gcm);
         return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::EncryptionFailed));
     }
 
+    // NOLINTNEXTLINE(readability-suspicious-call-argument)
     ret = mbedtls_gcm_crypt_and_tag(&gcm,
                                     MBEDTLS_GCM_ENCRYPT,
                                     pt_len,
@@ -325,6 +334,7 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(const uint8_t* key,
 #endif
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 core::Result<size_t> CryptoEngine::decrypt_aes_gcm(const uint8_t* key,
                                                    const uint8_t* nonce,
                                                    const uint8_t* ciphertext,
@@ -333,6 +343,7 @@ core::Result<size_t> CryptoEngine::decrypt_aes_gcm(const uint8_t* key,
                                                    uint8_t* plaintext_out) noexcept
 {
 
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(key == nullptr || nonce == nullptr || ciphertext == nullptr || tag == nullptr ||
                     plaintext_out == nullptr || ct_len == 0)) {
         return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
@@ -343,12 +354,13 @@ core::Result<size_t> CryptoEngine::decrypt_aes_gcm(const uint8_t* key,
     mbedtls_gcm_context gcm;
     mbedtls_gcm_init(&gcm);
 
-    int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, key, AES_KEY_SIZE * 8);
+    int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, key, AES_KEY_SIZE * BITS_PER_BYTE);
     if (ret != 0) {
         mbedtls_gcm_free(&gcm);
         return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::DecryptionFailed));
     }
 
+    // NOLINTNEXTLINE(readability-suspicious-call-argument)
     ret = mbedtls_gcm_auth_decrypt(&gcm,
                                    ct_len,
                                    nonce,
@@ -378,6 +390,7 @@ core::Result<void>
 CryptoEngine::hash_sha256(const uint8_t* data, size_t length, uint8_t* hash_out) noexcept
 {
 
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(data == nullptr || hash_out == nullptr)) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
@@ -387,6 +400,7 @@ CryptoEngine::hash_sha256(const uint8_t* data, size_t length, uint8_t* hash_out)
 
 core::Result<void> CryptoEngine::random_bytes(uint8_t* buffer, size_t length) noexcept
 {
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(buffer == nullptr || length == 0)) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }

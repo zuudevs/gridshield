@@ -13,14 +13,11 @@
 
 static const char* TAG = "GS_Packet";
 
-#if GS_PLATFORM_NATIVE
 #include <cstring>
-#else
-#include <string.h>
-#endif
 
 namespace gridshield::network {
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 core::Result<void> SecurePacket::build(PacketType type,
                                        core::meter_id_t meter_id,
                                        core::Priority priority,
@@ -56,12 +53,12 @@ core::Result<void> SecurePacket::build(PacketType type,
     }
 
     // Compute checksum (first 4 bytes of SHA256)
-    uint8_t hash[security::SHA256_HASH_SIZE];
-    GS_TRY(crypto.hash_sha256(payload_.data(), payload_len, hash));
+    std::array<uint8_t, security::SHA256_HASH_SIZE> hash{};
+    GS_TRY(crypto.hash_sha256(payload_.data(), payload_len, hash.data()));
 #if GS_PLATFORM_NATIVE
-    std::memcpy(&header_.checksum, hash, sizeof(uint32_t));
+    std::memcpy(&header_.checksum, hash.data(), sizeof(uint32_t));
 #else
-    memcpy(&header_.checksum, hash, sizeof(uint32_t));
+    memcpy(&header_.checksum, hash.data(), sizeof(uint32_t));
 #endif
 
     // Sign packet
@@ -76,6 +73,7 @@ core::Result<void> SecurePacket::build(PacketType type,
     return core::Result<void>{};
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 core::Result<void> SecurePacket::parse(const uint8_t* buffer,
                                        size_t buffer_len,
                                        security::ICryptoEngine& crypto,
@@ -84,6 +82,7 @@ core::Result<void> SecurePacket::parse(const uint8_t* buffer,
 
     const size_t min_size = sizeof(PacketHeader) + sizeof(PacketFooter);
 
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(buffer == nullptr || buffer_len < min_size)) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidPacket);
     }
@@ -188,14 +187,14 @@ core::Result<size_t> SecurePacket::serialize(uint8_t* buffer, size_t buffer_size
 
 core::Result<void> SecurePacket::verify_integrity(security::ICryptoEngine& crypto) const noexcept
 {
-    uint8_t hash[security::SHA256_HASH_SIZE];
-    GS_TRY(crypto.hash_sha256(payload_.data(), header_.payload_length, hash));
+    std::array<uint8_t, security::SHA256_HASH_SIZE> hash{};
+    GS_TRY(crypto.hash_sha256(payload_.data(), header_.payload_length, hash.data()));
 
     uint32_t computed_checksum;
 #if GS_PLATFORM_NATIVE
-    std::memcpy(&computed_checksum, hash, sizeof(uint32_t));
+    std::memcpy(&computed_checksum, hash.data(), sizeof(uint32_t));
 #else
-    memcpy(&computed_checksum, hash, sizeof(uint32_t));
+    memcpy(&computed_checksum, hash.data(), sizeof(uint32_t));
 #endif
 
     if (GS_UNLIKELY(computed_checksum != header_.checksum)) {
@@ -233,6 +232,7 @@ core::Result<void> SecurePacket::compute_signature(security::ICryptoEngine& cryp
 PacketTransport::PacketTransport(platform::IPlatformComm& comm) noexcept : comm_(comm)
 {}
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 core::Result<void> PacketTransport::send_packet(const SecurePacket& packet,
                                                 security::ICryptoEngine& /*crypto*/,
                                                 const security::ECCKeyPair& /*keypair*/) noexcept

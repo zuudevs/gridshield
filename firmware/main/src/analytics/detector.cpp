@@ -85,7 +85,7 @@ core::Result<AnomalyReport> AnomalyDetector::analyze(const core::MeterReading& r
     if (reading.energy_wh == 0 && report.expected_value > DEVIATION_FULL) {
         report.type = AnomalyType::ZeroConsumption;
         report.severity = AnomalySeverity::Critical;
-        report.confidence = 95; // High confidence for zero consumption when expected
+        report.confidence = CONFIDENCE_HIGH; // High confidence for zero consumption when expected
         report.deviation_percent = DEVIATION_FULL;
         return core::Result<AnomalyReport>(GS_MOVE(report));
     }
@@ -146,16 +146,16 @@ core::Result<void> AnomalyDetector::reset_profile() noexcept
 AnomalySeverity AnomalyDetector::calculate_severity(uint32_t deviation_percent) noexcept
 {
 
-    if (deviation_percent >= 80) {
+    if (deviation_percent >= SEVERITY_CRITICAL_THRESHOLD) {
         return AnomalySeverity::Critical;
     }
-    if (deviation_percent >= 60) {
+    if (deviation_percent >= SEVERITY_HIGH_THRESHOLD) {
         return AnomalySeverity::High;
     }
-    if (deviation_percent >= 40) {
+    if (deviation_percent >= SEVERITY_MEDIUM_THRESHOLD) {
         return AnomalySeverity::Medium;
     }
-    if (deviation_percent >= 20) {
+    if (deviation_percent >= SEVERITY_LOW_THRESHOLD) {
         return AnomalySeverity::Low;
     }
     return AnomalySeverity::None;

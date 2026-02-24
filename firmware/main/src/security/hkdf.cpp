@@ -50,6 +50,7 @@ core::Result<void> hkdf_extract(const uint8_t* salt,
                                 size_t ikm_len,
                                 uint8_t* prk_out) noexcept
 {
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(ikm == nullptr || ikm_len == 0 || prk_out == nullptr)) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
@@ -71,6 +72,7 @@ core::Result<void> hkdf_extract(const uint8_t* salt,
 // T(i) = HMAC-Hash(PRK, T(i-1) || info || i)
 // OKM = T(1) || T(2) || ... || T(N)  truncated to okm_len
 // ============================================================================
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 core::Result<void> hkdf_expand(const uint8_t* prk,
                                size_t prk_len,
                                const uint8_t* info,
@@ -78,6 +80,7 @@ core::Result<void> hkdf_expand(const uint8_t* prk,
                                uint8_t* okm_out,
                                size_t okm_len) noexcept
 {
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(prk == nullptr || prk_len == 0 || okm_out == nullptr || okm_len == 0)) {
         return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
     }
@@ -92,7 +95,7 @@ core::Result<void> hkdf_expand(const uint8_t* prk,
     }
 
     std::array<uint8_t, HKDF_HASH_SIZE> t_block{}; // T(i)
-    size_t t_len = 0;                // Length of T(i-1), 0 for first iteration
+    size_t t_len = 0;                              // Length of T(i-1), 0 for first iteration
 
     size_t offset = 0;
     uint8_t counter = 1;

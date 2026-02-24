@@ -16,6 +16,7 @@ static const char* TAG = "GS_Tamper";
 
 namespace gridshield::hardware {
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 core::Result<void> TamperDetector::initialize(const TamperConfig& config,
                                               platform::PlatformServices& platform) noexcept
 {
@@ -109,6 +110,7 @@ core::Result<void> TamperDetector::reset() noexcept
 
 core::Result<void> TamperDetector::poll() noexcept
 {
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(!initialized_ || platform_ == nullptr)) {
         return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
     }
@@ -150,6 +152,7 @@ void TamperDetector::interrupt_handler(void* context) noexcept
     }
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void TamperDetector::confirm_tamper() noexcept
 {
     is_tampered_ = true;
