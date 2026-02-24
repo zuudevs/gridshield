@@ -84,8 +84,8 @@ GridShield aims to become the **industry-standard open-source security framework
 - [x] **Testing Infrastructure**
   - [x] Unit tests with Unity (ESP-IDF) — 104 tests, 14 suites
   - [x] Integration tests via QEMU
-  - [ ] Fuzzing for packet parser
-  - [ ] Code coverage reports (>80%)
+  - [x] Fuzzing for packet parser (LibFuzzer + ASan/UBSan)
+  - [x] Code coverage reports (>80%) — gcov/lcov + CI job
 
 #### Medium Priority
 
@@ -98,7 +98,7 @@ GridShield aims to become the **industry-standard open-source security framework
 - [x] **Documentation**
   - [x] Security audit report
   - [x] Threat model documentation
-  - [ ] API examples for all modules
+  - [x] API examples for all modules (6 examples in docs/examples/)
 
 ---
 

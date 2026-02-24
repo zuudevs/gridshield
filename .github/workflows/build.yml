@@ -132,11 +132,35 @@ jobs:
           cd firmware
           find main/src -name '*.cpp' | xargs clang-tidy \
             -p build \
-            --query-driver="**/*" \
-            --checks="-bugprone-branch-clone,-readability-non-const-parameter" \
             --extra-arg=-Wno-unknown-warning-option \
             2>&1 | tee clang_tidy_output.log
           if grep -q 'error:' clang_tidy_output.log; then
             echo '::error::clang-tidy found issues'
             exit 1
           fi
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ cmake lcov bc
+
+      - name: Build & Run Coverage
+        run: |
+          cd firmware/coverage
+          bash run_coverage.sh
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: firmware/coverage/report/
+          retention-days: 30
