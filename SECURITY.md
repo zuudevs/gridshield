@@ -6,7 +6,9 @@ GridShield is currently in active development. We release security updates for t
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
+| 3.0.x   | :white_check_mark: |
+| 2.0.x   | :white_check_mark: |
+| 1.x     | :x:                |
 | < 1.0   | :x:                |
 
 ## Security Considerations
@@ -29,23 +31,23 @@ GridShield is designed for **Advanced Metering Infrastructure (AMI)** security, 
 
 Current prototype limitations that affect security:
 
-1. **Cryptography**: Uses software-only placeholder implementations
-   - No real ECC key generation
-   - Simplified ECDSA signing/verification
-   - Mock AES-GCM encryption
+1. **Cryptography**: Production micro-ecc integrated (ECDSA secp256r1), but:
+   - AES-GCM relies on mbedTLS software implementation
+   - No post-quantum cryptography support yet
+   - Key derivation uses HKDF (software-only)
 
-2. **Key Storage**: No persistent secure storage
-   - Keys are generated in RAM
-   - No hardware-backed key protection
-   - Vulnerable to power analysis attacks
+2. **Key Storage**: NVS-based encrypted key store implemented
+   - No hardware-backed secure element (ATECC608) integration yet
+   - Key rotation mechanism available but manual
 
-3. **Physical Security**: Simplified tamper detection
-   - Single GPIO-based sensor
-   - No advanced anti-tampering mechanisms
+3. **Physical Security**: Multi-sensor tamper detection available
+   - MPU6050 accelerometer, limit switches, temperature sensors
+   - Not yet tested with full production enclosure
 
-4. **Network Security**: Basic packet authentication
-   - No replay attack protection beyond sequence numbers
-   - No perfect forward secrecy (PFS)
+4. **Network Security**: Packet authentication with ECDSA signatures
+   - Replay protection via sequence numbers
+   - No perfect forward secrecy (PFS) yet
+   - No mutual TLS (mTLS) yet
 
 ## Reporting a Vulnerability
 
@@ -135,15 +137,21 @@ Before production deployment:
 - [ ] Perform code audit by security experts
 - [ ] Document threat model and attack surface
 
-## Security Features (Roadmap)
+## Security Features Status
 
-Planned security enhancements:
+Completed security enhancements:
 
-- **v1.1**: Hardware crypto integration (ATECC608, mbedTLS)
-- **v1.2**: Secure boot implementation
-- **v1.3**: OTA updates with signature verification
-- **v1.4**: Advanced tamper detection (multi-sensor)
-- **v1.5**: Network-level intrusion detection
+- **v1.1**: ✅ Production crypto (micro-ecc ECDSA secp256r1)
+- **v2.0**: ✅ ESP-IDF migration, platform abstraction
+- **v2.1**: ✅ NVS key storage, HKDF, AES-256-GCM, Secure Boot v2 docs
+- **v2.2**: ✅ Sensor drivers, OTA with signed firmware, watchdog
+- **v3.0**: ✅ MQTT-TLS, X.509 certificates, ML anomaly detection
+
+Planned:
+
+- **v3.1**: Hardware Security Module (HSM/ATECC608) integration
+- **v3.2**: Mutual TLS (mTLS) and Perfect Forward Secrecy
+- **v4.0**: Post-quantum cryptography (Kyber, Dilithium)
 
 ## External Security Resources
 

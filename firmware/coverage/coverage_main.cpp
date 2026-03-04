@@ -29,6 +29,9 @@ extern void test_retry_suite(void);
 extern void test_system_integration_suite(void);
 extern void test_degradation_suite(void);
 extern void test_telemetry_suite(void);
+extern void test_mqtt_suite(void);
+extern void test_sensors_suite(void);
+extern void test_ota_power_suite(void);
 
 int main()
 {
@@ -53,6 +56,9 @@ int main()
     test_system_integration_suite();
     test_degradation_suite();
     test_telemetry_suite();
+    test_mqtt_suite();
+    test_sensors_suite();
+    test_ota_power_suite();
 
     int failures = UNITY_END();
 

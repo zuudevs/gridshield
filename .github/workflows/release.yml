@@ -33,6 +33,17 @@ jobs:
         working-directory: firmware/test_app
         run: idf.py build
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build Frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
       - name: Package Artifacts
         run: |
           mkdir -p release
@@ -46,6 +57,9 @@ jobs:
           
           # Docs bundle
           tar czf release/gridshield-docs-${VERSION}.tar.gz docs/
+          
+          # Frontend dashboard
+          tar czf release/gridshield-dashboard-${VERSION}.tar.gz -C frontend dist/
           
           # Source archive
           git archive --format=tar.gz --prefix=gridshield-${VERSION}/ HEAD > release/gridshield-src-${VERSION}.tar.gz

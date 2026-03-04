@@ -135,6 +135,24 @@ inline int UnityEnd()
 
 #define TEST_ASSERT_EQUAL_INT(expected, actual) TEST_ASSERT_EQUAL((int)(expected), (int)(actual))
 
+#define TEST_ASSERT_EQUAL_INT16(expected, actual)                                                  \
+    TEST_ASSERT_EQUAL((int16_t)(expected), (int16_t)(actual))
+
+#define TEST_ASSERT_EQUAL_INT32(expected, actual)                                                  \
+    TEST_ASSERT_EQUAL((int32_t)(expected), (int32_t)(actual))
+
+#define TEST_ASSERT_INT32_WITHIN(delta, expected, actual)                                          \
+    do {                                                                                           \
+        int32_t _d = (delta);                                                                      \
+        int32_t _e = (expected);                                                                   \
+        int32_t _a = (actual);                                                                     \
+        if ((_a < _e - _d) || (_a > _e + _d)) {                                                    \
+            char _buf[128];                                                                        \
+            snprintf(_buf, sizeof(_buf), "Expected %d +/- %d, got %d", (int)_e, (int)_d, (int)_a); \
+            UNITY_FAIL(_buf);                                                                      \
+        }                                                                                          \
+    } while (0)
+
 #define TEST_ASSERT_GREATER_THAN(threshold, actual)                                                \
     do {                                                                                           \
         if (!((actual) > (threshold))) {                                                           \

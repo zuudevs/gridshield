@@ -1,6 +1,6 @@
 # GridShield - System Architecture
 
-**Version:** 2.0.0  
+**Version:** 3.0.0  
 **Last Updated:** February 2026  
 **Authors:** M. Ichwan Fauzi, Rafi Indra Pramudhito Zuhayr, Cesar Ardika Bhayangkara
 
@@ -673,15 +673,45 @@ gridshield/
 │   │       ├── analytics/detector.cpp  # Anomaly detection
 │   │       └── platform/platform.cpp   # Platform common code
 │   │
+│   ├── test_app/                       # Unity test suites (206 tests)
+│   ├── fuzz/                           # LibFuzzer harness
+│   ├── coverage/                       # gcov/lcov coverage reports
+│   │
 │   └── lib/
 │       └── micro-ecc/                  # ECC library (secp256r1)
+│
+├── backend/                            # FastAPI REST backend
+│   ├── app/
+│   │   ├── main.py                     # FastAPI entry, CORS middleware
+│   │   ├── routes.py                   # 9 API endpoints
+│   │   ├── models.py                   # SQLAlchemy ORM models
+│   │   ├── schemas.py                  # Pydantic request/response schemas
+│   │   └── database.py                 # SQLite session factory
+│   ├── seed.py                         # Demo data seeder
+│   └── requirements.txt                # Python dependencies
+│
+├── frontend/                           # Vite + Chart.js dashboard
+│   ├── src/
+│   │   ├── main.js                     # App entry, router init
+│   │   ├── router.js                   # Client-side SPA router
+│   │   ├── api.js                      # Backend API client
+│   │   ├── style.css                   # Global styles
+│   │   ├── pages/                      # Dashboard, Alerts, Anomalies, Fleet
+│   │   └── components/                 # Navbar, Chart components
+│   ├── index.html                      # SPA shell
+│   ├── vite.config.js                  # Vite + API proxy config
+│   └── package.json
+│
+├── .github/workflows/                  # CI/CD pipeline
+│   ├── build.yml                       # 5-job CI (build, test, lint, tidy, coverage)
+│   └── release.yml                     # Release artifact packaging
 │
 ├── scripts/
 │   └── script.ps1                      # Build/run automation
 │
 └── docs/                               # Documentation
     ├── ARCHITECTURE.md                 # This file
-    ├── API.md                          # API reference
+    ├── API.md                          # Firmware + REST API reference
     ├── CHANGELOG.md                    # Version history
     ├── QUICKSTART.md                   # Getting started guide
     ├── TECHSTACK.md                    # Technology choices
@@ -956,7 +986,7 @@ enum class PacketType : uint8_t {
 - Rafi Indra Pramudhito Zuhayr (Firmware Implementation)
 - Cesar Ardika Bhayangkara (Hardware Integration)
 
-**Institut Teknologi PLN - 2025**
+**Institut Teknologi PLN - 2026**
 
 ---
 

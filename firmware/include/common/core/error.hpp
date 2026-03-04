@@ -59,6 +59,13 @@ enum class ErrorCode : uint16_t
     TransmissionFailed = 402,
     InvalidPacket = 403,
     BufferOverflow = 404,
+    MqttConnectionFailed = 405,
+    MqttPublishFailed = 406,
+    MqttSubscribeFailed = 407,
+    WiFiConnectionFailed = 408,
+    WiFiNotConnected = 409,
+    ModbusError = 410,
+    LoRaError = 411,
 
     // Analytics errors (500-599)
     AnomalyDetected = 500,
@@ -71,10 +78,56 @@ enum class ErrorCode : uint16_t
     ConfigurationError = 601,
     CalibrationRequired = 602,
 
-    // Generic errors (900-999)
-    Unknown = 900,
-    NotImplemented = 901,
-    NotSupported = 902
+    // Sensor errors (700-799)
+    SensorTimeout = 700,
+    SensorNotFound = 701,
+    SensorCalibrationError = 702,
+    ADCReadError = 703,
+    I2CError = 704,
+    OneWireError = 705,
+    UARTError = 706,
+
+    // OTA errors (800-809)
+    OtaFailed = 800,
+    OtaValidationFailed = 801,
+    OtaRollbackFailed = 802,
+
+    // Cloud errors (810-819)
+    CloudConnectionFailed = 810,
+    CloudPublishFailed = 811,
+    CloudSubscribeFailed = 812,
+    CloudProvisioningFailed = 813,
+    CloudAuthenticationFailed = 814,
+    CloudPayloadTooLarge = 815,
+
+    // SNTP errors (820-829)
+    SntpSyncFailed = 820,
+    SntpTimeout = 821,
+    SntpNotSynced = 822,
+
+    // Mesh / ESP-NOW errors (825-829)
+    MeshPeerFull = 825,
+    MeshSendFailed = 826,
+    MeshInvalidPeer = 827,
+
+    // Certificate errors (830-839)
+    CertificateExpired = 830,
+    CertificateInvalid = 831,
+    CertificateNotFound = 832,
+
+    // Memory pool errors (840-849)
+    PoolExhausted = 840,
+    PoolDoubleFree = 841,
+
+    // TFLite / ML errors (850-859)
+    ModelLoadFailed = 850,
+    InferenceFailed = 851,
+    TensorMismatch = 852,
+
+    // Generic errors (950-999)
+    Unknown = 950,
+    NotImplemented = 951,
+    NotSupported = 952
 };
 
 // ============================================================================

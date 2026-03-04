@@ -406,4 +406,344 @@ private:
     uint8_t storage_[STORAGE_SIZE];
 };
 
+// ============================================================================
+// MOCK WIFI
+// ============================================================================
+class MockWiFi : public IPlatformWiFi
+{
+public:
+    MockWiFi() noexcept = default;
+
+    core::Result<void> init() noexcept override
+    {
+        initialized_ = true;
+        return core::Result<void>{};
+    }
+
+    core::Result<void> connect(const char* /*ssid*/, const char* /*password*/) noexcept override
+    {
+        if (GS_UNLIKELY(!initialized_)) {
+            return GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized);
+        }
+        connected_ = true;
+        return core::Result<void>{};
+    }
+
+    core::Result<void> disconnect() noexcept override
+    {
+        connected_ = false;
+        return core::Result<void>{};
+    }
+
+    bool is_connected() noexcept override
+    {
+        return connected_;
+    }
+
+    core::Result<void> get_ip(char* buf, size_t len) noexcept override
+    {
+        if (GS_UNLIKELY(buf == nullptr || len == 0)) {
+            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
+        }
+        static constexpr const char* MOCK_IP = "192.168.1.100";
+        std::strncpy(buf, MOCK_IP, len - 1);
+        buf[len - 1] = '\0';
+        return core::Result<void>{};
+    }
+
+    // Test helpers
+    void set_connected(bool state)
+    {
+        connected_ = state;
+    }
+
+private:
+    bool initialized_{false};
+    bool connected_{false};
+};
+
+// ============================================================================
+// MOCK ADC
+// ============================================================================
+class MockADC : public IPlatformADC
+{
+public:
+    MockADC() noexcept
+    {
+        mock_values_.fill(0);
+    }
+
+    core::Result<void> init(uint8_t channel, Attenuation /*atten*/) noexcept override
+    {
+        if (GS_UNLIKELY(channel >= MAX_ADC_CHANNELS)) {
+            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
+        }
+        initialized_channels_[channel] = true;
+        return core::Result<void>{};
+    }
+
+    core::Result<uint32_t> read_raw(uint8_t channel) noexcept override
+    {
+        if (GS_UNLIKELY(channel >= MAX_ADC_CHANNELS || !initialized_channels_[channel])) {
+            return core::Result<uint32_t>(GS_MAKE_ERROR(core::ErrorCode::ADCReadError));
+        }
+        return core::Result<uint32_t>(mock_values_[channel]);
+    }
+
+    core::Result<uint32_t> read_mv(uint8_t channel) noexcept override
+    {
+        if (GS_UNLIKELY(channel >= MAX_ADC_CHANNELS || !initialized_channels_[channel])) {
+            return core::Result<uint32_t>(GS_MAKE_ERROR(core::ErrorCode::ADCReadError));
+        }
+        // Convert raw (0-4095) to mV (0-3300) — 12-bit ADC range
+        static constexpr uint32_t ADC_MAX_RAW = 4095;
+        static constexpr uint32_t ADC_MAX_MV = 3300;
+        uint32_t mv = (mock_values_[channel] * ADC_MAX_MV) / ADC_MAX_RAW;
+        return core::Result<uint32_t>(mv);
+    }
+
+    // Test helpers
+    void set_raw_value(uint8_t channel, uint32_t value)
+    {
+        if (channel < MAX_ADC_CHANNELS) {
+            mock_values_[channel] = value;
+        }
+    }
+
+private:
+    std::array<uint32_t, MAX_ADC_CHANNELS> mock_values_{};
+    std::array<bool, MAX_ADC_CHANNELS> initialized_channels_{};
+};
+
+// ============================================================================
+// MOCK I2C
+// ============================================================================
+class MockI2C : public IPlatformI2C
+{
+public:
+    static constexpr size_t MOCK_REGISTER_COUNT = 256;
+
+    MockI2C() noexcept
+    {
+        mock_registers_.fill(0);
+    }
+
+    core::Result<void>
+    init(uint8_t /*sda_pin*/, uint8_t /*scl_pin*/, uint32_t /*freq_hz*/) noexcept override
+    {
+        initialized_ = true;
+        return core::Result<void>{};
+    }
+
+    core::Result<void>
+    read_reg(uint8_t /*dev_addr*/, uint8_t reg_addr, uint8_t* buf, size_t len) noexcept override
+    {
+        if (GS_UNLIKELY(!initialized_ || buf == nullptr)) {
+            return GS_MAKE_ERROR(core::ErrorCode::I2CError);
+        }
+        for (size_t i = 0; i < len && (reg_addr + i) < MOCK_REGISTER_COUNT; ++i) {
+            buf[i] = mock_registers_[reg_addr + i];
+        }
+        return core::Result<void>{};
+    }
+
+    core::Result<void> write_reg(uint8_t /*dev_addr*/,
+                                 uint8_t reg_addr,
+                                 const uint8_t* buf,
+                                 size_t len) noexcept override
+    {
+        if (GS_UNLIKELY(!initialized_ || buf == nullptr)) {
+            return GS_MAKE_ERROR(core::ErrorCode::I2CError);
+        }
+        for (size_t i = 0; i < len && (reg_addr + i) < MOCK_REGISTER_COUNT; ++i) {
+            mock_registers_[reg_addr + i] = buf[i];
+        }
+        return core::Result<void>{};
+    }
+
+    core::Result<void> shutdown() noexcept override
+    {
+        initialized_ = false;
+        return core::Result<void>{};
+    }
+
+    // Test helpers
+    void set_register(uint8_t reg, uint8_t value)
+    {
+        mock_registers_[reg] = value;
+    }
+    uint8_t get_register(uint8_t reg) const
+    {
+        return mock_registers_[reg];
+    }
+
+private:
+    bool initialized_{false};
+    std::array<uint8_t, MOCK_REGISTER_COUNT> mock_registers_{};
+};
+
+// ============================================================================
+// MOCK ONE-WIRE
+// ============================================================================
+class MockOneWire : public IPlatformOneWire
+{
+public:
+    static constexpr size_t MOCK_BUFFER_SIZE = 16;
+
+    MockOneWire() noexcept
+    {
+        rx_data_.fill(0);
+    }
+
+    core::Result<void> init(uint8_t /*pin*/) noexcept override
+    {
+        initialized_ = true;
+        return core::Result<void>{};
+    }
+
+    core::Result<void> reset() noexcept override
+    {
+        if (GS_UNLIKELY(!initialized_)) {
+            return GS_MAKE_ERROR(core::ErrorCode::OneWireError);
+        }
+        rx_pos_ = 0;
+        return core::Result<void>{};
+    }
+
+    core::Result<void> write_byte(uint8_t /*data*/) noexcept override
+    {
+        if (GS_UNLIKELY(!initialized_)) {
+            return GS_MAKE_ERROR(core::ErrorCode::OneWireError);
+        }
+        return core::Result<void>{};
+    }
+
+    core::Result<uint8_t> read_byte() noexcept override
+    {
+        if (GS_UNLIKELY(!initialized_ || rx_pos_ >= MOCK_BUFFER_SIZE)) {
+            return core::Result<uint8_t>(GS_MAKE_ERROR(core::ErrorCode::OneWireError));
+        }
+        return core::Result<uint8_t>(rx_data_[rx_pos_++]);
+    }
+
+    // Test helpers
+    void inject_data(const uint8_t* data, size_t len)
+    {
+        for (size_t i = 0; i < len && i < MOCK_BUFFER_SIZE; ++i) {
+            rx_data_[i] = data[i];
+        }
+        rx_pos_ = 0;
+    }
+
+private:
+    bool initialized_{false};
+    std::array<uint8_t, MOCK_BUFFER_SIZE> rx_data_{};
+    size_t rx_pos_{};
+};
+
+// ============================================================================
+// MOCK UART
+// ============================================================================
+class MockUART : public IPlatformUART
+{
+public:
+    static constexpr size_t UART_BUFFER_SIZE = 512;
+
+    MockUART() noexcept
+    {
+        tx_buffer_.fill(0);
+        rx_buffer_.fill(0);
+    }
+
+    core::Result<void> init(uint8_t port,
+                            uint32_t /*baud_rate*/,
+                            uint8_t /*tx_pin*/,
+                            uint8_t /*rx_pin*/) noexcept override
+    {
+        if (GS_UNLIKELY(port >= MAX_UART_PORTS)) {
+            return GS_MAKE_ERROR(core::ErrorCode::InvalidParameter);
+        }
+        initialized_ports_[port] = true;
+        return core::Result<void>{};
+    }
+
+    core::Result<size_t> write(uint8_t port, const uint8_t* data, size_t length) noexcept override
+    {
+        if (GS_UNLIKELY(port >= MAX_UART_PORTS || !initialized_ports_[port])) {
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::UARTError));
+        }
+        if (GS_UNLIKELY(data == nullptr || length == 0)) {
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        }
+        size_t written = 0;
+        while (written < length && tx_len_ < UART_BUFFER_SIZE) {
+            tx_buffer_[tx_len_++] = data[written++];
+        }
+        return core::Result<size_t>(written);
+    }
+
+    core::Result<size_t> read(uint8_t port,
+                              uint8_t* buffer,
+                              size_t max_length,
+                              uint32_t /*timeout_ms*/) noexcept override
+    {
+        if (GS_UNLIKELY(port >= MAX_UART_PORTS || !initialized_ports_[port])) {
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::UARTError));
+        }
+        if (GS_UNLIKELY(buffer == nullptr || max_length == 0)) {
+            return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        }
+        size_t read_count = 0;
+        while (read_count < max_length && rx_pos_ < rx_len_) {
+            buffer[read_count++] = rx_buffer_[rx_pos_++];
+        }
+        return core::Result<size_t>(read_count);
+    }
+
+    core::Result<void> shutdown(uint8_t port) noexcept override
+    {
+        if (port < MAX_UART_PORTS) {
+            initialized_ports_[port] = false;
+        }
+        return core::Result<void>{};
+    }
+
+    // Test helpers
+    void inject_rx_data(const uint8_t* data, size_t len)
+    {
+        rx_len_ = 0;
+        rx_pos_ = 0;
+        for (size_t i = 0; i < len && i < UART_BUFFER_SIZE; ++i) {
+            rx_buffer_[i] = data[i];
+            rx_len_++;
+        }
+    }
+
+    const std::array<uint8_t, UART_BUFFER_SIZE>& get_tx_buffer() const
+    {
+        return tx_buffer_;
+    }
+    size_t get_tx_length() const
+    {
+        return tx_len_;
+    }
+
+    void clear_buffers()
+    {
+        tx_buffer_.fill(0);
+        rx_buffer_.fill(0);
+        tx_len_ = 0;
+        rx_len_ = 0;
+        rx_pos_ = 0;
+    }
+
+private:
+    std::array<bool, MAX_UART_PORTS> initialized_ports_{};
+    std::array<uint8_t, UART_BUFFER_SIZE> tx_buffer_{};
+    std::array<uint8_t, UART_BUFFER_SIZE> rx_buffer_{};
+    size_t tx_len_{};
+    size_t rx_len_{};
+    size_t rx_pos_{};
+};
+
 } // namespace gridshield::platform::mock

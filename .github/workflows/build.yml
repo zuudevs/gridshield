@@ -100,6 +100,36 @@ jobs:
       - name: Lint
         run: ruff check backend/
 
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Upload Frontend Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 30
+
   clang-tidy:
     name: C++ Lint (clang-tidy)
     runs-on: ubuntu-latest
@@ -131,20 +161,29 @@ jobs:
           . $IDF_PATH/export.sh
           cd firmware
           
+          # Create stub for missing toolchain header that causes clang-tidy to fail
           mkdir -p stubs/machine
           touch stubs/machine/endian.h
+          STUB_PATH=$(pwd)/stubs
           
-          find main/src -name '*.cpp' | xargs clang-tidy \
+          # Run clang-tidy on project source files
+          # We use -print0/xargs -0 for safety and || true to handle results manually
+          find main/src -name '*.cpp' -print0 | xargs -0 clang-tidy \
             -p build \
             --extra-arg=-Wno-unknown-warning-option \
-            --extra-arg=-isystem --extra-arg=stubs \
+            --extra-arg=-isystem --extra-arg="${STUB_PATH}" \
             2>&1 | tee clang_tidy_output.log || true
 
-          if grep -E '(main/src|include/).*error:' clang_tidy_output.log; then
-            echo '::error::clang-tidy found REAL issues in project code!'
+          # Filter output: only fail on errors in project code, ignoring the endian.h issue
+          # We look for 'error:' but exclude 'machine/endian.h' and only care about main/ or include/ paths
+          REAL_ERRORS=$(grep "error:" clang_tidy_output.log | grep -v "machine/endian.h" | grep -E "(main/src|include/)")
+          
+          if [ -n "${REAL_ERRORS}" ]; then
+            echo "::error::clang-tidy found REAL issues in project code!"
+            echo "${REAL_ERRORS}"
             exit 1
           else
-            echo 'No critical errors found in project code. System header errors ignored.'
+            echo "No critical errors found in project code. System header issues like endian.h were ignored."
           fi
 
   coverage:

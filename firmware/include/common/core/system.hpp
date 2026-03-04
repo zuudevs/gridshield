@@ -16,10 +16,13 @@
 #include "core/error.hpp"
 #include "core/telemetry.hpp"
 #include "core/types.hpp"
+#include "hardware/sensor_manager.hpp"
 #include "hardware/tamper.hpp"
 #include "network/packet.hpp"
 #include "platform/platform.hpp"
 #include "security/crypto.hpp"
+#include "system/ota_manager.hpp"
+#include "system/power_manager.hpp"
 
 namespace gridshield {
 
@@ -36,6 +39,11 @@ struct SystemConfig
     analytics::ConsumptionProfile baseline_profile;
     uint32_t heartbeat_interval_ms{DEFAULT_HEARTBEAT_INTERVAL_MS};
     uint32_t reading_interval_ms{DEFAULT_READING_INTERVAL_MS};
+
+    // v2.2.0: Sensor, OTA, and Power configurations
+    hardware::SensorManagerConfig sensor_config{};
+    system::OtaConfig ota_config{};
+    system::PowerConfig power_config{};
 
     GS_CONSTEXPR SystemConfig() noexcept = default;
 };
@@ -102,6 +110,20 @@ public:
         return telemetry_;
     }
 
+    // v2.2.0 subsystem accessors
+    GS_NODISCARD hardware::SensorManager& sensors() noexcept
+    {
+        return sensor_manager_;
+    }
+    GS_NODISCARD system::OtaManager& ota() noexcept
+    {
+        return ota_manager_;
+    }
+    GS_NODISCARD system::PowerManager& power() noexcept
+    {
+        return power_manager_;
+    }
+
 private:
     core::Result<void> initialize_crypto() noexcept;
     core::Result<void> init_network_layer() noexcept;
@@ -137,6 +159,11 @@ private:
     // Degradation & Telemetry
     core::DegradationManager degradation_;
     core::SystemTelemetry telemetry_;
+
+    // v2.2.0: Sensor, OTA, Power subsystems
+    hardware::SensorManager sensor_manager_;
+    system::OtaManager ota_manager_;
+    system::PowerManager power_manager_;
 };
 
 } // namespace gridshield

@@ -82,7 +82,7 @@ idf.py qemu monitor
 
 ```
 [GridShield] ==============================================
-[GridShield] GridShield v1.1 [ESP32 - QEMU Simulation]
+[GridShield] GridShield v3.0.0 [ESP32 - QEMU Simulation]
 [GridShield] Platform: ESP-IDF + QEMU
 [GridShield] ==============================================
 
@@ -185,8 +185,28 @@ class IPlatformTime {
 ### 📚 Learn More
 
 - [**Architecture**](ARCHITECTURE.md) — System design with diagrams
-- [**API Reference**](API.md) — Class & function docs
+- [**API Reference**](API.md) — Firmware & backend API docs
 - [**Build Guide**](../BUILD.md) — Advanced build configurations
+
+### 🖥️ Backend & Frontend
+
+**Start the Backend:**
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+**Start the Frontend Dashboard:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+- Dashboard: [http://localhost:5173](http://localhost:5173)
 
 ### 🔧 Customize
 
@@ -233,4 +253,4 @@ C:\esp\v5.5.3\esp-idf\export.bat  # Windows
 
 **Ready to secure your AMI system?** Start building!
 
-**Institut Teknologi PLN — 2025**
+**Institut Teknologi PLN — 2026**

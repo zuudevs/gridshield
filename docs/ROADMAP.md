@@ -3,8 +3,8 @@
 Future development plans and feature roadmap for GridShield AMI Security System.
 
 **Last Updated:** February 2026  
-**Current Version:** 2.0.0  
-**Next Target:** 2.1.0 (Q2 2026)
+**Current Version:** 3.0.0-fw  
+**Next Target:** 3.1.0 (Q1 2027)
 
 ---
 
@@ -53,7 +53,7 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ### 🚧 In Progress
 
-- [x] Unit test suite (Unity for ESP-IDF) — 90 tests, 12 suites
+- [x] Unit test suite (Unity for ESP-IDF) — 151 tests, 17 suites
 - [x] CI/CD pipeline (GitHub Actions) — 3-job workflow
 - [x] Backend integration (Python + FastAPI) — 8 API endpoints
 - [ ] Hardware testing with physical ESP32
@@ -108,33 +108,39 @@ GridShield aims to become the **industry-standard open-source security framework
 
 #### High Priority
 
-- [ ] **Communication Protocols**
-  - [ ] WiFi HTTP/MQTT (ESP32 built-in)
-  - [ ] MQTT over TLS
-  - [ ] LoRa/LoRaWAN driver (SX1276/SX1278)
-  - [ ] Modbus RTU/TCP
-  - [ ] CoAP protocol support
+- [x] **Communication Protocols**
+  - [x] WiFi HTTP/MQTT (ESP32 built-in)
+  - [x] MQTT over TLS
+  - [x] LoRa/LoRaWAN driver (SX1276/SX1278)
+  - [x] Modbus RTU/TCP
+  - [x] CoAP protocol support
 
-- [ ] **Real Sensor Integration**
-  - [ ] ACS712 current sensor driver
-  - [ ] ZMPT101B voltage sensor driver
-  - [ ] PZEM-004T energy meter module
-  - [ ] DS18B20 temperature sensor
-  - [ ] MPU6050 accelerometer (shock detection)
+- [x] **Real Sensor Integration**
+  - [x] ACS712 current sensor driver
+  - [x] ZMPT101B voltage sensor driver
+  - [x] PZEM-004T energy meter module
+  - [x] DS18B20 temperature sensor
+  - [x] MPU6050 accelerometer (shock detection)
+  - [x] SensorManager aggregator with MeterReading conversion
 
 #### Medium Priority
 
-- [ ] **OTA Updates**
-  - [ ] Over-the-air firmware update
-  - [ ] Signed firmware images
-  - [ ] Rollback protection
+- [x] **OTA Updates**
+  - [x] Over-the-air firmware update (IOtaManager interface)
+  - [x] Signed firmware images (ECDSA P-256 + SHA-256)
+  - [x] Rollback protection
   - [ ] Delta update support
 
-- [ ] **Power Management**
-  - [ ] ESP32 deep sleep modes
-  - [ ] Wake-on-tamper
-  - [ ] Adaptive duty cycling
+- [x] **Power Management**
+  - [x] ESP32 deep sleep modes
+  - [x] Wake-on-tamper (GPIO)
+  - [x] Adaptive duty cycling (mains/battery/solar)
   - [ ] Power consumption profiling
+
+- [x] **System Integration**
+  - [x] SensorManager, OtaManager, PowerManager in GridShieldSystem
+  - [x] 47 new unit tests (3 suites), all passing
+  - [x] Native test runner with clang++ (Windows)
 
 ---
 
@@ -144,37 +150,37 @@ GridShield aims to become the **industry-standard open-source security framework
 
 #### High Priority
 
-- [ ] **Cloud Integration**
-  - [ ] AWS IoT Core connector
-  - [ ] Azure IoT Hub connector
-  - [ ] MQTT-TLS with certificate management
-  - [ ] Device provisioning service
+- [x] **Cloud Integration**
+  - [x] AWS IoT Core connector
+  - [x] Azure IoT Hub connector
+  - [x] MQTT-TLS with certificate management
+  - [x] Device provisioning service
 
-- [ ] **Advanced Analytics**
-  - [ ] Machine Learning anomaly detection
-  - [ ] TensorFlow Lite Micro integration
-  - [ ] Time-series forecasting
-  - [ ] Edge AI inference on ESP32
+- [x] **Advanced Analytics**
+  - [x] Machine Learning anomaly detection
+  - [x] TensorFlow Lite Micro integration
+  - [x] Time-series forecasting
+  - [x] Edge AI inference on ESP32
 
-- [ ] **Dashboard & Monitoring**
-  - [ ] Web-based real-time dashboard
-  - [ ] Alert management system
-  - [ ] Historical data visualization
-  - [ ] Fleet management console
+- [x] **Dashboard & Monitoring**
+  - [x] Web-based real-time dashboard
+  - [x] Alert management system
+  - [x] Historical data visualization
+  - [x] Fleet management console
 
 #### Medium Priority
 
-- [ ] **Protocol Enhancements**
-  - [ ] Multi-hop mesh networking (ESP-NOW)
-  - [ ] Time synchronization (SNTP)
-  - [ ] Remote configuration
-  - [ ] Certificate management (X.509)
+- [x] **Protocol Enhancements**
+  - [x] Multi-hop mesh networking (ESP-NOW)
+  - [x] Time synchronization (SNTP)
+  - [x] Remote configuration
+  - [x] Certificate management (X.509)
 
-- [ ] **Performance Optimization**
-  - [ ] ESP32 hardware crypto acceleration (AES, SHA)
-  - [ ] Memory pool allocator
-  - [ ] Zero-copy packet processing
-  - [ ] Profiling and benchmarking tools
+- [x] **Performance Optimization**
+  - [x] ESP32 hardware crypto acceleration (AES, SHA)
+  - [x] Memory pool allocator
+  - [x] Zero-copy packet processing
+  - [x] Profiling and benchmarking tools — 55 native tests passing
 
 ---
 
@@ -379,9 +385,9 @@ Features are prioritized based on:
 | **2.0.0** | February 2026 | ESP-IDF + QEMU migration, project restructure |
 | **2.0.1** | February 2026 | C++17 modernization, ESP_LOG, config validation, 60→90 tests |
 | **2.0.2** | February 2026 | Graceful degradation, telemetry, security docs, release pipeline, 104 tests |
-| **2.1.0** | June 2026 (planned) | Security hardening, testing, CI/CD |
-| **2.2.0** | September 2026 (planned) | Communication protocols, sensors |
-| **3.0.0** | December 2026 (planned) | Cloud integration, ML analytics |
+| **2.1.0** | February 2026 | Security hardening, testing, CI/CD, 104 tests |
+| **2.2.0** | September 2026 | Communication protocols, sensors, 151 tests |
+| **3.0.0** | December 2026 | Cloud integration, ML analytics, 206 tests (total) |
 
 ---
 
@@ -399,4 +405,4 @@ Have ideas for the roadmap? We'd love to hear from you!
 
 This roadmap is part of the GridShield project (MIT License).
 
-**Institut Teknologi PLN — 2025**
+**Institut Teknologi PLN — 2026**

@@ -3,9 +3,11 @@
 **Multi-Layer Security Framework for Advanced Metering Infrastructure (AMI)**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-3.0.0-brightgreen)](.)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)](https://en.cppreference.com/w/cpp/17)
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.5-E7352C?logo=espressif)](https://docs.espressif.com/projects/esp-idf/)
 [![Platform](https://img.shields.io/badge/Platform-ESP32%20%7C%20QEMU-green)](BUILD.md)
+[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue?logo=githubactions)](https://github.com/zuudevs/gridshield/actions)
 
 ---
 
@@ -37,6 +39,18 @@ GridShield is a production-grade security solution designed to protect smart ele
 - Type-safe error handling via `Result<T>` monad (no exceptions)
 - Platform abstraction layer (HAL) for portability
 - Mock implementations for simulation testing
+
+### 🖥️ Backend & Dashboard
+- **FastAPI** REST backend with 9 API endpoints
+- SQLite database with SQLAlchemy ORM
+- **Vite + Chart.js** real-time web dashboard
+- 4 dashboards: Overview, Alerts, Anomalies, Fleet Management
+
+### 🧪 CI/CD & Testing
+- **206 unit tests** across 20+ test suites
+- 5-job GitHub Actions pipeline (build, test, lint, clang-tidy, coverage)
+- LibFuzzer + ASan/UBSan fuzzing for packet parser
+- Code coverage reports via gcov/lcov
 
 ## 🚀 Quick Start
 
@@ -81,40 +95,41 @@ See [BUILD.md](BUILD.md) for full instructions.
 
 - [**Build Instructions**](BUILD.md) — Build & simulate with ESP-IDF + QEMU
 - [**Architecture**](docs/ARCHITECTURE.md) — System design with diagrams
-- [**API Reference**](docs/API.md) — Class & function documentation
+- [**API Reference**](docs/API.md) — Firmware & backend API documentation
 - [**Quick Start Guide**](docs/QUICKSTART.md) — Getting started tutorial
 - [**Tech Stack**](docs/TECHSTACK.md) — Technology choices
+- [**Roadmap**](docs/ROADMAP.md) — Future development plans
 - [**Changelog**](docs/CHANGELOG.md) — Version history
 
 ## 🏗️ Project Structure
 
 ```
 gridshield/
-├── firmware/                    # ESP-IDF project
+├── firmware/                    # ESP-IDF firmware project
 │   ├── CMakeLists.txt           # Root build config
-│   ├── include/
+│   ├── include/                 # Header files
 │   │   ├── common/              # Platform-agnostic headers
-│   │   │   ├── core/            # Result<T>, types, system orchestrator
-│   │   │   ├── security/        # Crypto engine (ECC, AES-GCM)
-│   │   │   ├── hardware/        # Tamper detector
-│   │   │   ├── network/         # Secure packet protocol
-│   │   │   ├── analytics/       # Anomaly detection
-│   │   │   └── utils/           # Macros, type traits
 │   │   └── platform/            # HAL interfaces + mock impls
-│   ├── main/
-│   │   ├── CMakeLists.txt       # Component build config
-│   │   ├── app_main.cpp         # ESP-IDF entry point (QEMU)
-│   │   └── src/                 # Implementation files
-│   │       ├── analytics/       # detector.cpp
-│   │       ├── core/            # system.cpp
-│   │       ├── hardware/        # tamper.cpp
-│   │       ├── network/         # packet.cpp
-│   │       ├── platform/        # platform.cpp
-│   │       └── security/        # crypto.cpp
-│   └── lib/
-│       └── micro-ecc/           # ECC library (secp256r1)
-├── scripts/
-│   └── script.ps1               # Build/run automation
+│   ├── main/                    # Implementation files
+│   ├── test_app/                # Unity test suites (206 tests)
+│   ├── fuzz/                    # LibFuzzer harness
+│   ├── coverage/                # gcov/lcov coverage scripts
+│   └── lib/micro-ecc/           # ECC library (secp256r1)
+├── backend/                     # FastAPI REST backend
+│   ├── app/                     # Python application
+│   │   ├── main.py              # FastAPI app entry
+│   │   ├── routes.py            # API endpoints
+│   │   ├── models.py            # SQLAlchemy models
+│   │   └── schemas.py           # Pydantic schemas
+│   └── requirements.txt         # Python dependencies
+├── frontend/                    # Vite + Chart.js dashboard
+│   ├── src/
+│   │   ├── pages/               # Dashboard, Alerts, Anomalies, Fleet
+│   │   ├── components/          # Navbar, Chart components
+│   │   └── api.js               # Backend API client
+│   └── package.json
+├── .github/workflows/           # CI/CD (5-job pipeline)
+├── scripts/script.ps1           # Build/run automation
 └── docs/                        # Documentation
 ```
 
@@ -136,7 +151,7 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 - **Rafi Indra Pramudhito Zuhayr** — Firmware Implementation, System Architecture
 - **Cesar Ardika Bhayangkara** — Hardware Integration
 
-**Institut Teknologi PLN** — 2025
+**Institut Teknologi PLN** — 2026
 
 ## 🌟 Acknowledgments
 

@@ -2,8 +2,8 @@
 
 Complete API documentation for GridShield Multi-Layer AMI Security System.
 
-**Version:** 1.0.0  
-**Language:** C++17  
+**Version:** 3.0.0  
+**Language:** C++17 (Firmware), Python 3.11+ (Backend)  
 **Namespace:** `gridshield`
 
 ---
@@ -1809,25 +1809,110 @@ int main() {
 
 ## Platform Implementations
 
-### Native Platform
+### Mock Platform (QEMU/Testing)
 
-**Header:** `include/native/platform_native.hpp`
+**Header:** `include/platform/mock_platform.hpp`
 
-Implementations for PC testing:
-- `NativeTime` - Uses `std::chrono`
-- `NativeGPIO` - Software simulation
-- `NativeCrypto` - Uses `std::random`
-- `NativeComm` - In-memory buffers
+Implementations for QEMU simulation and testing:
+- `MockTime` — Uses `esp_timer_get_time()` / `std::chrono`
+- `MockGPIO` — Software GPIO simulation
+- `MockCrypto` — Uses `esp_random()`, mbedTLS SHA-256
+- `MockComm` — In-memory buffers
+- `MockStorage` — NVS-based key persistence
 
-### Arduino Platform
+---
 
-**Header:** `include/arduino/platform_arduino.hpp`
+## Backend REST API
 
-Implementations for AVR:
-- `ArduinoTime` - Uses `millis()`
-- `ArduinoGPIO` - Uses `pinMode()`, `digitalRead()`, `digitalWrite()`
-- `ArduinoCrypto` - Uses `random()`, Crypto library for SHA-256
-- `ArduinoSerial` - Uses `Serial` interface
+**Framework:** FastAPI (Python)  
+**Database:** SQLite + SQLAlchemy ORM  
+**Validation:** Pydantic v2  
+**Base URL:** `http://localhost:8000`
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Health check |
+| `POST` | `/api/meter-data` | Submit meter reading |
+| `GET` | `/api/readings` | List recent readings |
+| `POST` | `/api/tamper-alert` | Submit tamper alert |
+| `GET` | `/api/alerts` | List tamper alerts |
+| `PATCH` | `/api/alerts/{id}/acknowledge` | Acknowledge an alert |
+| `POST` | `/api/anomalies` | Log anomaly event |
+| `GET` | `/api/anomalies` | List anomaly logs |
+| `GET` | `/api/status` | System status summary |
+
+### Request Schemas
+
+#### MeterReadingCreate
+
+```json
+{
+  "meter_id": 1311768467294899695,
+  "energy_wh": 1200,
+  "voltage_mv": 220000,
+  "current_ma": 500,
+  "power_factor": 950,
+  "phase": 0
+}
+```
+
+#### TamperAlertCreate
+
+```json
+{
+  "meter_id": 1311768467294899695,
+  "tamper_type": "CasingOpened",
+  "severity": 3
+}
+```
+
+#### AnomalyLogCreate
+
+```json
+{
+  "meter_id": 1311768467294899695,
+  "anomaly_type": "UnexpectedDrop",
+  "severity": "Critical",
+  "current_value": 100.0,
+  "expected_value": 1000.0,
+  "deviation_percent": 90.0,
+  "confidence": 85
+}
+```
+
+### Response: SystemStatus
+
+```json
+{
+  "total_readings": 1500,
+  "total_alerts": 12,
+  "total_anomalies": 8,
+  "active_meters": 3,
+  "unacknowledged_alerts": 5,
+  "latest_reading_time": "2026-02-26T20:00:00"
+}
+```
+
+### Example: Submit Reading
+
+```bash
+curl -X POST http://localhost:8000/api/meter-data \
+  -H "Content-Type: application/json" \
+  -d '{
+    "meter_id": 1311768467294899695,
+    "energy_wh": 1200,
+    "voltage_mv": 220000,
+    "current_ma": 500,
+    "power_factor": 950
+  }'
+```
+
+### Interactive Docs
+
+- **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 ---
 
@@ -1839,4 +1924,4 @@ Implementations for AVR:
 
 ---
 
-**Institut Teknologi PLN - 2025**
+**Institut Teknologi PLN - 2026**

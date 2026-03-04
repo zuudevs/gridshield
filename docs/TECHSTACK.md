@@ -18,8 +18,8 @@ GridShield utilizes a carefully selected technology stack optimized for embedded
 | **Simulation** | QEMU (ESP32 emulator) | Rafi |
 | **Crypto** | micro-ecc (ECDSA secp256r1) | Rafi |
 | **Backend** | Python 3.11+, FastAPI, SQLite | Ichwan |
-| **Frontend** | Simple web dashboard | Ichwan |
-| **Hardware** | ESP32 DevKit V1, sensors | Rafi |
+| **Frontend** | Vite + Chart.js (vanilla JS) | Ichwan |
+| **Hardware** | ESP32 DevKit V1, sensors | Cesar |
 
 ---
 
@@ -50,7 +50,7 @@ GridShield utilizes a carefully selected technology stack optimized for embedded
   - QEMU integration for simulation
 
 **QEMU Simulator**
-- **Purpose**: Simulated ESP32 tanpa hardware fisik
+- **Purpose**: Simulated ESP32 without physical hardware
 - **Features**:
   - Full Xtensa CPU emulation
   - GPIO simulation (tamper sensor input)
@@ -73,8 +73,8 @@ GridShield utilizes a carefully selected technology stack optimized for embedded
 - **micro-ecc**: Lightweight ECC implementation (ECDSA secp256r1)
 
 **Communication (PIC: Rafi)**
-- **Serial (UART)**: Debug output + data transmission ke backend (POC)
-- **WiFiClient**: HTTP communication ke backend (optional untuk POC)
+- **Serial (UART)**: Debug output + data transmission to backend (POC)
+- **WiFiClient**: HTTP communication to backend (optional for POC)
 
 **Sensors (PIC: Cesar)**
 - **Custom HAL**: Hardware abstraction for tamper sensors
@@ -107,18 +107,18 @@ GridShield utilizes a carefully selected technology stack optimized for embedded
 - **Schema**: Time-series optimized tables
 
 > [!NOTE]
-> PostgreSQL, Redis, dan database enterprise lainnya tidak dibutuhkan untuk POC. SQLite cukup untuk demo dengan puluhan meter.
+> PostgreSQL, Redis, and other enterprise databases are not needed for POC. SQLite is sufficient for demos with dozens of meters.
 
 ### Communication Protocol (POC)
 
 **Serial (UART) — Primary**
-- ESP32 mengirim data via Serial ke PC
-- Python backend membaca dari serial port
-- Paling simple untuk POC demo
+- ESP32 sends data via Serial to PC
+- Python backend reads from serial port
+- Simplest approach for POC demo
 
 **HTTP REST — Alternative**
-- ESP32 mengirim via WiFi HTTP POST ke FastAPI
-- Lebih realistis untuk demo production-like
+- ESP32 sends via WiFi HTTP POST to FastAPI
+- More realistic for production-like demo
 
 ---
 
@@ -126,19 +126,20 @@ GridShield utilizes a carefully selected technology stack optimized for embedded
 
 ### Dashboard (POC Scope)
 
-**Simple Web Interface**
-- **HTML + JavaScript** (vanilla, tanpa framework berat)
-- **Chart.js**: Data visualization (consumption graph)
-- **WebSocket** atau polling: Live meter status updates
+**Vite + Vanilla JavaScript SPA**
+- **Build Tool**: Vite 6.x (hot module replacement, fast builds)
+- **Chart.js**: Data visualization (consumption graph, KPI charts)
+- **SPA Router**: Custom client-side routing (4 pages)
+- **API Client**: Fetch-based backend polling
 
-**Features:**
-- Status meter (Green/Red)
-- Real-time consumption graph
-- Tamper alert notifications
-- Anomaly detection log
+**Pages:**
+- **Dashboard** — KPIs, consumption chart, recent alerts
+- **Alerts** — Tamper alert management
+- **Anomalies** — Detection logs with filtering
+- **Fleet** — Meter management console
 
 > [!NOTE]
-> React, Vue, TailwindCSS, Grafana — semua ini tidak diperlukan untuk POC. Dashboard sederhana cukup.
+> React, Vue, TailwindCSS, Grafana — none of these are needed for POC. A simple SPA with Chart.js is sufficient.
 
 ---
 
@@ -227,7 +228,7 @@ QEMU Commands:
 
 ## Scale-Up Stack (Future — NOT in POC)
 
-Teknologi berikut akan dipertimbangkan saat scaling dari POC ke production:
+Technologies below will be considered when scaling from POC to production:
 
 | Category | Technology | When |
 |---|---|---|

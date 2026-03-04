@@ -1,6 +1,6 @@
 # GridShield Build Guide
 
-Build instructions for GridShield firmware using **ESP-IDF v5.5** and **QEMU** simulation.
+Build instructions for GridShield firmware, backend, and frontend.
 
 ---
 
@@ -127,7 +127,7 @@ idf.py qemu
 
 ```
 [GridShield] ==============================================
-[GridShield] GridShield v1.1 [ESP32 - QEMU Simulation]
+[GridShield] GridShield v3.0.0 [ESP32 - QEMU Simulation]
 [GridShield] Platform: ESP-IDF + QEMU
 [GridShield] ==============================================
 [GridShield] System started successfully
@@ -136,6 +136,60 @@ idf.py qemu
 [GridShield] Cycle 2/20 OK
 ...
 [GridShield] Simulation complete — all cycles finished
+```
+
+---
+
+## Backend
+
+### Setup (Python 3.11+)
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+### Run Development Server
+
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+
+### Interactive API Docs
+
+- **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+### Seed Demo Data
+
+```bash
+python seed.py
+```
+
+---
+
+## Frontend Dashboard
+
+### Setup (Node.js 18+)
+
+```bash
+cd frontend
+npm install
+```
+
+### Run Development Server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Build for Production
+
+```bash
+npm run build
+npm run preview
 ```
 
 ---
@@ -270,4 +324,4 @@ idf.py build
 
 MIT License — See [LICENSE](LICENSE) for details.
 
-**Institut Teknologi PLN — 2025**
+**Institut Teknologi PLN — 2026**

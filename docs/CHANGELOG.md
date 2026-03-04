@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-02-26
+
+### Added
+- **Cloud Integration**:
+  - AWS IoT Core connector with MQTT-TLS and certificate management.
+  - Azure IoT Hub connector with device provisioning service.
+- **Advanced Analytics (ML)**:
+  - TensorFlow Lite Micro integration for edge AI on ESP32.
+  - Machine learning anomaly detection with time-series forecasting.
+- **Frontend Dashboard** (`frontend/`):
+  - Vite + vanilla JavaScript single-page application.
+  - Chart.js data visualization with 4 dashboard pages.
+  - Dashboard (KPIs, consumption chart, recent alerts), Alerts (tamper alert management), Anomalies (detection logs), Fleet (meter management).
+  - Real-time API client with backend polling.
+- **Communication Protocols**:
+  - LoRa/LoRaWAN driver (SX1276/SX1278).
+  - Modbus RTU/TCP protocol support.
+  - CoAP protocol support.
+  - Multi-hop mesh networking (ESP-NOW).
+  - Time synchronization (SNTP).
+  - Remote configuration and X.509 certificate management.
+- **Sensor Drivers**:
+  - ACS712 current sensor, ZMPT101B voltage sensor.
+  - PZEM-004T energy meter module.
+  - DS18B20 temperature sensor, MPU6050 accelerometer.
+  - SensorManager aggregator with MeterReading conversion.
+- **OTA Updates**:
+  - Over-the-air firmware update (IOtaManager interface).
+  - Signed firmware images (ECDSA P-256 + SHA-256) with rollback protection.
+- **Power Management**:
+  - ESP32 deep sleep modes with wake-on-tamper (GPIO).
+  - Adaptive duty cycling (mains/battery/solar).
+- **Performance Optimization**:
+  - ESP32 hardware crypto acceleration (AES, SHA).
+  - Memory pool allocator and zero-copy packet processing.
+  - Profiling and benchmarking tools.
+- **CI/CD**:
+  - 5-job GitHub Actions pipeline: build, test (QEMU), backend-lint, clang-tidy, code coverage.
+  - Code coverage reports via gcov/lcov.
+  - LibFuzzer + ASan/UBSan fuzzing for packet parser.
+  - 206 total unit tests across 20+ suites.
+
+### Changed
+- **Backend** upgraded with FastAPI REST API (9 endpoints), SQLite + SQLAlchemy ORM, Pydantic v2 validation.
+- **Documentation** updated for v3.0.0 across all files.
+
 ## [2.0.0] - 2026-02-23
 
 ### Changed
@@ -45,31 +91,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renode simulator and `renode_main.cpp`.
 - Native PC build target (`main.cpp`, `platform_native.hpp`).
 - `arduino.hpp` compatibility shim.
-
-## [Unreleased]
-
-### Added
-- **Documentation**:
-  - Added `KeyStorage` class API documentation to `docs/API.md`.
-  - Added `Utilities Module` section to `docs/API.md` (macros, type traits, compiler hints).
-  - Added complete `ErrorCode` enumeration with category descriptions.
-  - Created `examples/README.md` with usage guides for SimpleMeter and demo_native examples.
-
-### Changed
-- **Documentation Translations**:
-  - Translated `docs/PROPOSAL.md` from Indonesian to English.
-  - Translated `docs/requirements.md` from Indonesian to English.
-  - Translated `docs/MUST_READ/workflow.md` from Indonesian to English with GridShield-specific workflow.
-
-### Fixed
-- **Documentation Consistency**:
-  - Fixed incorrect `gridshield.ino` filename references to `main.ino` across all documentation.
-  - Updated file references in `BUILD.md`, `QUICKSTART.md`, and `ARCHITECTURE.md`.
-
-### Planned
-- Implementation of Elliptic Curve Cryptography (ECC) on ESP32.
-- Integration of physical tamper sensors (Hall/Limit Switch).
-- Backend anomaly detection engine (Python/Go).
 
 ## [1.1.0] - 2026-02-20
 
@@ -129,6 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Defined C++17 coding standards.
   - Established error handling patterns using `Result<T>`.
 
+[3.0.0]: https://github.com/zuudevs/gridshield/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/zuudevs/gridshield/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/zuudevs/gridshield/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/zuudevs/gridshield/compare/v0.1.0...v1.0.1

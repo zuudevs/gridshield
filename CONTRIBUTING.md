@@ -39,20 +39,29 @@ This project adheres to the Contributor Covenant [Code of Conduct](CODE_OF_CONDU
 
 ### Prerequisites
 
-- CMake ≥ 3.20
-- C++17 compiler (GCC ≥ 7.0, Clang ≥ 5.0, MSVC 2017+)
-- Arduino CLI ≥ 1.4.1 (for AVR builds)
-- Git
+- **ESP-IDF v5.5+** — [Installation Guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/)
+- **QEMU** (optional, for simulation) — install via `idf_tools.py`
+- **Python 3.11+** — for backend development
+- **Node.js 18+** — for frontend development
+- **Git**
 
 ### Build for Development
 
 ```bash
-# Native development build with sanitizers
-cmake --preset native-debug
-cmake --build --preset native-debug
+# Firmware
+cd firmware
+idf.py set-target esp32
+idf.py build
 
-# Run tests (if applicable)
-./bin/NATIVE/GridShield
+# Backend
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+
+# Frontend
+cd frontend
+npm install
+npm run dev
 ```
 
 See [BUILD.md](BUILD.md) for detailed build instructions.
@@ -83,9 +92,9 @@ What actually happens
 
 ### Environment
 - OS: [e.g., Windows 10, Ubuntu 22.04]
-- Compiler: [e.g., GCC 11.2]
-- CMake Version: [e.g., 3.25]
-- Build Type: [e.g., native-debug, avr-mega]
+- ESP-IDF Version: [e.g., v5.5.3]
+- Python Version: [e.g., 3.11]
+- Node Version: [e.g., 18.x]
 
 ### Additional Context
 Screenshots, logs, etc.
@@ -139,12 +148,17 @@ Any relevant context
 
 2. **Run checks locally**:
    ```bash
-   # Build and test
-   cmake --preset native-debug
-   cmake --build --preset native-debug
+   # Build firmware
+   cd firmware && idf.py build
    
-   # Format check (if formatter is configured)
-   # clang-format -i src/**/*.cpp include/**/*.hpp
+   # Run tests
+   cd firmware/test_app && idf.py build
+   
+   # Lint backend
+   ruff check backend/
+   
+   # Format check (firmware)
+   # clang-format -i firmware/main/src/**/*.cpp firmware/include/**/*.hpp
    ```
 
 3. **Push to your fork**:
@@ -295,12 +309,12 @@ uint32_t checksum = compute_hash(data);
 
 ```cpp
 // Use platform macros
-#if GS_PLATFORM_NATIVE
-    #include <iostream>
-    std::cout << "Native build\n";
-#elif GS_PLATFORM_ARDUINO
-    #include <Arduino.h>
-    Serial.println("Arduino build");
+#if GS_QEMU_BUILD
+    // QEMU simulation-specific code paths
+    ESP_LOGI(TAG, "Running in QEMU simulation");
+#else
+    // Production hardware code paths
+    ESP_LOGI(TAG, "Running on ESP32 hardware");
 #endif
 ```
 
@@ -369,32 +383,36 @@ Use module names:
 
 ## Testing
 
-### Manual Testing
+### Unit Tests (ESP-IDF + QEMU)
 
 ```bash
-# Native build
-cmake --preset native-debug
-cmake --build --preset native-debug
-./bin/NATIVE/GridShield
-
-# Arduino build (verify only)
-cmake --preset avr-mega
-cmake --build --preset avr-mega
+# Build and run unit tests
+cd firmware/test_app
+idf.py set-target esp32
+idf.py build
+idf.py qemu monitor  # Runs 206 tests on QEMU
 ```
 
-### Unit Tests (Future)
+### Code Coverage
 
-Once test framework is added:
 ```bash
-cmake --preset native-debug -DBUILD_TESTS=ON
-cmake --build --preset native-debug
-ctest --preset native-debug
+# Native build with gcov/lcov
+cd firmware/coverage
+bash run_coverage.sh
+```
+
+### Fuzzing
+
+```bash
+# Packet parser fuzzing (LibFuzzer)
+cd firmware/fuzz
+# See fuzz/README.md for instructions
 ```
 
 ### Hardware-in-Loop Testing
 
-For Arduino contributions:
-1. Upload to actual hardware
+For ESP32 contributions:
+1. Flash to physical ESP32
 2. Test all affected features
 3. Monitor serial output
 4. Document results in PR
@@ -439,18 +457,17 @@ core::Result<void> process_tamper(const TamperEvent& event) noexcept;
 
 ```
 gridshield/
-├── include/
-│   ├── common/          # Platform-agnostic headers
-│   ├── platform/        # HAL interfaces
-│   ├── native/          # PC implementation
-│   └── arduino/         # AVR implementation
-├── src/
-│   ├── common/          # Cross-platform implementations
-│   ├── native/          # PC entry point
-│   └── arduino/         # Arduino entry point
-├── docs/                # Documentation
-├── CMakeLists.txt       # Build config
-└── CMakePresets.json    # Build presets
+├── firmware/            # ESP-IDF firmware
+│   ├── include/         # Header files
+│   ├── main/            # Implementation
+│   ├── test_app/        # Unity tests (206 tests)
+│   ├── fuzz/            # Fuzzing harness
+│   └── coverage/        # Coverage scripts
+├── backend/             # FastAPI REST backend
+├── frontend/            # Vite + Chart.js dashboard
+├── .github/workflows/   # CI/CD pipeline
+├── scripts/             # Automation scripts
+└── docs/                # Documentation
 ```
 
 ## Communication
