@@ -176,7 +176,7 @@ jobs:
 
           # Filter output: only fail on errors in project code, ignoring the endian.h issue
           # We look for 'error:' but exclude 'machine/endian.h' and only care about main/ or include/ paths
-          REAL_ERRORS=$(grep "error:" clang_tidy_output.log | grep -v "machine/endian.h" | grep -E "(main/src|include/)")
+          REAL_ERRORS=$(grep "error:" clang_tidy_output.log | grep -v "machine/endian.h" | grep -E "(main/src|include/)" || true)
           
           if [ -n "${REAL_ERRORS}" ]; then
             echo "::error::clang-tidy found REAL issues in project code!"

@@ -2,8 +2,8 @@
 
 Future development plans and feature roadmap for GridShield AMI Security System.
 
-**Last Updated:** February 2026  
-**Current Version:** 3.0.0-fw  
+**Last Updated:** March 2026  
+**Current Version:** 3.0.1-fw  
 **Next Target:** 3.1.0 (Q1 2027)
 
 ---
@@ -53,10 +53,10 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ### 🚧 In Progress
 
-- [x] Unit test suite (Unity for ESP-IDF) — 151 tests, 17 suites
-- [x] CI/CD pipeline (GitHub Actions) — 3-job workflow
+- [x] Unit test suite (Unity for ESP-IDF) — 152 tests, 17 suites
+- [x] CI/CD pipeline (GitHub Actions) — 6-job workflow
 - [x] Backend integration (Python + FastAPI) — 8 API endpoints
-- [ ] Hardware testing with physical ESP32
+- [x] Hardware testing with physical ESP32 (ESP32-D0WD rev1.1, Dual Core 240MHz)
 
 ---
 
@@ -85,7 +85,7 @@ GridShield aims to become the **industry-standard open-source security framework
   - [x] Unit tests with Unity (ESP-IDF) — 104 tests, 14 suites
   - [x] Integration tests via QEMU
   - [x] Fuzzing for packet parser (LibFuzzer + ASan/UBSan)
-  - [x] Code coverage reports (>70% native) — gcov/lcov + CI job
+  - [x] Code coverage reports (≥45% native) — gcov/lcov + CI job
 
 #### Medium Priority
 
@@ -388,6 +388,7 @@ Features are prioritized based on:
 | **2.1.0** | February 2026 | Security hardening, testing, CI/CD, 104 tests |
 | **2.2.0** | September 2026 | Communication protocols, sensors, 151 tests |
 | **3.0.0** | December 2026 | Cloud integration, ML analytics, 206 tests (total) |
+| **3.0.1** | March 2026 | CI fixes, hardware testing (ESP32-D0WD), HKDF test fix, 152 tests |
 
 ---
 

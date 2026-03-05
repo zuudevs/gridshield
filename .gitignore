@@ -5,6 +5,7 @@
 /build/
 /build-*/
 /.cache/
+/logs/
 
 # ESP-IDF
 firmware/build/
