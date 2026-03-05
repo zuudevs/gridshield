@@ -14,6 +14,7 @@
 #pragma once
 
 #include "core/error.hpp"
+#include "core/vals.hpp"
 #include "platform/platform.hpp"
 
 #include <array>
@@ -156,23 +157,24 @@ public:
      */
     core::Result<AccelData> read_accel() noexcept
     {
+        // NOLINTNEXTLINE(readability-simplify-boolean-expr)
         if (GS_UNLIKELY(!initialized_ || i2c_ == nullptr)) {
-            return core::Result<AccelData>(GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
+            return core::Result<AccelData>{GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)};
         }
 
         std::array<uint8_t, MPU6050_ACCEL_DATA_SIZE> buf{};
         auto result =
             i2c_->read_reg(config_.i2c_addr, MPU6050_REG_ACCEL_XOUT_H, buf.data(), buf.size());
         if (result.is_error()) {
-            return core::Result<AccelData>(result.error());
+            return core::Result<AccelData>{result.error()};
         }
 
         AccelData data{};
-        data.x_raw = static_cast<int16_t>((buf[0] << 8) | buf[1]);
-        data.y_raw = static_cast<int16_t>((buf[2] << 8) | buf[3]);
-        data.z_raw = static_cast<int16_t>((buf[4] << 8) | buf[5]);
+        data.x_raw = static_cast<int16_t>((buf[0] << core::BITS_PER_BYTE) | buf[1]);
+        data.y_raw = static_cast<int16_t>((buf[2] << core::BITS_PER_BYTE) | buf[3]);
+        data.z_raw = static_cast<int16_t>((buf[4] << core::BITS_PER_BYTE) | buf[5]);
 
-        return core::Result<AccelData>(data);
+        return core::Result<AccelData>{data};
     }
 
     /**
@@ -183,7 +185,7 @@ public:
     {
         auto accel_result = read_accel();
         if (accel_result.is_error()) {
-            return core::Result<bool>(accel_result.error());
+            return core::Result<bool>{accel_result.error()};
         }
 
         const auto& accel = accel_result.value();
@@ -194,7 +196,7 @@ public:
         auto threshold = static_cast<int32_t>(config_.shock_threshold_mg);
         bool shock = (abs_x > threshold) || (abs_y > threshold) || (abs_z > threshold);
 
-        return core::Result<bool>(shock);
+        return core::Result<bool>{shock};
     }
 
     GS_NODISCARD bool is_initialized() const noexcept

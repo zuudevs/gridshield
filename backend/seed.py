@@ -154,7 +154,7 @@ def main():
 
         session.commit()
         print("=" * 40)
-        print(f"[OK] Done! Seeded:")
+        print("[OK] Done! Seeded:")
         print(f"   - {READINGS_PER_METER * NUM_METERS} meter readings")
         print(f"   - {ALERTS_COUNT} tamper alerts")
         print(f"   - {ANOMALIES_COUNT} anomaly logs")

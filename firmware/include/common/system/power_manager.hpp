@@ -125,11 +125,11 @@ public:
     core::Result<WakeReason> enter_light_sleep(uint32_t duration_ms) noexcept
     {
         if (GS_UNLIKELY(!initialized_)) {
-            return core::Result<WakeReason>(GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
+            return core::Result<WakeReason>{GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)};
         }
 
         if (duration_ms < POWER_MIN_SLEEP_MS || duration_ms > POWER_MAX_SLEEP_MS) {
-            return core::Result<WakeReason>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+            return core::Result<WakeReason>{GS_MAKE_ERROR(core::ErrorCode::InvalidParameter)};
         }
 
         state_ = PowerState::LightSleep;
@@ -139,7 +139,7 @@ public:
         // After wakeup, check wakeup cause
 
         state_ = PowerState::Active;
-        return core::Result<WakeReason>(last_wake_reason_);
+        return core::Result<WakeReason>{last_wake_reason_};
     }
 
     /**
@@ -227,13 +227,13 @@ public:
     core::Result<BatteryStatus> read_battery_status() noexcept
     {
         if (GS_UNLIKELY(!initialized_)) {
-            return core::Result<BatteryStatus>(
-                GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
+            return core::Result<BatteryStatus>{
+                GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)};
         }
 
         // In real implementation: read ADC pin for battery voltage
         // For now, return stored status
-        return core::Result<BatteryStatus>(battery_status_);
+        return core::Result<BatteryStatus>{battery_status_};
     }
 
     // ---- Getters ----

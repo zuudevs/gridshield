@@ -29,9 +29,9 @@ extern void test_retry_suite(void);
 extern void test_system_integration_suite(void);
 extern void test_degradation_suite(void);
 extern void test_telemetry_suite(void);
-extern void test_mqtt_suite(void);
-extern void test_sensors_suite(void);
-extern void test_ota_power_suite(void);
+extern "C" void test_mqtt_suite(void);
+extern "C" void test_sensors_suite(void);
+extern "C" void test_ota_power_suite(void);
 
 int main()
 {

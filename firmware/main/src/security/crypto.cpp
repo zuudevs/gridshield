@@ -233,13 +233,13 @@ core::Result<bool> CryptoEngine::verify(const ECCKeyPair& keypair,
 
     // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(!keypair.has_public_key() || message == nullptr || signature == nullptr)) {
-        return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        return core::Result<bool>{GS_MAKE_ERROR(core::ErrorCode::InvalidParameter)};
     }
 
     std::array<uint8_t, SHA256_HASH_SIZE> hash{};
     auto result = hash_sha256(message, msg_len, hash.data());
     if (result.is_error()) {
-        return core::Result<bool>(result.error());
+        return core::Result<bool>{result.error()};
     }
 
 #if defined(USE_EMBEDDED_CRYPTO)
@@ -249,10 +249,10 @@ core::Result<bool> CryptoEngine::verify(const ECCKeyPair& keypair,
     int valid =
         uECC_verify(keypair.get_public_key(), hash.data(), SHA256_HASH_SIZE, signature, curve);
 
-    return core::Result<bool>(valid != 0);
+    return core::Result<bool>{valid != 0};
 
 #else
-    return core::Result<bool>(GS_MAKE_ERROR(core::ErrorCode::NotImplemented));
+    return core::Result<bool>{GS_MAKE_ERROR(core::ErrorCode::NotImplemented)};
 #endif
 }
 
@@ -294,7 +294,7 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(const uint8_t* key,
     // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(key == nullptr || nonce == nullptr || plaintext == nullptr ||
                     ciphertext_out == nullptr || tag_out == nullptr || pt_len == 0)) {
-        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        return core::Result<size_t>{GS_MAKE_ERROR(core::ErrorCode::InvalidParameter)};
     }
 
 #if defined(USE_MBEDTLS_AES_GCM)
@@ -305,7 +305,7 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(const uint8_t* key,
     int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, key, AES_KEY_SIZE * BITS_PER_BYTE);
     if (ret != 0) {
         mbedtls_gcm_free(&gcm);
-        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::EncryptionFailed));
+        return core::Result<size_t>{GS_MAKE_ERROR(core::ErrorCode::EncryptionFailed)};
     }
 
     // NOLINTNEXTLINE(readability-suspicious-call-argument)
@@ -323,14 +323,14 @@ core::Result<size_t> CryptoEngine::encrypt_aes_gcm(const uint8_t* key,
     mbedtls_gcm_free(&gcm);
 
     if (ret != 0) {
-        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::EncryptionFailed));
+        return core::Result<size_t>{GS_MAKE_ERROR(core::ErrorCode::EncryptionFailed)};
     }
 
     ESP_LOGD(TAG, "AES-GCM encrypt OK (len=%u)", static_cast<unsigned>(pt_len));
-    return core::Result<size_t>(pt_len);
+    return core::Result<size_t>{pt_len};
 
 #else
-    return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::NotImplemented));
+    return core::Result<size_t>{GS_MAKE_ERROR(core::ErrorCode::NotImplemented)};
 #endif
 }
 
@@ -346,7 +346,7 @@ core::Result<size_t> CryptoEngine::decrypt_aes_gcm(const uint8_t* key,
     // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (GS_UNLIKELY(key == nullptr || nonce == nullptr || ciphertext == nullptr || tag == nullptr ||
                     plaintext_out == nullptr || ct_len == 0)) {
-        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::InvalidParameter));
+        return core::Result<size_t>{GS_MAKE_ERROR(core::ErrorCode::InvalidParameter)};
     }
 
 #if defined(USE_MBEDTLS_AES_GCM)
@@ -357,7 +357,7 @@ core::Result<size_t> CryptoEngine::decrypt_aes_gcm(const uint8_t* key,
     int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, key, AES_KEY_SIZE * BITS_PER_BYTE);
     if (ret != 0) {
         mbedtls_gcm_free(&gcm);
-        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::DecryptionFailed));
+        return core::Result<size_t>{GS_MAKE_ERROR(core::ErrorCode::DecryptionFailed)};
     }
 
     // NOLINTNEXTLINE(readability-suspicious-call-argument)
@@ -376,13 +376,13 @@ core::Result<size_t> CryptoEngine::decrypt_aes_gcm(const uint8_t* key,
     if (ret != 0) {
         // Auth tag mismatch or decrypt error
         ESP_LOGW(TAG, "AES-GCM auth failed (integrity violation)");
-        return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation));
+        return core::Result<size_t>{GS_MAKE_ERROR(core::ErrorCode::IntegrityViolation)};
     }
 
-    return core::Result<size_t>(ct_len);
+    return core::Result<size_t>{ct_len};
 
 #else
-    return core::Result<size_t>(GS_MAKE_ERROR(core::ErrorCode::NotImplemented));
+    return core::Result<size_t>{GS_MAKE_ERROR(core::ErrorCode::NotImplemented)};
 #endif
 }
 

@@ -86,8 +86,9 @@ public:
      */
     core::Result<int16_t> read_temperature_c10() noexcept
     {
+        // NOLINTNEXTLINE(readability-simplify-boolean-expr)
         if (GS_UNLIKELY(!initialized_ || ow_ == nullptr)) {
-            return core::Result<int16_t>(GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
+            return core::Result<int16_t>{GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)};
         }
 
         // Reset bus
@@ -112,27 +113,28 @@ public:
         for (auto& byte : scratchpad) {
             auto read_result = ow_->read_byte();
             if (read_result.is_error()) {
-                return core::Result<int16_t>(read_result.error());
+                return core::Result<int16_t>{read_result.error()};
             }
             byte = read_result.value();
         }
 
         // Parse temperature from bytes 0-1 (little-endian, signed)
-        int16_t raw_temp = static_cast<int16_t>(static_cast<uint16_t>(scratchpad[0]) |
+        auto raw_temp = static_cast<int16_t>(static_cast<uint16_t>(scratchpad[0]) |
                                                 (static_cast<uint16_t>(scratchpad[1]) << 8));
 
         // Validate range
+        // NOLINTNEXTLINE(readability-simplify-boolean-expr)
         if (GS_UNLIKELY(raw_temp < DS18B20_MIN_RAW || raw_temp > DS18B20_MAX_RAW)) {
-            return core::Result<int16_t>(GS_MAKE_ERROR(core::ErrorCode::SensorReadFailure));
+            return core::Result<int16_t>{GS_MAKE_ERROR(core::ErrorCode::SensorReadFailure)};
         }
 
         // Convert to 0.1°C: raw_temp is in 1/16°C units
         // temp_c10 = raw_temp * 10 / 16
         static constexpr int16_t DECI_DEGREE_MULTIPLIER = 10;
-        int16_t temp_c10 = static_cast<int16_t>(
+        auto temp_c10 = static_cast<int16_t>(
             (static_cast<int32_t>(raw_temp) * DECI_DEGREE_MULTIPLIER) / DS18B20_RESOLUTION_SCALE);
 
-        return core::Result<int16_t>(temp_c10);
+        return core::Result<int16_t>{temp_c10};
     }
 
     GS_NODISCARD bool is_initialized() const noexcept

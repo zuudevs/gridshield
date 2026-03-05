@@ -290,7 +290,7 @@ core::Result<SecurePacket> PacketTransport::receive_packet(security::ICryptoEngi
     auto parse_result = packet.parse(buffer.data(), received_bytes, crypto, keypair);
 
     if (parse_result.is_error()) {
-        return core::Result<SecurePacket>(parse_result.error());
+        return core::Result<SecurePacket>{parse_result.error()};
     }
 
     return core::Result<SecurePacket>{GS_MOVE(packet)};

@@ -53,8 +53,8 @@ enum class OtaState : uint8_t
 // ============================================================================
 struct OtaFirmwareInfo
 {
-    char version[OTA_MAX_VERSION_LENGTH]{};
-    char url[OTA_MAX_URL_LENGTH]{};
+    std::array<char, OTA_MAX_VERSION_LENGTH> version{};
+    std::array<char, OTA_MAX_URL_LENGTH> url{};
     uint32_t size_bytes{};
     std::array<uint8_t, OTA_SHA256_DIGEST_SIZE> sha256{};
     std::array<uint8_t, OTA_SIGNATURE_SIZE> signature{};
@@ -147,8 +147,8 @@ public:
     core::Result<OtaFirmwareInfo> check_update() noexcept override
     {
         if (GS_UNLIKELY(!initialized_)) {
-            return core::Result<OtaFirmwareInfo>(
-                GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
+            return core::Result<OtaFirmwareInfo>{
+                GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)};
         }
 
         state_ = OtaState::Checking;
@@ -157,7 +157,7 @@ public:
         // For now, return "no update" by returning an empty info
         OtaFirmwareInfo info{};
         state_ = OtaState::Idle;
-        return core::Result<OtaFirmwareInfo>(info);
+        return core::Result<OtaFirmwareInfo>{info};
     }
 
     core::Result<void> start_update(const OtaFirmwareInfo& info) noexcept override
@@ -187,11 +187,11 @@ public:
     core::Result<OtaProgress> get_progress() noexcept override
     {
         if (GS_UNLIKELY(!initialized_)) {
-            return core::Result<OtaProgress>(GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
+            return core::Result<OtaProgress>{GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)};
         }
 
         progress_.percent = progress_.calculate_percent();
-        return core::Result<OtaProgress>(progress_);
+        return core::Result<OtaProgress>{progress_};
     }
 
     core::Result<void> abort_update() noexcept override

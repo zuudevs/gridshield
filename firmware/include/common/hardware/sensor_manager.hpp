@@ -127,7 +127,7 @@ public:
     core::Result<SensorData> read_all() noexcept
     {
         if (GS_UNLIKELY(!initialized_)) {
-            return core::Result<SensorData>(GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
+            return core::Result<SensorData>{GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)};
         }
 
         SensorData data{};
@@ -195,7 +195,7 @@ public:
             }
         }
 
-        return core::Result<SensorData>(data);
+        return core::Result<SensorData>{data};
     }
 
     /**

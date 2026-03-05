@@ -16,6 +16,7 @@
 #include "core/error.hpp"
 #include "platform/platform.hpp"
 
+#include <array>
 #include <cstdint>
 
 namespace gridshield::hardware::sensors {
@@ -40,7 +41,7 @@ static constexpr uint32_t ACS712_ZERO_CURRENT_MV = 2500; // Vcc/2 at zero curren
 static constexpr uint16_t ACS712_SAMPLES_PER_READ = 100; // Averaging sample count
 
 /// Sensitivity table in mV/A (indexed by ACS712Variant)
-static constexpr uint16_t ACS712_SENSITIVITY_MV_PER_A[] = {185, 100, 66};
+static constexpr std::array<uint16_t, 3> ACS712_SENSITIVITY_MV_PER_A = {185, 100, 66};
 
 // ============================================================================
 // ACS712 CONFIGURATION
@@ -85,13 +86,14 @@ public:
      */
     core::Result<int32_t> read_current_ma() noexcept
     {
+        // NOLINTNEXTLINE(readability-simplify-boolean-expr)
         if (GS_UNLIKELY(!initialized_ || adc_ == nullptr)) {
-            return core::Result<int32_t>(GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
+            return core::Result<int32_t>{GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)};
         }
 
         auto mv_result = adc_->read_mv(config_.adc_channel);
         if (mv_result.is_error()) {
-            return core::Result<int32_t>(mv_result.error());
+            return core::Result<int32_t>{mv_result.error()};
         }
 
         uint32_t raw_mv = mv_result.value();
@@ -107,7 +109,7 @@ public:
         static constexpr int32_t MA_PER_A = 1000;
         int32_t current_ma = (delta_mv * MA_PER_A) / static_cast<int32_t>(sensitivity);
 
-        return core::Result<int32_t>(current_ma);
+        return core::Result<int32_t>{current_ma};
     }
 
     /**

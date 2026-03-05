@@ -110,8 +110,9 @@ public:
      */
     core::Result<PzemReading> read() noexcept
     {
+        // NOLINTNEXTLINE(readability-simplify-boolean-expr)
         if (GS_UNLIKELY(!initialized_ || uart_ == nullptr)) {
-            return core::Result<PzemReading>(GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
+            return core::Result<PzemReading>{GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)};
         }
 
         // Build Modbus RTU request frame
@@ -142,7 +143,7 @@ public:
         // Send request
         auto tx_result = uart_->write(config_.uart_port, request.data(), request.size());
         if (tx_result.is_error()) {
-            return core::Result<PzemReading>(tx_result.error());
+            return core::Result<PzemReading>{tx_result.error()};
         }
 
         // Read response
@@ -150,7 +151,7 @@ public:
         auto rx_result =
             uart_->read(config_.uart_port, response.data(), response.size(), PZEM_TIMEOUT_MS);
         if (rx_result.is_error()) {
-            return core::Result<PzemReading>(rx_result.error());
+            return core::Result<PzemReading>{rx_result.error()};
         }
 
         return parse_response(response);
@@ -242,7 +243,7 @@ private:
         // Alarm status: register 9
         reading.alarm = extract_u16(data, REG9_ALARM_OFFSET) != 0;
 
-        return core::Result<PzemReading>(reading);
+        return core::Result<PzemReading>{reading};
     }
 
     /**

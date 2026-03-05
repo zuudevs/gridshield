@@ -75,13 +75,14 @@ public:
      */
     core::Result<uint32_t> read_voltage_mv() noexcept
     {
+        // NOLINTNEXTLINE(readability-simplify-boolean-expr)
         if (GS_UNLIKELY(!initialized_ || adc_ == nullptr)) {
-            return core::Result<uint32_t>(GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized));
+            return core::Result<uint32_t>{GS_MAKE_ERROR(core::ErrorCode::SystemNotInitialized)};
         }
 
         auto mv_result = adc_->read_mv(config_.adc_channel);
         if (mv_result.is_error()) {
-            return core::Result<uint32_t>(mv_result.error());
+            return core::Result<uint32_t>{mv_result.error()};
         }
 
         uint32_t raw_mv = mv_result.value();
@@ -92,10 +93,10 @@ public:
                            config_.calibration_offset_mv;
 
         // Apply transformer ratio (fixed-point: ratio/1000)
-        uint32_t abs_delta = static_cast<uint32_t>(delta_mv >= 0 ? delta_mv : -delta_mv);
+        auto abs_delta = static_cast<uint32_t>(delta_mv >= 0 ? delta_mv : -delta_mv);
         uint32_t voltage_mv = (abs_delta * config_.voltage_ratio) / ZMPT101B_RATIO_DIVISOR;
 
-        return core::Result<uint32_t>(voltage_mv);
+        return core::Result<uint32_t>{voltage_mv};
     }
 
     GS_NODISCARD bool is_initialized() const noexcept
