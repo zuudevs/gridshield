@@ -89,7 +89,8 @@ All commands are run from the `firmware/` directory with ESP-IDF environment act
 | `idf.py qemu` | Run in QEMU (raw console) |
 | `idf.py qemu --gdb monitor` | Run QEMU with GDB server |
 | `idf.py gdb` | Attach GDB to QEMU |
-| `idf.py menuconfig` | Open ESP-IDF config UI |
+| `idf.py -p COM3 flash` | Flash firmware to ESP32 via serial |
+| `idf.py -p COM3 monitor` | Serial monitor (115200 baud) |
 
 ### Build Output
 
@@ -127,7 +128,7 @@ idf.py qemu
 
 ```
 [GridShield] ==============================================
-[GridShield] GridShield v3.0.0 [ESP32 - QEMU Simulation]
+[GridShield] GridShield v3.0.1 [ESP32 - QEMU Simulation]
 [GridShield] Platform: ESP-IDF + QEMU
 [GridShield] ==============================================
 [GridShield] System started successfully

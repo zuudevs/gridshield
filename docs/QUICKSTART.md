@@ -82,7 +82,7 @@ idf.py qemu monitor
 
 ```
 [GridShield] ==============================================
-[GridShield] GridShield v3.0.0 [ESP32 - QEMU Simulation]
+[GridShield] GridShield v3.0.1 [ESP32 - QEMU Simulation]
 [GridShield] Platform: ESP-IDF + QEMU
 [GridShield] ==============================================
 

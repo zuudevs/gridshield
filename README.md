@@ -3,7 +3,7 @@
 **Multi-Layer Security Framework for Advanced Metering Infrastructure (AMI)**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-3.0.0-brightgreen)](.)
+[![Version](https://img.shields.io/badge/Version-3.0.1-brightgreen)](.)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)](https://en.cppreference.com/w/cpp/17)
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.5-E7352C?logo=espressif)](https://docs.espressif.com/projects/esp-idf/)
 [![Platform](https://img.shields.io/badge/Platform-ESP32%20%7C%20QEMU-green)](BUILD.md)
@@ -47,10 +47,11 @@ GridShield is a production-grade security solution designed to protect smart ele
 - 4 dashboards: Overview, Alerts, Anomalies, Fleet Management
 
 ### 🧪 CI/CD & Testing
-- **206 unit tests** across 20+ test suites
-- 5-job GitHub Actions pipeline (build, test, lint, clang-tidy, coverage)
+- **152 unit tests** across 17 test suites
+- 6-job GitHub Actions pipeline (build, test, backend-lint, frontend-build, clang-tidy, coverage)
 - LibFuzzer + ASan/UBSan fuzzing for packet parser
 - Code coverage reports via gcov/lcov
+- Hardware tested on ESP32-D0WD rev1.1 (Dual Core 240MHz)
 
 ## 🚀 Quick Start
 
@@ -79,7 +80,9 @@ Or manually with ESP-IDF:
 cd firmware
 idf.py set-target esp32
 idf.py build
-idf.py qemu monitor          # requires QEMU
+idf.py -p COM3 flash         # flash to physical ESP32
+idf.py -p COM3 monitor       # serial monitor
+idf.py qemu monitor          # or run in QEMU simulator
 ```
 
 See [BUILD.md](BUILD.md) for full instructions.
@@ -111,7 +114,7 @@ gridshield/
 │   │   ├── common/              # Platform-agnostic headers
 │   │   └── platform/            # HAL interfaces + mock impls
 │   ├── main/                    # Implementation files
-│   ├── test_app/                # Unity test suites (206 tests)
+│   ├── test_app/                # Unity test suites (152 tests)
 │   ├── fuzz/                    # LibFuzzer harness
 │   ├── coverage/                # gcov/lcov coverage scripts
 │   └── lib/micro-ecc/           # ECC library (secp256r1)
@@ -128,7 +131,7 @@ gridshield/
 │   │   ├── components/          # Navbar, Chart components
 │   │   └── api.js               # Backend API client
 │   └── package.json
-├── .github/workflows/           # CI/CD (5-job pipeline)
+├── .github/workflows/           # CI/CD (6-job pipeline)
 ├── scripts/script.ps1           # Build/run automation
 └── docs/                        # Documentation
 ```

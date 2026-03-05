@@ -1,6 +1,6 @@
 # GridShield - System Architecture
 
-**Version:** 3.0.0  
+**Version:** 3.0.1  
 **Last Updated:** February 2026  
 **Authors:** M. Ichwan Fauzi, Rafi Indra Pramudhito Zuhayr, Cesar Ardika Bhayangkara
 

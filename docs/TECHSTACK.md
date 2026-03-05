@@ -1,6 +1,6 @@
 # GridShield Technology Stack
 
-**Version:** 3.0.0  
+**Version:** 3.0.1  
 **Last Updated:** February 2026  
 **Maintained By:** GridShield Development Team
 
@@ -266,6 +266,6 @@ Hardware (when ready for physical testing):
 
 ---
 
-**Document Version:** 3.0.0  
+**Document Version:** 3.0.1  
 **Last Updated:** February 2026  
 **Review Cycle:** Quarterly

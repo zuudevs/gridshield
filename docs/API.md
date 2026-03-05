@@ -2,7 +2,7 @@
 
 Complete API documentation for GridShield Multi-Layer AMI Security System.
 
-**Version:** 3.0.0  
+**Version:** 3.0.1  
 **Language:** C++17 (Firmware), Python 3.11+ (Backend)  
 **Namespace:** `gridshield`
 
