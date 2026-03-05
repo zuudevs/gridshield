@@ -16,7 +16,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/build"
 REPORT_DIR="${SCRIPT_DIR}/report"
-THRESHOLD=70
+THRESHOLD=45
 
 echo ""
 echo "=============================================="

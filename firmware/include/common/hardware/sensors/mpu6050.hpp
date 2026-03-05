@@ -172,7 +172,7 @@ public:
         AccelData data{};
         data.x_raw = static_cast<int16_t>((buf[0] << core::BITS_PER_BYTE) | buf[1]);
         data.y_raw = static_cast<int16_t>((buf[2] << core::BITS_PER_BYTE) | buf[3]);
-        data.z_raw = static_cast<int16_t>((buf[4] << core::BITS_PER_BYTE) | buf[5]);
+        data.z_raw = static_cast<int16_t>((buf[4] << core::BITS_PER_BYTE) | buf[5]); // NOLINT(readability-magic-numbers)
 
         return core::Result<AccelData>{data};
     }

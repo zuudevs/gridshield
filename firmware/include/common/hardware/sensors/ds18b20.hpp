@@ -14,6 +14,7 @@
 #pragma once
 
 #include "core/error.hpp"
+#include "core/vals.hpp"
 #include "platform/platform.hpp"
 
 #include <array>
@@ -120,7 +121,7 @@ public:
 
         // Parse temperature from bytes 0-1 (little-endian, signed)
         auto raw_temp = static_cast<int16_t>(static_cast<uint16_t>(scratchpad[0]) |
-                                                (static_cast<uint16_t>(scratchpad[1]) << 8));
+                                                (static_cast<uint16_t>(scratchpad[1]) << core::BITS_PER_BYTE));
 
         // Validate range
         // NOLINTNEXTLINE(readability-simplify-boolean-expr)
