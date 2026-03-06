@@ -1,84 +1,197 @@
 # GridShield - Quick Start Guide
 
-Get GridShield running in **5 minutes** with ESP-IDF and QEMU simulation.
+Panduan langkah demi langkah untuk menjalankan **seluruh sistem GridShield** — mulai dari Backend API, Frontend Dashboard, hingga Firmware IoT.
 
 ---
 
-## Table of Contents
+## Daftar Isi
 
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Build & Run](#build--run)
-- [Understanding the Output](#understanding-the-output)
-- [Next Steps](#next-steps)
+- [Persyaratan](#persyaratan)
+- [Langkah 1 — Clone Repository](#langkah-1--clone-repository)
+- [Langkah 2 — Jalankan Backend API](#langkah-2--jalankan-backend-api)
+- [Langkah 3 — Jalankan Frontend Dashboard](#langkah-3--jalankan-frontend-dashboard)
+- [Langkah 4 — Jalankan Firmware (QEMU / ESP32)](#langkah-4--jalankan-firmware-qemu--esp32)
+- [Demo: Cara Kerja Sistem](#demo-cara-kerja-sistem)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
-## Prerequisites
+## Persyaratan
 
-### ESP-IDF v5.5+
+Pastikan software berikut sudah terinstal di komputer kamu:
 
-Follow the official [ESP-IDF installation guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/).
+| Software | Versi | Kegunaan | Download |
+|----------|-------|----------|----------|
+| **Git** | Any | Clone repository | [git-scm.com](https://git-scm.com/) |
+| **Python** | 3.11+ | Backend API server | [python.org](https://www.python.org/downloads/) |
+| **Node.js** | 18+ | Frontend dashboard | [nodejs.org](https://nodejs.org/) |
+| **ESP-IDF** | v5.5+ | Firmware build (opsional) | [docs.espressif.com](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/) |
 
-**Windows (recommended path):**
-```
-C:\esp\v5.5.3\esp-idf\
-```
+> **💡 Tips:** Jika kamu hanya ingin melihat demo Backend + Frontend, cukup install Python dan Node.js saja. ESP-IDF hanya diperlukan untuk build firmware.
 
-### QEMU (Optional)
+---
+
+## Langkah 1 — Clone Repository
 
 ```powershell
-# Install via automation script
-.\scripts\script.ps1 --setup
-
-# Or manually
-python $IDF_PATH/tools/idf_tools.py install qemu-xtensa qemu-riscv32
-```
-
----
-
-## Installation
-
-```bash
-# Clone repository
 git clone https://github.com/zuudevs/gridshield.git
 cd gridshield
 ```
 
+Struktur folder utama:
+
+```
+gridshield/
+├── backend/       ← FastAPI REST API (Python)
+├── frontend/      ← Dashboard Web (Vite + Chart.js)
+├── firmware/      ← Firmware ESP32 (C++17)
+└── docs/          ← Dokumentasi
+```
+
 ---
 
-## Build & Run
+## Langkah 2 — Jalankan Backend API
 
-### Option A: Using Automation Script (Recommended)
+Backend menggunakan **FastAPI** dengan database **SQLite**.
+
+### 2.1. Install Dependencies
 
 ```powershell
+cd backend
+pip install -r requirements.txt
+```
+
+> Jika `pip` tidak dikenali, coba: `py -m pip install -r requirements.txt`
+
+### 2.2. Seed Database (Pertama Kali)
+
+Database sudah terisi data contoh (`gridshield.db`). Jika ingin reset:
+
+```powershell
+py seed.py
+```
+
+### 2.3. Jalankan Server
+
+```powershell
+py -m uvicorn app.main:app --reload --port 8000
+```
+
+### 2.4. Verifikasi ✅
+
+Buka browser dan akses:
+
+| URL | Keterangan |
+|-----|------------|
+| http://localhost:8000/docs | 📖 Swagger UI — Dokumentasi API interaktif |
+| http://localhost:8000/api/meters | 📡 Daftar meter yang terdaftar |
+| http://localhost:8000/api/alerts | 🚨 Daftar tamper alert |
+| http://localhost:8000/api/readings | 📊 Data pembacaan meter |
+| http://localhost:8000/api/anomalies | ⚠️ Log deteksi anomali |
+
+**Contoh tampilan Swagger UI:**
+
+![Swagger UI](images/swagger_ui.png)
+
+> **🎉 Berhasil!** Backend API kamu sudah berjalan di `localhost:8000`.
+
+**⚠️ Jangan tutup terminal ini.** Biarkan server tetap berjalan.
+
+---
+
+## Langkah 3 — Jalankan Frontend Dashboard
+
+Frontend menggunakan **Vite** + **Chart.js** — dashboard web real-time.
+
+### 3.1. Install Dependencies
+
+Buka **terminal baru** (jangan tutup backend):
+
+```powershell
+cd frontend
+npm install
+```
+
+### 3.2. Jalankan Dev Server
+
+```powershell
+npm run dev
+```
+
+### 3.3. Buka Dashboard ✅
+
+Buka browser: **http://localhost:5173**
+
+Dashboard memiliki **4 halaman**:
+
+| Halaman | URL | Fungsi |
+|---------|-----|--------|
+| **Dashboard** | `http://localhost:5173/` | Overview KPI, grafik konsumsi energi, alert terbaru |
+| **Tamper Alerts** | `http://localhost:5173/#/alerts` | Manajemen alert keamanan fisik |
+| **Anomalies** | `http://localhost:5173/#/anomalies` | Log deteksi anomali konsumsi |
+| **Fleet** | `http://localhost:5173/#/fleet` | Manajemen dan monitoring meter |
+
+**Tampilan Dashboard:**
+
+![Dashboard](images/dashboard.png)
+
+**Tampilan Tamper Alerts:**
+
+![Alerts](images/alerts.png)
+
+**Tampilan Anomaly Detection:**
+
+![Anomalies](images/anomalies.png)
+
+**Tampilan Fleet Management:**
+
+![Fleet](images/fleet.png)
+
+> **🎉 Berhasil!** Frontend dashboard kamu sudah terhubung dengan backend API.
+
+---
+
+## Langkah 4 — Jalankan Firmware (QEMU / ESP32)
+
+Firmware ditulis dalam **C++17** menggunakan **ESP-IDF v5.5**.
+
+### Opsi A: Simulasi QEMU (Tanpa Hardware)
+
+```powershell
+# Install QEMU (sekali saja)
+.\scripts\script.ps1 --setup
+
 # Build firmware
 .\scripts\script.ps1 --build
 
-# Build + Run in QEMU
+# Jalankan di QEMU
 .\scripts\script.ps1 --run
 ```
 
-### Option B: Using ESP-IDF Directly
+Atau secara manual:
 
-```bash
+```powershell
 cd firmware
-
-# Set target (first time only)
-idf.py set-target esp32
-
-# Build
-idf.py build
-
-# Run in QEMU
-idf.py qemu monitor
+idf.py set-target esp32     # Set target (sekali saja)
+idf.py build                # Build firmware
+idf.py qemu monitor         # Jalankan di QEMU
 ```
 
----
+### Opsi B: Flash ke ESP32 (Hardware Asli)
 
-## Understanding the Output
+Hubungkan ESP32 ke komputer via USB, lalu:
 
-**Expected output when running in QEMU:**
+```powershell
+cd firmware
+idf.py set-target esp32
+idf.py build
+idf.py -p COM3 flash        # Ganti COM3 sesuai port kamu
+idf.py -p COM3 monitor      # Monitor serial output
+```
+
+> **💡 Tips:** Cek port COM di Device Manager → Ports (COM & LPT).
+
+### Output yang Diharapkan ✅
 
 ```
 [GridShield] ==============================================
@@ -101,156 +214,91 @@ idf.py qemu monitor
 [GridShield] Simulation complete — all cycles finished
 ```
 
-**🎉 Success!** You've just run GridShield's multi-layer security system in QEMU.
+> **🎉 Berhasil!** Firmware multi-layer security berjalan — tamper detection, crypto, dan anomaly detection aktif.
 
 ---
 
-## Debugging with GDB
+## Demo: Cara Kerja Sistem
 
-Use two terminals for interactive debugging:
+### Arsitektur Keseluruhan
 
-**Terminal 1 — Start QEMU with GDB server:**
+```
+┌──────────────┐     Serial/WiFi     ┌──────────────┐     HTTP API     ┌──────────────┐
+│   ESP32      │ ──────────────────► │   Backend    │ ◄────────────── │   Frontend   │
+│   Firmware   │                     │   FastAPI    │                  │   Dashboard  │
+│              │                     │              │                  │              │
+│ • Tamper Det │                     │ • REST API   │                  │ • KPI Charts │
+│ • Crypto     │                     │ • SQLite DB  │                  │ • Alert Mgmt │
+│ • Anomaly    │                     │ • Analytics  │                  │ • Fleet View │
+└──────────────┘                     └──────────────┘                  └──────────────┘
+   Port: COM3                         Port: 8000                        Port: 5173
+```
+
+### Alur Kerja
+
+1. **Firmware (ESP32)** membaca sensor, mendeteksi tamper, dan mengirim data terenkripsi ke backend
+2. **Backend (FastAPI)** menerima data, menyimpan ke SQLite, dan menjalankan analisis anomali
+3. **Frontend (Dashboard)** mengambil data dari backend via REST API dan menampilkan visualisasi real-time
+
+### 3 Layer Keamanan
+
+| Layer | Fungsi | Teknologi |
+|-------|--------|-----------|
+| **🔐 Physical** | Deteksi gangguan fisik pada meter | ISR + GPIO + debounce |
+| **🌐 Network** | Enkripsi dan autentikasi paket data | ECDSA (secp256r1) + SHA-256 |
+| **📊 Analytics** | Deteksi anomali konsumsi listrik | Statistical analysis + ML |
+
+---
+
+## Troubleshooting
+
+### ❌ `python` / `pip` tidak ditemukan
 
 ```powershell
-.\scripts\script.ps1 --debug
+# Gunakan 'py' (Windows launcher)
+py -m pip install -r requirements.txt
+py -m uvicorn app.main:app --reload --port 8000
 ```
 
-**Terminal 2 — Attach GDB:**
+### ❌ `npm` tidak ditemukan
+
+Install [Node.js](https://nodejs.org/) dan restart terminal.
+
+### ❌ ESP-IDF tidak ditemukan
 
 ```powershell
-.\scripts\script.ps1 --gdb
+# Aktifkan environment ESP-IDF
+C:\esp\v5.5.3\esp-idf\export.bat
 ```
 
----
+### ❌ QEMU tidak ditemukan
 
-## Code Overview
-
-### Entry Point
-
-The `app_main()` function in `firmware/main/app_main.cpp` is the ESP-IDF entry point:
-
-```cpp
-#include "core/system.hpp"
-#include "platform/mock_platform.hpp"
-
-void app_main(void) {
-    // Setup mock platform services for QEMU
-    gridshield::platform::MockTime mock_time;
-    gridshield::platform::MockGPIO mock_gpio;
-    // ... more mock services ...
-
-    // Configure system
-    gridshield::SystemConfig config;
-    config.meter_id = 0x1234567890ABCDEF;
-    config.tamper_config.sensor_pin = 4;
-
-    // Initialize and run
-    gridshield::GridShieldSystem system;
-    system.initialize(config, services);
-    system.start();
-
-    while (cycle < max_cycles) {
-        system.process_cycle();
-        vTaskDelay(pdMS_TO_TICKS(500));
-        ++cycle;
-    }
-}
-```
-
-### Key Concepts
-
-**Result<T> Monad** — Type-safe error handling without exceptions:
-```cpp
-auto result = system.process_cycle();
-if (result.is_ok()) {
-    // success
-} else {
-    auto error = result.error();
-    // handle error
-}
-```
-
-**Platform Abstraction Layer (HAL)** — Clean hardware interfaces:
-```cpp
-class IPlatformTime {
-    virtual timestamp_t get_timestamp_ms() = 0;
-    virtual void delay_ms(uint32_t milliseconds) = 0;
-};
-```
-
----
-
-## Next Steps
-
-### 📚 Learn More
-
-- [**Architecture**](ARCHITECTURE.md) — System design with diagrams
-- [**API Reference**](API.md) — Firmware & backend API docs
-- [**Build Guide**](../BUILD.md) — Advanced build configurations
-
-### 🖥️ Backend & Frontend
-
-**Start the Backend:**
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
-
-- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
-
-**Start the Frontend Dashboard:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-- Dashboard: [http://localhost:5173](http://localhost:5173)
-
-### 🔧 Customize
-
-**1. Configure Tamper Detection:**
-```cpp
-config.tamper_config.sensor_pin = 3;
-config.tamper_config.debounce_ms = 100;
-```
-
-**2. Adjust Anomaly Thresholds:**
-```cpp
-config.baseline_profile.variance_threshold = 40;  // More lenient (40%)
-config.baseline_profile.variance_threshold = 15;  // Stricter (15%)
-```
-
-**3. Change Cycle Count:**
-```cpp
-const int max_cycles = 100;  // Longer simulation
-```
-
-### 🐛 Troubleshooting
-
-**Build fails with "ESP-IDF not found":**
-```bash
-# Ensure ESP-IDF environment is exported
-C:\esp\v5.5.3\esp-idf\export.bat  # Windows
-. $IDF_PATH/export.sh              # Linux/macOS
-```
-
-**QEMU not found:**
 ```powershell
 .\scripts\script.ps1 --setup
 ```
 
+### ❌ Port COM tidak terdeteksi
+
+1. Buka **Device Manager** → **Ports (COM & LPT)**
+2. Cari "Silicon Labs CP210x" atau "CH340"
+3. Ganti `COM3` dengan port yang muncul
+
+### ❌ Frontend tidak menampilkan data
+
+Pastikan backend sudah berjalan di port 8000 **sebelum** menjalankan frontend.
+
 ---
 
-## Support
+## Langkah Selanjutnya
 
-- **Documentation:** `docs/` folder
-- **Issues:** Report bugs on GitHub
-- **Contact:** zuudevs@gmail.com
+| Dokumen | Isi |
+|---------|-----|
+| [Architecture](ARCHITECTURE.md) | Desain sistem lengkap dengan diagram |
+| [API Reference](API.md) | Dokumentasi endpoint firmware & backend |
+| [Build Guide](../BUILD.md) | Konfigurasi build lanjutan |
+| [Tech Stack](TECHSTACK.md) | Teknologi yang digunakan |
+| [Roadmap](ROADMAP.md) | Rencana pengembangan |
 
 ---
-
-**Ready to secure your AMI system?** Start building!
 
 **Institut Teknologi PLN — 2026**
