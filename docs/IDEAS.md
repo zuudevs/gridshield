@@ -2,7 +2,8 @@
 
 **Version:** 2.0.0  
 **Last Updated:** February 2026  
-**Authors:** M. Ichwan Fauzi, Rafi Indra Pramudhito Zuhayr, Cesar Ardika Bhayangkara
+**Authors:** M. Ichwan Fauzi, Rafi Indra Pramudhito Zuhayr, Cesar Ardika Bhayangkara  
+**Implementasi Aktual:** Seluruh implementasi teknis di repository ini dikerjakan oleh **Rafi Indra Pramudhito Zuhayr**
 
 ---
 

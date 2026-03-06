@@ -149,4 +149,5 @@ GridShield adalah sistem keamanan multi-layer untuk Advanced Metering Infrastruc
 
 **Document Version:** 1.0.0  
 **Created:** Maret 2026  
-**Author:** GridShield Team
+**Author:** GridShield Team  
+**Implementasi Aktual:** Seluruh implementasi teknis di repository ini dikerjakan oleh **Rafi Indra Pramudhito Zuhayr**

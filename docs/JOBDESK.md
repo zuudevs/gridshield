@@ -1,5 +1,8 @@
 ### Jobdesk
 
+> [!IMPORTANT]
+> **Catatan Implementasi:** Meskipun pembagian jobdesk di bawah ini menunjukkan PIC (Person In Charge) yang berbeda-beda, **seluruh implementasi teknis yang ada di repository ini merupakan hasil pekerjaan Rafi Indra Pramudhito Zuhayr.** Ini mencakup seluruh kode firmware, backend, frontend, CI/CD pipeline, dokumentasi teknis, testing, dan konfigurasi project. Pembagian jobdesk di bawah hanya menggambarkan perencanaan awal, bukan realisasi kontribusi aktual.
+
 |Jobdesk|Domain|PIC|Description|Weight|
 |---|---|---|---|---|
 |Bussiness Analyst|Document|Cesar|Menyelaraskan fitur teknis GridShield dengan kebutuhan bisnis dan regulasi PLN.|1%|

@@ -90,3 +90,44 @@ class SystemStatus(BaseModel):
     active_meters: int
     unacknowledged_alerts: int
     latest_reading_time: datetime | None = None
+
+
+# ============================================================================
+# Meter
+# ============================================================================
+class MeterCreate(BaseModel):
+    meter_id: int = Field(..., description="Unique meter hardware identifier")
+    name: str = Field(default="", max_length=100)
+    location: str = Field(default="", max_length=200)
+    firmware_version: str = Field(default="unknown", max_length=20)
+
+
+class MeterUpdate(BaseModel):
+    name: str | None = Field(default=None, max_length=100)
+    location: str | None = Field(default=None, max_length=200)
+    firmware_version: str | None = Field(default=None, max_length=20)
+    status: str | None = Field(default=None, max_length=20)
+
+
+class MeterResponse(BaseModel):
+    id: int
+    meter_id: int
+    name: str
+    location: str
+    firmware_version: str
+    status: str
+    registered_at: datetime
+    last_seen_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class MeterStats(BaseModel):
+    meter_id: int
+    total_readings: int
+    total_alerts: int
+    total_anomalies: int
+    avg_energy_wh: float
+    avg_voltage_mv: float
+    avg_current_ma: float
+    last_reading_time: datetime | None = None

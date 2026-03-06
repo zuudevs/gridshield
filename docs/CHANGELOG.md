@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [3.1.0] - 2026-03-06
+
+### Added
+- **Fleet Management API** (`backend/app/meters.py`):
+  - Meter registration, CRUD, and deregistration endpoints.
+  - Meter statistics endpoint (`GET /api/meters/{meter_id}/stats`).
+  - Auto-update `last_seen_at` and `status` on reading ingestion.
+- **Server-Side Anomaly Detection** (`backend/app/anomaly_engine.py`):
+  - Automatic anomaly detection triggered when meter readings are ingested.
+  - Configurable deviation thresholds (60% medium, 80% critical).
+  - Auto-classification of anomaly types: `UnexpectedSpike`, `UnexpectedDrop`, `ZeroConsumption`.
+- **Forensics Module** (`firmware/include/common/forensics/`):
+  - `EventLogger` — circular buffer for 64 security events with timeline retrieval.
+  - `IncidentReportGenerator` — cross-layer attack correlation and classification.
+  - Attack types: PhysicalTampering, NetworkIntrusion, ConsumptionFraud, HybridAttack.
+  - Confidence scoring for coordinated attack detection.
+- **Backend Test Suite** (`backend/tests/`):
+  - 31 pytest tests covering readings (8), alerts (6), meters (12), anomaly engine (5).
+  - Test infrastructure: in-memory SQLite, FastAPI TestClient via httpx.
+- **Firmware Tests**:
+  - 16 new forensics tests (EventLogger: 10, IncidentReportGenerator: 6).
+  - Total firmware test count: 168 (152 + 16).
+
+### Changed
+- Backend API version bumped to `3.1.0`.
+- Updated `requirements.txt` with `pytest>=8.0.0` and `httpx>=0.27.0`.
+- Updated all documentation with Rafi Indra Pramudhito Zuhayr attribution notes.
 
 ## [3.0.1] - 2026-03-05
 

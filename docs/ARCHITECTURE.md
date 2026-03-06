@@ -2,7 +2,8 @@
 
 **Version:** 3.0.1  
 **Last Updated:** February 2026  
-**Authors:** M. Ichwan Fauzi, Rafi Indra Pramudhito Zuhayr, Cesar Ardika Bhayangkara
+**Authors:** M. Ichwan Fauzi, Rafi Indra Pramudhito Zuhayr, Cesar Ardika Bhayangkara  
+**Implementasi Aktual:** Seluruh implementasi teknis di repository ini dikerjakan oleh **Rafi Indra Pramudhito Zuhayr**
 
 ---
 
@@ -982,8 +983,8 @@ enum class PacketType : uint8_t {
 **License:** MIT License - See LICENSE.md
 
 **Developed by:**
-- Muhammad Ichwan Fauzi (System Architecture)
-- Rafi Indra Pramudhito Zuhayr (Firmware Implementation)
+- Muhammad Ichwan Fauzi
+- Rafi Indra Pramudhito Zuhayr (Firmware Implementation, System Architecture, Hardware Integration)
 - Cesar Ardika Bhayangkara (Hardware Integration)
 
 **Institut Teknologi PLN - 2026**

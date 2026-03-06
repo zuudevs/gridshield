@@ -150,9 +150,11 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- **Muhammad Ichwan Fauzi** — Team Leader, Project Manager
-- **Rafi Indra Pramudhito Zuhayr** — Firmware Implementation, System Architecture
+- **Muhammad Ichwan Fauzi** — Team Leader
+- **Rafi Indra Pramudhito Zuhayr** — Firmware, Backend, Frontend, CI/CD, Dokumentasi, Testing, System Architecture, Project Manager
 - **Cesar Ardika Bhayangkara** — Hardware Integration
+
+> **Catatan:** Seluruh implementasi teknis yang ada di repository ini (firmware, backend, frontend, CI/CD, dokumentasi, testing, dan seluruh konfigurasi project) merupakan hasil pekerjaan **Rafi Indra Pramudhito Zuhayr**.
 
 **Institut Teknologi PLN** — 2026
 
