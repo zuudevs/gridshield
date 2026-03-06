@@ -1,0 +1,65 @@
+# ============================================================================
+# GridShield — CODEOWNERS
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Tim:
+#   Cesar Ardika Bhayangkara  — Hardware / Electrical / PCB / Supply Chain
+#   Muhammad Ichwan Fauzi     — QA / Server / Database / UI-UX / Data Science
+#   Rafi Indra P. Zuhayr      — Firmware / Software / DevOps / System Architect
+# ============================================================================
+
+# --- Default: seluruh repo dimiliki oleh organisasi ---
+*                                       @zuudevs
+
+# ============================================================================
+# Firmware (C++ / ESP-IDF)
+# PIC: Rafi — Embedded Firmware Engineer, Software Engineer, Cybersecurity
+# ============================================================================
+/firmware/                              @zuudevs
+/firmware/include/common/core/          @zuudevs
+/firmware/include/common/network/       @zuudevs
+/firmware/include/common/security/      @zuudevs
+/firmware/include/common/hardware/      @zuudevs
+/firmware/include/platform/             @zuudevs
+/firmware/main/                         @zuudevs
+/firmware/test_app/                     @zuudevs
+/firmware/fuzz/                         @zuudevs
+/firmware/coverage/                     @zuudevs
+/firmware/lib/                          @zuudevs
+
+# Analytics / Anomaly Detection — Layer 3
+# PIC: Ichwan — Data Scientist
+/firmware/include/common/analytics/     @zuudevs
+/firmware/main/src/analytics/           @zuudevs
+
+# ============================================================================
+# Backend (Python / FastAPI)
+# PIC: Ichwan — Server Engineer, Database Administrator
+# ============================================================================
+/backend/                               @zuudevs
+
+# ============================================================================
+# Frontend (Vite / Chart.js)
+# PIC: Ichwan — UI/UX Designer, Graphic Designer
+# ============================================================================
+/frontend/                              @zuudevs
+
+# ============================================================================
+# DevOps / CI-CD
+# PIC: Rafi — DevOps
+# ============================================================================
+/.github/                               @zuudevs
+/scripts/                               @zuudevs
+
+# ============================================================================
+# Documentation
+# PIC: Rafi — Technical Writing, Project Manager
+# PIC: Cesar — Business Analyst, IP Specialist
+# ============================================================================
+/docs/                                  @zuudevs
+README.md                               @zuudevs
+BUILD.md                                @zuudevs
+CONTRIBUTING.md                         @zuudevs
+SECURITY.md                             @zuudevs
+CODE_OF_CONDUCT.md                      @zuudevs
+LICENSE                                 @zuudevs
