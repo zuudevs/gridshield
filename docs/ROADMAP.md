@@ -3,8 +3,13 @@
 Future development plans and feature roadmap for GridShield AMI Security System.
 
 **Last Updated:** March 2026  
+<<<<<<< HEAD
+**Current Version:** 3.2.0  
+**Next Target:** 3.3.0 (Q2 2027)
+=======
 **Current Version:** 3.1.0-fw  
 **Next Target:** 3.2.0 (Q2 2027)
+>>>>>>> 469b660da70c38354fe5127353f451559b605a7f
 
 ---
 
@@ -224,6 +229,47 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ---
 
+<<<<<<< HEAD
+### Q2 2027 — Integration & Export Enhancement (v3.2.0)
+
+**Target Release:** June 2027 (completed March 2026)
+
+#### High Priority
+
+- [x] **Data Export API**
+  - [x] CSV export endpoints (readings, alerts, anomalies)
+  - [x] StreamingResponse with Content-Disposition headers
+  - [x] Meter-specific export filtering
+
+- [x] **Frontend Fleet Integration**
+  - [x] Fleet page refactored to use Meter CRUD API
+  - [x] Meter registration modal (create/delete)
+  - [x] Meter status indicators (online/offline/tampered)
+  - [x] CSV export buttons on all data pages
+
+- [x] **Evidence Preservation** (Firmware)
+  - [x] EvidenceStore with circular buffer (32 snapshots)
+  - [x] Hash chain integrity (FNV-1a tamper detection)
+  - [x] SensorSnapshot capture (energy, voltage, current, temperature, accelerometer)
+  - [x] Chain verification function
+
+#### Medium Priority
+
+- [x] **CI Enhancement**
+  - [x] Backend pytest job in GitHub Actions (7-job pipeline)
+
+- [x] **Backend Testing**
+  - [x] Export endpoint tests (6 tests)
+  - [x] Total backend tests: 37+ (31 existing + 6 new)
+
+- [x] **Firmware Tests**
+  - [x] EvidenceStore tests (8 tests)
+  - [x] Total firmware test count: 176 (168 + 8)
+
+---
+
+=======
+>>>>>>> 469b660da70c38354fe5127353f451559b605a7f
 ## Feature Backlogs
 
 ### Core Features
@@ -280,7 +326,11 @@ GridShield aims to become the **industry-standard open-source security framework
 - [x] **Forensics**
   - [x] Attack signature event logger (SecurityEvent + EventLogger)
   - [x] Incident timeline reconstruction (get_timeline)
+<<<<<<< HEAD
+  - [x] Evidence preservation (EvidenceStore + hash chain)
+=======
   - [ ] Evidence preservation
+>>>>>>> 469b660da70c38354fe5127353f451559b605a7f
   - [x] Automated reporting (IncidentReportGenerator)
 
 ---
@@ -430,6 +480,10 @@ Features are prioritized based on:
 | **3.0.0** | December 2026 | Cloud integration, ML analytics, 206 tests (total) |
 | **3.0.1** | March 2026 | CI fixes, hardware testing (ESP32-D0WD), HKDF test fix, 152 tests |
 | **3.1.0** | March 2026 | Fleet management API, server-side anomaly detection, forensics module, backend tests (31), firmware tests (+16 = 168 total) |
+<<<<<<< HEAD
+| **3.2.0** | March 2026 | Data export API (CSV), frontend fleet integration, evidence preservation, backend CI tests, 37+ backend tests, 176 firmware tests |
+=======
+>>>>>>> 469b660da70c38354fe5127353f451559b605a7f
 
 ---
 
