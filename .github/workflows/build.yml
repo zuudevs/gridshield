@@ -100,6 +100,25 @@ jobs:
       - name: Lint
         run: ruff check backend/
 
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Run Tests
+        run: python -m pytest backend/tests/ -v --tb=short
+
   frontend-build:
     name: Frontend Build
     runs-on: ubuntu-latest

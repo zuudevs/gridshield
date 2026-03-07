@@ -3,36 +3,36 @@
  * KPI cards + energy chart + recent alerts
  */
 
-import { getStatus, getReadings, getAlerts } from '../api.js';
+import { getStatus, getReadings, getAlerts, exportReadings } from '../api.js';
 import { createLineChart } from '../components/chart.js';
 
 /** Helper: format timestamp */
 function timeAgo(ts) {
-    const diff = Date.now() - new Date(ts).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 function severityColor(sev) {
-    if (sev >= 3) return 'var(--color-red)';
-    if (sev >= 2) return 'var(--color-orange)';
-    if (sev >= 1) return 'var(--color-amber)';
-    return 'var(--color-green)';
+  if (sev >= 3) return 'var(--color-red)';
+  if (sev >= 2) return 'var(--color-orange)';
+  if (sev >= 1) return 'var(--color-amber)';
+  return 'var(--color-green)';
 }
 
 export default async function renderDashboard(container) {
-    // Fetch data in parallel
-    const [status, readings, alerts] = await Promise.all([
-        getStatus(),
-        getReadings({ limit: 100 }),
-        getAlerts({ limit: 10 }),
-    ]);
+  // Fetch data in parallel
+  const [status, readings, alerts] = await Promise.all([
+    getStatus(),
+    getReadings({ limit: 100 }),
+    getAlerts({ limit: 10 }),
+  ]);
 
-    container.innerHTML = `
+  container.innerHTML = `
     <div class="page-enter">
       <div class="page-header">
         <h1>Dashboard</h1>
@@ -83,7 +83,10 @@ export default async function renderDashboard(container) {
         <div class="glass-panel">
           <div class="panel-header">
             <span class="panel-title">Energy Consumption (Wh)</span>
-            <span class="badge badge-info">Last ${readings.length} readings</span>
+            <div style="display:flex;gap:var(--space-2);align-items:center">
+              <span class="badge badge-info">Last ${readings.length} readings</span>
+              <button class="btn btn-sm" id="export-readings-btn">📥 Export</button>
+            </div>
           </div>
           <div class="panel-body">
             <div class="chart-container" id="energy-chart"></div>
@@ -101,55 +104,55 @@ export default async function renderDashboard(container) {
     </div>
   `;
 
-    // --- Energy Chart ---
-    const sorted = [...readings].reverse();
-    const labels = sorted.map((r, i) => {
-        const d = new Date(r.timestamp);
-        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    });
+  // --- Energy Chart ---
+  const sorted = [...readings].reverse();
+  const labels = sorted.map((r, i) => {
+    const d = new Date(r.timestamp);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  });
 
-    const chartContainer = document.getElementById('energy-chart');
-    const chart = createLineChart(chartContainer, {
-        labels,
-        datasets: [
-            {
-                label: 'Energy (Wh)',
-                data: sorted.map(r => r.energy_wh),
-                borderColor: '#00f5d4',
-                backgroundColor: 'rgba(0, 245, 212, 0.08)',
-                fill: true,
-            },
-            {
-                label: 'Voltage (V)',
-                data: sorted.map(r => r.voltage_mv / 1000),
-                borderColor: '#7b61ff',
-                backgroundColor: 'rgba(123, 97, 255, 0.05)',
-                fill: false,
-                yAxisID: 'y1',
-            },
-        ],
-        options: {
-            scales: {
-                y: { position: 'left', title: { display: true, text: 'Wh' } },
-                y1: {
-                    position: 'right',
-                    title: { display: true, text: 'Voltage (V)' },
-                    grid: { drawOnChartArea: false },
-                },
-            },
+  const chartContainer = document.getElementById('energy-chart');
+  const chart = createLineChart(chartContainer, {
+    labels,
+    datasets: [
+      {
+        label: 'Energy (Wh)',
+        data: sorted.map(r => r.energy_wh),
+        borderColor: '#00f5d4',
+        backgroundColor: 'rgba(0, 245, 212, 0.08)',
+        fill: true,
+      },
+      {
+        label: 'Voltage (V)',
+        data: sorted.map(r => r.voltage_mv / 1000),
+        borderColor: '#7b61ff',
+        backgroundColor: 'rgba(123, 97, 255, 0.05)',
+        fill: false,
+        yAxisID: 'y1',
+      },
+    ],
+    options: {
+      scales: {
+        y: { position: 'left', title: { display: true, text: 'Wh' } },
+        y1: {
+          position: 'right',
+          title: { display: true, text: 'Voltage (V)' },
+          grid: { drawOnChartArea: false },
         },
-    });
+      },
+    },
+  });
 
-    // --- Recent Alerts ---
-    const alertsList = document.getElementById('recent-alerts');
-    if (alerts.length === 0) {
-        alertsList.innerHTML = `
+  // --- Recent Alerts ---
+  const alertsList = document.getElementById('recent-alerts');
+  if (alerts.length === 0) {
+    alertsList.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">✅</div>
         <div class="empty-text">No recent alerts</div>
       </div>`;
-    } else {
-        alertsList.innerHTML = alerts.map(a => `
+  } else {
+    alertsList.innerHTML = alerts.map(a => `
       <div class="recent-alert-item">
         <span class="recent-alert-dot" style="background:${severityColor(a.severity)}"></span>
         <div class="recent-alert-info">
@@ -159,23 +162,28 @@ export default async function renderDashboard(container) {
         ${a.acknowledged ? '<span class="badge badge-success">ACK</span>' : '<span class="badge badge-critical">NEW</span>'}
       </div>
     `).join('');
-    }
+  }
 
-    // --- Auto-refresh ---
-    const interval = setInterval(async () => {
-        try {
-            const s = await getStatus();
-            const el = (id) => document.getElementById(id);
-            if (el('stat-readings')) el('stat-readings').textContent = s.total_readings.toLocaleString();
-            if (el('stat-meters')) el('stat-meters').textContent = s.active_meters;
-            if (el('stat-alerts')) el('stat-alerts').textContent = s.unacknowledged_alerts;
-            if (el('stat-anomalies')) el('stat-anomalies').textContent = s.total_anomalies;
-        } catch (_) { /* ignore if navigated away */ }
-    }, 10000);
+  // --- Export button ---
+  document.getElementById('export-readings-btn')?.addEventListener('click', () => {
+    exportReadings();
+  });
 
-    // Return cleanup function
-    return () => {
-        clearInterval(interval);
-        chart.destroy();
-    };
+  // --- Auto-refresh ---
+  const interval = setInterval(async () => {
+    try {
+      const s = await getStatus();
+      const el = (id) => document.getElementById(id);
+      if (el('stat-readings')) el('stat-readings').textContent = s.total_readings.toLocaleString();
+      if (el('stat-meters')) el('stat-meters').textContent = s.active_meters;
+      if (el('stat-alerts')) el('stat-alerts').textContent = s.unacknowledged_alerts;
+      if (el('stat-anomalies')) el('stat-anomalies').textContent = s.total_anomalies;
+    } catch (_) { /* ignore if navigated away */ }
+  }, 10000);
+
+  // Return cleanup function
+  return () => {
+    clearInterval(interval);
+    chart.destroy();
+  };
 }

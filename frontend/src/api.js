@@ -54,3 +54,72 @@ export function getAnomalies({ meterId, limit = 50 } = {}) {
     const qs = params.toString();
     return request(`/anomalies${qs ? '?' + qs : ''}`);
 }
+
+// ============================================================================
+// Meter CRUD
+// ============================================================================
+
+/** List all registered meters */
+export function getMeters({ status } = {}) {
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    const qs = params.toString();
+    return request(`/meters${qs ? '?' + qs : ''}`);
+}
+
+/** Register a new meter */
+export function createMeter(data) {
+    return request('/meters', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
+/** Update meter info */
+export function updateMeter(meterId, data) {
+    return request(`/meters/${meterId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+    });
+}
+
+/** Delete a meter */
+export function deleteMeter(meterId) {
+    return fetch(`${BASE}/meters/${meterId}`, { method: 'DELETE' });
+}
+
+/** Get meter statistics */
+export function getMeterStats(meterId) {
+    return request(`/meters/${meterId}/stats`);
+}
+
+// ============================================================================
+// CSV Export — triggers download
+// ============================================================================
+
+function triggerDownload(url, fallbackName) {
+    const a = document.createElement('a');
+    a.href = `${BASE}${url}`;
+    a.download = fallbackName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+
+/** Export readings as CSV */
+export function exportReadings(meterId) {
+    const params = meterId != null ? `?meter_id=${meterId}` : '';
+    triggerDownload(`/export/readings${params}`, 'gridshield_readings.csv');
+}
+
+/** Export alerts as CSV */
+export function exportAlerts(meterId) {
+    const params = meterId != null ? `?meter_id=${meterId}` : '';
+    triggerDownload(`/export/alerts${params}`, 'gridshield_alerts.csv');
+}
+
+/** Export anomalies as CSV */
+export function exportAnomalies(meterId) {
+    const params = meterId != null ? `?meter_id=${meterId}` : '';
+    triggerDownload(`/export/anomalies${params}`, 'gridshield_anomalies.csv');
+}

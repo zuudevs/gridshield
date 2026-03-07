@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [3.2.0] - 2026-03-07
+
+### Added
+- **Data Export API** (`backend/app/export.py`):
+  - `GET /api/export/readings` — Export meter readings as CSV.
+  - `GET /api/export/alerts` — Export tamper alerts as CSV.
+  - `GET /api/export/anomalies` — Export anomaly logs as CSV.
+  - All endpoints support `meter_id` filtering and `StreamingResponse`.
+- **Frontend Fleet Integration**:
+  - Fleet page refactored to use backend Meter CRUD API (`GET /api/meters`).
+  - Meter registration modal (`POST /api/meters`).
+  - Meter delete with confirmation (`DELETE /api/meters/{id}`).
+  - Meter status indicators (online/offline/tampered).
+  - Meter detail modal with statistics from `GET /api/meters/{id}/stats`.
+  - CSV export buttons on Dashboard, Alerts, and Anomalies pages.
+- **Evidence Preservation** (`firmware/include/common/forensics/evidence_store.hpp`):
+  - `EvidenceStore` — circular buffer for 32 forensic evidence snapshots.
+  - `SensorSnapshot` — captures raw sensor state (energy, voltage, current, temperature, accelerometer).
+  - Hash chain integrity — each snapshot linked to previous via FNV-1a hash.
+  - `verify_chain()` — validates entire evidence chain integrity.
+- **Backend Test Suite**:
+  - 6 new export endpoint tests (`backend/tests/test_export.py`).
+  - Total backend tests: 37+.
+- **Firmware Tests**:
+  - 8 new EvidenceStore tests (`firmware/test_app/main/test_evidence_store.cpp`).
+  - Total firmware test count: 176 (168 + 8).
+- **CI Enhancement**:
+  - Added `backend-test` job to GitHub Actions pipeline (7-job workflow).
+
+### Changed
+- Backend API version bumped to `3.2.0`.
+- Frontend `api.js` extended with meter CRUD and CSV export functions.
+- Frontend `style.css` extended with modal, status indicator, and form styles.
+
 ## [3.1.0] - 2026-03-06
 
 ### Added

@@ -3,52 +3,52 @@
  * Tamper alert management with filtering and acknowledge action
  */
 
-import { getAlerts, acknowledgeAlert } from '../api.js';
+import { getAlerts, acknowledgeAlert, exportAlerts } from '../api.js';
 
 const TAMPER_ICONS = {
-    CasingOpened: '📦',
-    MagneticInterference: '🧲',
-    PowerCutAttempt: '🔌',
-    PhysicalShock: '💥',
-    VibrationDetected: '📳',
-    TemperatureAnomaly: '🌡️',
+  CasingOpened: '📦',
+  MagneticInterference: '🧲',
+  PowerCutAttempt: '🔌',
+  PhysicalShock: '💥',
+  VibrationDetected: '📳',
+  TemperatureAnomaly: '🌡️',
 };
 
 function severityBadge(sev) {
-    const map = {
-        4: ['CRITICAL', 'badge-critical'],
-        3: ['HIGH', 'badge-high'],
-        2: ['MEDIUM', 'badge-medium'],
-        1: ['LOW', 'badge-low'],
-        0: ['INFO', 'badge-info'],
-    };
-    const [label, cls] = map[sev] || map[0];
-    return `<span class="badge ${cls}">${label}</span>`;
+  const map = {
+    4: ['CRITICAL', 'badge-critical'],
+    3: ['HIGH', 'badge-high'],
+    2: ['MEDIUM', 'badge-medium'],
+    1: ['LOW', 'badge-low'],
+    0: ['INFO', 'badge-info'],
+  };
+  const [label, cls] = map[sev] || map[0];
+  return `<span class="badge ${cls}">${label}</span>`;
 }
 
 function formatTime(ts) {
-    return new Date(ts).toLocaleString([], {
-        month: 'short', day: 'numeric',
-        hour: '2-digit', minute: '2-digit',
-    });
+  return new Date(ts).toLocaleString([], {
+    month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
 }
 
 function formatMeterId(id) {
-    return id.toString(16).toUpperCase().slice(-8);
+  return id.toString(16).toUpperCase().slice(-8);
 }
 
 export default async function renderAlerts(container) {
-    let filter = 'all';
+  let filter = 'all';
 
-    async function refresh() {
-        const params = {};
-        if (filter === 'unacknowledged') params.acknowledged = false;
-        if (filter === 'acknowledged') params.acknowledged = true;
-        params.limit = 100;
+  async function refresh() {
+    const params = {};
+    if (filter === 'unacknowledged') params.acknowledged = false;
+    if (filter === 'acknowledged') params.acknowledged = true;
+    params.limit = 100;
 
-        const alerts = await getAlerts(params);
+    const alerts = await getAlerts(params);
 
-        container.innerHTML = `
+    container.innerHTML = `
       <div class="page-enter">
         <div class="page-header">
           <h1>Tamper Alerts</h1>
@@ -62,6 +62,7 @@ export default async function renderAlerts(container) {
             <option value="acknowledged" ${filter === 'acknowledged' ? 'selected' : ''}>Acknowledged</option>
           </select>
           <span class="badge badge-info">${alerts.length} results</span>
+          <button class="btn btn-sm" id="export-alerts-btn">📥 Export CSV</button>
         </div>
 
         <div class="glass-panel">
@@ -94,13 +95,13 @@ export default async function renderAlerts(container) {
                     <td>${severityBadge(a.severity)}</td>
                     <td>
                       ${a.acknowledged
-                ? '<span class="badge badge-success">Acknowledged</span>'
-                : '<span class="badge badge-critical">⏳ Pending</span>'}
+        ? '<span class="badge badge-success">Acknowledged</span>'
+        : '<span class="badge badge-critical">⏳ Pending</span>'}
                     </td>
                     <td>
                       ${a.acknowledged
-                ? '—'
-                : `<button class="btn btn-primary btn-sm" data-ack-id="${a.id}">Acknowledge</button>`}
+        ? '—'
+        : `<button class="btn btn-primary btn-sm" data-ack-id="${a.id}">Acknowledge</button>`}
                     </td>
                   </tr>
                 `).join('')}
@@ -111,29 +112,34 @@ export default async function renderAlerts(container) {
       </div>
     `;
 
-        // Bind filter
-        document.getElementById('alert-filter')?.addEventListener('change', (e) => {
-            filter = e.target.value;
-            refresh();
-        });
+    // Bind filter
+    document.getElementById('alert-filter')?.addEventListener('change', (e) => {
+      filter = e.target.value;
+      refresh();
+    });
 
-        // Bind acknowledge buttons
-        container.querySelectorAll('[data-ack-id]').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.target.dataset.ackId;
-                e.target.disabled = true;
-                e.target.textContent = '...';
-                try {
-                    await acknowledgeAlert(id);
-                    await refresh();
-                } catch (err) {
-                    alert('Failed to acknowledge: ' + err.message);
-                    e.target.disabled = false;
-                    e.target.textContent = 'Acknowledge';
-                }
-            });
-        });
-    }
+    // Export button
+    document.getElementById('export-alerts-btn')?.addEventListener('click', () => {
+      exportAlerts();
+    });
 
-    await refresh();
+    // Bind acknowledge buttons
+    container.querySelectorAll('[data-ack-id]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.dataset.ackId;
+        e.target.disabled = true;
+        e.target.textContent = '...';
+        try {
+          await acknowledgeAlert(id);
+          await refresh();
+        } catch (err) {
+          alert('Failed to acknowledge: ' + err.message);
+          e.target.disabled = false;
+          e.target.textContent = 'Acknowledge';
+        }
+      });
+    });
+  }
+
+  await refresh();
 }

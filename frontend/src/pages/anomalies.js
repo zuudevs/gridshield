@@ -3,23 +3,23 @@
  * Anomaly detection logs with deviation visualization
  */
 
-import { getAnomalies } from '../api.js';
+import { getAnomalies, exportAnomalies } from '../api.js';
 
 function severityBadge(sev) {
-    const s = (sev || '').toLowerCase();
-    if (s === 'critical') return '<span class="badge badge-critical">CRITICAL</span>';
-    if (s === 'high') return '<span class="badge badge-high">HIGH</span>';
-    if (s === 'medium') return '<span class="badge badge-medium">MEDIUM</span>';
-    return '<span class="badge badge-low">LOW</span>';
+  const s = (sev || '').toLowerCase();
+  if (s === 'critical') return '<span class="badge badge-critical">CRITICAL</span>';
+  if (s === 'high') return '<span class="badge badge-high">HIGH</span>';
+  if (s === 'medium') return '<span class="badge badge-medium">MEDIUM</span>';
+  return '<span class="badge badge-low">LOW</span>';
 }
 
 function deviationBar(pct) {
-    const clamped = Math.min(Math.abs(pct), 100);
-    let color = 'var(--color-green)';
-    if (clamped >= 80) color = 'var(--color-red)';
-    else if (clamped >= 50) color = 'var(--color-orange)';
-    else if (clamped >= 30) color = 'var(--color-amber)';
-    return `
+  const clamped = Math.min(Math.abs(pct), 100);
+  let color = 'var(--color-green)';
+  if (clamped >= 80) color = 'var(--color-red)';
+  else if (clamped >= 50) color = 'var(--color-orange)';
+  else if (clamped >= 30) color = 'var(--color-amber)';
+  return `
     <div style="display:flex;align-items:center;gap:8px;">
       <div class="deviation-bar-container">
         <div class="deviation-bar" style="width:${clamped}%;background:${color}"></div>
@@ -30,28 +30,28 @@ function deviationBar(pct) {
 }
 
 function formatTime(ts) {
-    return new Date(ts).toLocaleString([], {
-        month: 'short', day: 'numeric',
-        hour: '2-digit', minute: '2-digit',
-    });
+  return new Date(ts).toLocaleString([], {
+    month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
 }
 
 function formatMeterId(id) {
-    return id.toString(16).toUpperCase().slice(-8);
+  return id.toString(16).toUpperCase().slice(-8);
 }
 
 export default async function renderAnomalies(container) {
-    let typeFilter = 'all';
+  let typeFilter = 'all';
 
-    async function refresh() {
-        const anomalies = await getAnomalies({ limit: 100 });
+  async function refresh() {
+    const anomalies = await getAnomalies({ limit: 100 });
 
-        const types = [...new Set(anomalies.map(a => a.anomaly_type))];
-        const filtered = typeFilter === 'all'
-            ? anomalies
-            : anomalies.filter(a => a.anomaly_type === typeFilter);
+    const types = [...new Set(anomalies.map(a => a.anomaly_type))];
+    const filtered = typeFilter === 'all'
+      ? anomalies
+      : anomalies.filter(a => a.anomaly_type === typeFilter);
 
-        container.innerHTML = `
+    container.innerHTML = `
       <div class="page-enter">
         <div class="page-header">
           <h1>Anomaly Detection</h1>
@@ -64,6 +64,7 @@ export default async function renderAnomalies(container) {
             ${types.map(t => `<option value="${t}" ${typeFilter === t ? 'selected' : ''}>${t.replace(/_/g, ' ')}</option>`).join('')}
           </select>
           <span class="badge badge-info">${filtered.length} events</span>
+          <button class="btn btn-sm" id="export-anomalies-btn">📥 Export CSV</button>
         </div>
 
         <div class="glass-panel">
@@ -108,11 +109,15 @@ export default async function renderAnomalies(container) {
       </div>
     `;
 
-        document.getElementById('anomaly-type-filter')?.addEventListener('change', (e) => {
-            typeFilter = e.target.value;
-            refresh();
-        });
-    }
+    document.getElementById('anomaly-type-filter')?.addEventListener('change', (e) => {
+      typeFilter = e.target.value;
+      refresh();
+    });
 
-    await refresh();
+    document.getElementById('export-anomalies-btn')?.addEventListener('click', () => {
+      exportAnomalies();
+    });
+  }
+
+  await refresh();
 }
