@@ -9,6 +9,8 @@
 * Rafi Indra Pramudhito Zuhayr (202331291)
 * Cesar Ardika Bhayangkara (202311240)
 
+> **Catatan Implementasi:** Seluruh implementasi teknis yang ada di repository ini (firmware, backend, frontend, CI/CD, dokumentasi, testing, dan seluruh konfigurasi project) merupakan hasil pekerjaan **Rafi Indra Pramudhito Zuhayr**.
+
 **Institut Teknologi PLN - 2025**
 
 ---

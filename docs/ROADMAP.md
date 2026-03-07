@@ -3,8 +3,8 @@
 Future development plans and feature roadmap for GridShield AMI Security System.
 
 **Last Updated:** March 2026  
-**Current Version:** 3.0.1-fw  
-**Next Target:** 3.1.0 (Q1 2027)
+**Current Version:** 3.1.0-fw  
+**Next Target:** 3.2.0 (Q2 2027)
 
 ---
 
@@ -184,6 +184,46 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ---
 
+### Q1 2027 — Fleet Management & Forensics (v3.1.0)
+
+**Target Release:** March 2027 (completed March 2026)
+
+#### High Priority
+
+- [x] **Fleet Management API**
+  - [x] Meter registration & CRUD endpoints
+  - [x] Fleet statistics & aggregation
+  - [x] Meter status tracking (online/offline/tampered)
+  - [x] Meter last-seen timestamp auto-update
+
+- [x] **Server-Side Anomaly Detection**
+  - [x] Automatic anomaly detection on reading ingestion
+  - [x] Configurable deviation thresholds (60%/80%)
+  - [x] Severity classification (low/medium/high/critical)
+  - [x] Anomaly type classification (spike/drop/zero-consumption)
+
+- [x] **Forensics Module** (Firmware)
+  - [x] Security event logger with circular buffer (64 events)
+  - [x] Event timeline retrieval and filtering
+  - [x] Cross-layer incident report generation
+  - [x] Attack classification (physical/network/fraud/hybrid)
+  - [x] Confidence scoring for coordinated attacks
+
+#### Medium Priority
+
+- [x] **Backend Testing**
+  - [x] pytest + httpx test infrastructure
+  - [x] Meter CRUD tests (12 tests)
+  - [x] Reading API tests (8 tests)
+  - [x] Alert API tests (6 tests)
+  - [x] Anomaly engine tests (5 tests)
+
+- [x] **Firmware Tests**
+  - [x] EventLogger tests (10 tests)
+  - [x] IncidentReportGenerator tests (6 tests)
+
+---
+
 ## Feature Backlogs
 
 ### Core Features
@@ -237,11 +277,11 @@ GridShield aims to become the **industry-standard open-source security framework
   - [ ] Appliance load disaggregation
   - [ ] Predictive maintenance
 
-- [ ] **Forensics**
-  - [ ] Attack signature database
-  - [ ] Incident timeline reconstruction
+- [x] **Forensics**
+  - [x] Attack signature event logger (SecurityEvent + EventLogger)
+  - [x] Incident timeline reconstruction (get_timeline)
   - [ ] Evidence preservation
-  - [ ] Automated reporting
+  - [x] Automated reporting (IncidentReportGenerator)
 
 ---
 
@@ -389,6 +429,7 @@ Features are prioritized based on:
 | **2.2.0** | September 2026 | Communication protocols, sensors, 151 tests |
 | **3.0.0** | December 2026 | Cloud integration, ML analytics, 206 tests (total) |
 | **3.0.1** | March 2026 | CI fixes, hardware testing (ESP32-D0WD), HKDF test fix, 152 tests |
+| **3.1.0** | March 2026 | Fleet management API, server-side anomaly detection, forensics module, backend tests (31), firmware tests (+16 = 168 total) |
 
 ---
 

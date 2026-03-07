@@ -29,6 +29,7 @@ extern void test_telemetry_suite(void);
 extern "C" void test_mqtt_suite(void);
 extern "C" void test_sensors_suite(void);
 extern "C" void test_ota_power_suite(void);
+extern "C" void test_forensics_suite(void);
 
 extern "C" void app_main(void)
 {
@@ -61,6 +62,7 @@ extern "C" void app_main(void)
     test_mqtt_suite();
     test_sensors_suite();
     test_ota_power_suite();
+    test_forensics_suite();
 
     int failures = UNITY_END();
 

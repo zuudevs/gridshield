@@ -2,7 +2,8 @@
 
 **Version:** 3.0.1  
 **Last Updated:** February 2026  
-**Maintained By:** GridShield Development Team
+**Maintained By:** GridShield Development Team  
+**Implementasi Aktual:** Seluruh implementasi teknis di repository ini dikerjakan oleh **Rafi Indra Pramudhito Zuhayr**
 
 ## Overview
 

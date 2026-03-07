@@ -2,11 +2,14 @@
 GridShield Backend — API Routes
 """
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from . import models, schemas
+from .anomaly_engine import analyze_reading
 from .database import get_db
 
 router = APIRouter(prefix="/api", tags=["GridShield API"])
@@ -22,6 +25,19 @@ def create_meter_reading(reading: schemas.MeterReadingCreate, db: Session = Depe
     db.add(db_reading)
     db.commit()
     db.refresh(db_reading)
+
+    # Update meter last_seen_at if registered
+    meter = db.query(models.Meter).filter(
+        models.Meter.meter_id == reading.meter_id
+    ).first()
+    if meter is not None:
+        meter.last_seen_at = datetime.utcnow()
+        meter.status = "online"
+        db.commit()
+
+    # Server-side anomaly detection
+    analyze_reading(db_reading, db)
+
     return db_reading
 
 

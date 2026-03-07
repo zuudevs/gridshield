@@ -51,3 +51,18 @@ class AnomalyLog(Base):
     expected_value = Column(Float, default=0.0)
     deviation_percent = Column(Float, default=0.0)
     confidence = Column(Integer, default=0)
+
+
+class Meter(Base):
+    """Registered meter device."""
+
+    __tablename__ = "meters"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    meter_id = Column(BigInteger, unique=True, nullable=False, index=True)
+    name = Column(String(100), default="")
+    location = Column(String(200), default="")
+    firmware_version = Column(String(20), default="unknown")
+    status = Column(String(20), default="offline")  # online / offline / tampered
+    registered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_seen_at = Column(DateTime, default=None, nullable=True)
