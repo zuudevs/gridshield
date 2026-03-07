@@ -32,6 +32,7 @@ extern "C" void test_ota_power_suite(void);
 extern "C" void test_forensics_suite(void);
 extern "C" void test_evidence_store_suite(void);
 
+
 extern "C" void app_main(void)
 {
     // Small delay for QEMU UART stabilization
@@ -65,6 +66,7 @@ extern "C" void app_main(void)
     test_ota_power_suite();
     test_forensics_suite();
     test_evidence_store_suite();
+
 
     int failures = UNITY_END();
 
