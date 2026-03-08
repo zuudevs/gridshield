@@ -1,0 +1,166 @@
+/**
+ * @file crypto.hpp
+ * @author zuudevs (zuudevs@gmail.com)
+ * @brief Lightweight cryptography engine (ECC secp256r1 + AES-256-GCM)
+ * @version 0.3
+ * @date 2026-02-03
+ *
+ * Third-party dependencies (production):
+ * - uECC (micro-ecc) for ECDSA
+ * - mbedTLS or TinyCrypt for AES-GCM
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
+#pragma once
+
+#include "core/error.hpp"
+#include "core/types.hpp"
+#include "platform/platform.hpp"
+#include <array>
+
+namespace gridshield::security {
+
+// ============================================================================
+// CRYPTO CONSTANTS
+// ============================================================================
+constexpr size_t ECC_KEY_SIZE = 32;        // 256-bit
+constexpr size_t ECC_SIGNATURE_SIZE = 64;  // r + s
+constexpr size_t ECC_PUBLIC_KEY_SIZE = 64; // x + y
+constexpr size_t AES_KEY_SIZE = 32;        // 256-bit
+constexpr size_t AES_BLOCK_SIZE = 16;
+constexpr size_t AES_GCM_TAG_SIZE = 16;
+constexpr size_t NONCE_SIZE = 12;
+constexpr size_t SHA256_HASH_SIZE = 32;
+
+// ============================================================================
+// ECC KEY PAIR
+// ============================================================================
+class ECCKeyPair
+{
+public:
+    static constexpr size_t PRIVATE_KEY_SIZE = ECC_KEY_SIZE;
+    static constexpr size_t PUBLIC_KEY_SIZE = ECC_PUBLIC_KEY_SIZE;
+
+    ECCKeyPair() noexcept = default;
+    ~ECCKeyPair() noexcept;
+
+    // Non-copyable, movable
+    ECCKeyPair(const ECCKeyPair&) = delete;
+    ECCKeyPair& operator=(const ECCKeyPair&) = delete;
+    ECCKeyPair(ECCKeyPair&& other) noexcept;
+    ECCKeyPair& operator=(ECCKeyPair&& other) noexcept;
+
+    core::Result<void> generate() noexcept;
+    core::Result<void> load_private_key(const uint8_t* key, size_t length) noexcept;
+    core::Result<void> load_public_key(const uint8_t* key, size_t length) noexcept;
+
+    GS_NODISCARD const uint8_t* get_private_key() const noexcept;
+    GS_NODISCARD const uint8_t* get_public_key() const noexcept;
+
+    GS_NODISCARD bool has_private_key() const noexcept;
+    GS_NODISCARD bool has_public_key() const noexcept;
+
+    void clear() noexcept;
+
+private:
+    std::array<uint8_t, ECC_KEY_SIZE> private_key_{};
+    std::array<uint8_t, ECC_PUBLIC_KEY_SIZE> public_key_{};
+    bool has_private_{false};
+    bool has_public_{false};
+};
+
+// ============================================================================
+// CRYPTO ENGINE INTERFACE
+// ============================================================================
+class ICryptoEngine
+{
+public:
+    virtual ~ICryptoEngine() noexcept = default;
+
+    virtual core::Result<void> generate_keypair(ECCKeyPair& keypair) noexcept = 0;
+
+    virtual core::Result<void> sign(const ECCKeyPair& keypair,
+                                    const uint8_t* message,
+                                    size_t msg_len,
+                                    uint8_t* signature_out) noexcept = 0;
+
+    virtual core::Result<bool> verify(const ECCKeyPair& keypair,
+                                      const uint8_t* message,
+                                      size_t msg_len,
+                                      const uint8_t* signature) noexcept = 0;
+
+    virtual core::Result<void> derive_shared_secret(const ECCKeyPair& our_keypair,
+                                                    const uint8_t* their_public_key,
+                                                    uint8_t* shared_secret_out) noexcept = 0;
+
+    virtual core::Result<size_t> encrypt_aes_gcm(const uint8_t* key,
+                                                 const uint8_t* nonce,
+                                                 const uint8_t* plaintext,
+                                                 size_t pt_len,
+                                                 uint8_t* ciphertext_out,
+                                                 uint8_t* tag_out) noexcept = 0;
+
+    virtual core::Result<size_t> decrypt_aes_gcm(const uint8_t* key,
+                                                 const uint8_t* nonce,
+                                                 const uint8_t* ciphertext,
+                                                 size_t ct_len,
+                                                 const uint8_t* tag,
+                                                 uint8_t* plaintext_out) noexcept = 0;
+
+    virtual core::Result<void>
+    hash_sha256(const uint8_t* data, size_t length, uint8_t* hash_out) noexcept = 0;
+
+    virtual core::Result<void> random_bytes(uint8_t* buffer, size_t length) noexcept = 0;
+};
+
+// ============================================================================
+// CRYPTO ENGINE IMPLEMENTATION
+// ============================================================================
+class CryptoEngine final : public ICryptoEngine
+{
+public:
+    explicit CryptoEngine(platform::IPlatformCrypto& platform_crypto) noexcept;
+    ~CryptoEngine() noexcept override = default;
+
+    core::Result<void> generate_keypair(ECCKeyPair& keypair) noexcept override;
+
+    core::Result<void> sign(const ECCKeyPair& keypair,
+                            const uint8_t* message,
+                            size_t msg_len,
+                            uint8_t* signature_out) noexcept override;
+
+    core::Result<bool> verify(const ECCKeyPair& keypair,
+                              const uint8_t* message,
+                              size_t msg_len,
+                              const uint8_t* signature) noexcept override;
+
+    core::Result<void> derive_shared_secret(const ECCKeyPair& our_keypair,
+                                            const uint8_t* their_public_key,
+                                            uint8_t* shared_secret_out) noexcept override;
+
+    core::Result<size_t> encrypt_aes_gcm(const uint8_t* key,
+                                         const uint8_t* nonce,
+                                         const uint8_t* plaintext,
+                                         size_t pt_len,
+                                         uint8_t* ciphertext_out,
+                                         uint8_t* tag_out) noexcept override;
+
+    core::Result<size_t> decrypt_aes_gcm(const uint8_t* key,
+                                         const uint8_t* nonce,
+                                         const uint8_t* ciphertext,
+                                         size_t ct_len,
+                                         const uint8_t* tag,
+                                         uint8_t* plaintext_out) noexcept override;
+
+    core::Result<void>
+    hash_sha256(const uint8_t* data, size_t length, uint8_t* hash_out) noexcept override;
+
+    core::Result<void> random_bytes(uint8_t* buffer, size_t length) noexcept override;
+
+private:
+    platform::IPlatformCrypto& platform_crypto_;
+};
+
+} // namespace gridshield::security

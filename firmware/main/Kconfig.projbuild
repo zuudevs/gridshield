@@ -1,0 +1,35 @@
+menu "GridShield Demo Config"
+
+    config GRIDSHIELD_DEMO_MODE
+        bool "Enable Demo Mode (no sensors, simulated data)"
+        default y
+        help
+            Enable demo mode. The ESP32 will generate simulated meter readings
+            and send them to the backend over WiFi. No sensors required.
+
+    config GRIDSHIELD_WIFI_SSID
+        string "WiFi SSID"
+        default "YOUR_WIFI_SSID"
+        help
+            WiFi network name to connect to.
+
+    config GRIDSHIELD_WIFI_PASS
+        string "WiFi Password"
+        default "YOUR_WIFI_PASSWORD"
+        help
+            WiFi network password.
+
+    config GRIDSHIELD_BACKEND_HOST
+        string "Backend Server IP Address"
+        default "192.168.1.100"
+        help
+            IP address of the machine running the GridShield FastAPI backend.
+            Use your computer's local IP (e.g. 192.168.1.100).
+
+    config GRIDSHIELD_BACKEND_PORT
+        int "Backend Server Port"
+        default 8000
+        help
+            Port number of the GridShield FastAPI backend (default: 8000).
+
+endmenu

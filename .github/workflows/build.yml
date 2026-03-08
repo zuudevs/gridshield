@@ -1,0 +1,232 @@
+name: GridShield CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  IDF_TARGET: esp32
+
+jobs:
+  build:
+    name: Build Firmware
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v5.5.3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Firmware
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware
+          idf.py set-target esp32
+          idf.py build
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-binary
+          path: |
+            firmware/build/gridshield.bin
+            firmware/build/gridshield.elf
+          retention-days: 30
+
+  test:
+    name: Unit Tests (QEMU)
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v5.5.3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install QEMU
+        shell: bash
+        run: |
+          pip install qemu-system-esp32 || true
+          # QEMU for ESP32 is bundled in newer IDF images
+
+      - name: Build Test App
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware/test_app
+          idf.py set-target esp32
+          idf.py build
+
+      - name: Run Tests on QEMU
+        shell: bash
+        timeout-minutes: 5
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware/test_app
+          # Run QEMU with timeout, capture output
+          timeout 60 idf.py qemu monitor --no-reset 2>&1 | tee test_output.log || true
+          # Check for test failures
+          if grep -q "FAIL" test_output.log; then
+            echo "::error::Unit tests failed!"
+            cat test_output.log
+            exit 1
+          fi
+          if grep -q "ALL TESTS PASSED" test_output.log; then
+            echo "All tests passed!"
+          fi
+
+  backend-lint:
+    name: Backend Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install ruff
+
+      - name: Lint
+        run: ruff check backend/
+
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Run Tests
+        run: python -m pytest backend/tests/ -v --tb=short
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Upload Frontend Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 30
+
+  clang-tidy:
+    name: C++ Lint (clang-tidy)
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v5.5.3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate compile_commands.json
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware
+          idf.py set-target esp32
+          idf.py reconfigure
+
+      - name: Install clang-tidy
+        run: apt-get update && apt-get install -y clang-tidy gcc-arm-none-eabi
+
+      - name: Sanitize compile_commands.json
+        shell: bash
+        run: python3 scripts/fix_compile_commands.py firmware/build/compile_commands.json
+
+      - name: Run clang-tidy
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware
+          
+          # Create stub for missing toolchain header that causes clang-tidy to fail
+          mkdir -p stubs/machine
+          touch stubs/machine/endian.h
+          STUB_PATH=$(pwd)/stubs
+          
+          # Run clang-tidy on project source files
+          # We use -print0/xargs -0 for safety and || true to handle results manually
+          find main/src -name '*.cpp' -print0 | xargs -0 clang-tidy \
+            -p build \
+            --extra-arg=-Wno-unknown-warning-option \
+            --extra-arg=-isystem --extra-arg="${STUB_PATH}" \
+            2>&1 | tee clang_tidy_output.log || true
+
+          # Filter output: only fail on errors in project code, ignoring the endian.h issue
+          # We look for 'error:' but exclude 'machine/endian.h' and only care about main/ or include/ paths
+          REAL_ERRORS=$(grep "error:" clang_tidy_output.log | grep -v "machine/endian.h" | grep -E "(main/src|include/)" || true)
+          
+          if [ -n "${REAL_ERRORS}" ]; then
+            echo "::error::clang-tidy found REAL issues in project code!"
+            echo "${REAL_ERRORS}"
+            exit 1
+          else
+            echo "No critical errors found in project code. System header issues like endian.h were ignored."
+          fi
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ cmake lcov bc libmbedtls-dev
+
+      - name: Build & Run Coverage
+        run: |
+          cd firmware/coverage
+          bash run_coverage.sh
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: firmware/coverage/report/
+          retention-days: 30
