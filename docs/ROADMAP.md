@@ -4,12 +4,17 @@ Future development plans and feature roadmap for GridShield AMI Security System.
 
 **Last Updated:** March 2026  
 <<<<<<< HEAD
+**Current Version:** 3.3.0  
+**Next Target:** 3.4.0 (Q3 2027)
+=======
+<<<<<<< HEAD
 **Current Version:** 3.2.0  
 **Next Target:** 3.3.0 (Q2 2027)
 =======
 **Current Version:** 3.1.0-fw  
 **Next Target:** 3.2.0 (Q2 2027)
 >>>>>>> 469b660da70c38354fe5127353f451559b605a7f
+>>>>>>> origin/main
 
 ---
 
@@ -230,6 +235,9 @@ GridShield aims to become the **industry-standard open-source security framework
 ---
 
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> origin/main
 ### Q2 2027 — Integration & Export Enhancement (v3.2.0)
 
 **Target Release:** June 2027 (completed March 2026)
@@ -268,8 +276,55 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ---
 
+<<<<<<< HEAD
+### Q3 2027 — Notification System & Forensics API (v3.3.0)
+
+**Target Release:** September 2027 (completed March 2026)
+
+#### High Priority
+
+- [x] **Notification & Webhook System**
+  - [x] In-app notification engine (auto-generate from alerts/anomalies)
+  - [x] Notification API (list, summary, mark-read, mark-all-read)
+  - [x] Webhook configuration CRUD (register, list, delete, test)
+  - [x] Event-type filtering for webhooks (tamper_alert, anomaly, forensics)
+  - [x] HTTP POST dispatch with secret header
+
+- [x] **Forensics API**
+  - [x] Incident report ingestion from firmware
+  - [x] Report listing with meter_id and type filters
+  - [x] Auto-notification for critical/high severity reports
+
+- [x] **Frontend Notifications**
+  - [x] Notification center page (read/unread filtering, mark-read)
+  - [x] Navigation bell badge with unread count polling
+  - [x] Dashboard 5th KPI: unread notifications
+  - [x] Dashboard forensics report summary panel
+
+#### Medium Priority
+
+- [x] **Firmware Alert Dispatcher**
+  - [x] Configurable rule-based event dispatch (16 rules, zero-heap)
+  - [x] Severity threshold matching
+  - [x] Multiple action types (LogOnly, HttpPost, MqttPublish, All)
+  - [x] AlertDispatcher tests (10 tests)
+
+- [x] **Backend Testing**
+  - [x] Notification tests (6 tests)
+  - [x] Webhook tests (6 tests)
+  - [x] Forensics report tests (7 tests)
+  - [x] Total backend tests: 59 (37 existing + 22 new)
+
+- [x] **Firmware Tests**
+  - [x] AlertDispatcher tests (10 tests)
+  - [x] Total firmware test count: 186 (176 + 10)
+
+---
+
+=======
 =======
 >>>>>>> 469b660da70c38354fe5127353f451559b605a7f
+>>>>>>> origin/main
 ## Feature Backlogs
 
 ### Core Features
@@ -329,8 +384,12 @@ GridShield aims to become the **industry-standard open-source security framework
 <<<<<<< HEAD
   - [x] Evidence preservation (EvidenceStore + hash chain)
 =======
+<<<<<<< HEAD
+  - [x] Evidence preservation (EvidenceStore + hash chain)
+=======
   - [ ] Evidence preservation
 >>>>>>> 469b660da70c38354fe5127353f451559b605a7f
+>>>>>>> origin/main
   - [x] Automated reporting (IncidentReportGenerator)
 
 ---
@@ -482,8 +541,13 @@ Features are prioritized based on:
 | **3.1.0** | March 2026 | Fleet management API, server-side anomaly detection, forensics module, backend tests (31), firmware tests (+16 = 168 total) |
 <<<<<<< HEAD
 | **3.2.0** | March 2026 | Data export API (CSV), frontend fleet integration, evidence preservation, backend CI tests, 37+ backend tests, 176 firmware tests |
+| **3.3.0** | March 2026 | Notification & webhook system, forensics API, frontend notifications page, alert dispatcher, 59 backend tests, 186 firmware tests |
+=======
+<<<<<<< HEAD
+| **3.2.0** | March 2026 | Data export API (CSV), frontend fleet integration, evidence preservation, backend CI tests, 37+ backend tests, 176 firmware tests |
 =======
 >>>>>>> 469b660da70c38354fe5127353f451559b605a7f
+>>>>>>> origin/main
 
 ---
 

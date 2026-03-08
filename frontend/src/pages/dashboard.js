@@ -3,7 +3,11 @@
  * KPI cards + energy chart + recent alerts
  */
 
+<<<<<<< HEAD
+import { getStatus, getReadings, getAlerts, exportReadings, getNotificationSummary, getForensicsReports } from '../api.js';
+=======
 import { getStatus, getReadings, getAlerts, exportReadings } from '../api.js';
+>>>>>>> origin/main
 import { createLineChart } from '../components/chart.js';
 
 /** Helper: format timestamp */
@@ -26,10 +30,19 @@ function severityColor(sev) {
 
 export default async function renderDashboard(container) {
   // Fetch data in parallel
+<<<<<<< HEAD
+  const [status, readings, alerts, notifSummary, forensics] = await Promise.all([
+    getStatus(),
+    getReadings({ limit: 100 }),
+    getAlerts({ limit: 10 }),
+    getNotificationSummary(),
+    getForensicsReports({ limit: 5 }),
+=======
   const [status, readings, alerts] = await Promise.all([
     getStatus(),
     getReadings({ limit: 100 }),
     getAlerts({ limit: 10 }),
+>>>>>>> origin/main
   ]);
 
   container.innerHTML = `
@@ -76,6 +89,15 @@ export default async function renderDashboard(container) {
           <div class="stat-value" id="stat-anomalies">${status.total_anomalies}</div>
           <div class="stat-sub">Detected events</div>
         </div>
+
+        <div class="stat-card accent-green">
+          <div class="stat-header">
+            <span class="stat-label">Notifications</span>
+            <span class="stat-icon">🔔</span>
+          </div>
+          <div class="stat-value" id="stat-notifs">${notifSummary.unread_count}</div>
+          <div class="stat-sub">Unread alerts</div>
+        </div>
       </div>
 
       <!-- Charts Row -->
@@ -99,6 +121,14 @@ export default async function renderDashboard(container) {
             <span class="badge badge-critical">${status.unacknowledged_alerts} active</span>
           </div>
           <div class="panel-body" id="recent-alerts"></div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="panel-header">
+            <span class="panel-title">Forensics Reports</span>
+            <span class="badge badge-info">${forensics.length} recent</span>
+          </div>
+          <div class="panel-body" id="forensics-list"></div>
         </div>
       </div>
     </div>
@@ -169,15 +199,47 @@ export default async function renderDashboard(container) {
     exportReadings();
   });
 
+<<<<<<< HEAD
+  // --- Forensics Reports ---
+  const forensicsList = document.getElementById('forensics-list');
+  if (forensics.length === 0) {
+    forensicsList.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-text">No forensics reports</div>
+      </div>`;
+  } else {
+    forensicsList.innerHTML = forensics.map(r => `
+      <div class="recent-alert-item">
+        <span class="recent-alert-dot" style="background:var(--color-${r.severity === 'critical' ? 'red' : r.severity === 'high' ? 'orange' : 'cyan'})"></span>
+        <div class="recent-alert-info">
+          <div class="recent-alert-type">${r.report_type} incident</div>
+          <div class="recent-alert-time">${timeAgo(r.timestamp)} · ${r.event_count} events · ${r.confidence}% confidence</div>
+        </div>
+        <span class="badge badge-${r.severity === 'critical' || r.severity === 'high' ? 'critical' : 'info'}">${r.severity}</span>
+      </div>
+    `).join('');
+  }
+
+  // --- Auto-refresh ---
+  const interval = setInterval(async () => {
+    try {
+      const [s, ns] = await Promise.all([getStatus(), getNotificationSummary()]);
+=======
   // --- Auto-refresh ---
   const interval = setInterval(async () => {
     try {
       const s = await getStatus();
+>>>>>>> origin/main
       const el = (id) => document.getElementById(id);
       if (el('stat-readings')) el('stat-readings').textContent = s.total_readings.toLocaleString();
       if (el('stat-meters')) el('stat-meters').textContent = s.active_meters;
       if (el('stat-alerts')) el('stat-alerts').textContent = s.unacknowledged_alerts;
       if (el('stat-anomalies')) el('stat-anomalies').textContent = s.total_anomalies;
+<<<<<<< HEAD
+      if (el('stat-notifs')) el('stat-notifs').textContent = ns.unread_count;
+=======
+>>>>>>> origin/main
     } catch (_) { /* ignore if navigated away */ }
   }, 10000);
 

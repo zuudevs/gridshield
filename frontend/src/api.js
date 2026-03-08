@@ -123,3 +123,52 @@ export function exportAnomalies(meterId) {
     const params = meterId != null ? `?meter_id=${meterId}` : '';
     triggerDownload(`/export/anomalies${params}`, 'gridshield_anomalies.csv');
 }
+<<<<<<< HEAD
+
+// ============================================================================
+// Notifications
+// ============================================================================
+
+/** List notifications */
+export function getNotifications({ isRead, limit = 50 } = {}) {
+    const params = new URLSearchParams();
+    if (isRead != null) params.set('is_read', isRead);
+    if (limit) params.set('limit', limit);
+    const qs = params.toString();
+    return request(`/notifications${qs ? '?' + qs : ''}`);
+}
+
+/** Notification summary (unread count + recent) */
+export function getNotificationSummary() {
+    return request('/notifications/summary');
+}
+
+/** Mark a notification as read */
+export function markNotificationRead(id) {
+    return request(`/notifications/${id}/read`, { method: 'PATCH' });
+}
+
+/** Mark all notifications as read */
+export function markAllNotificationsRead() {
+    return request('/notifications/read-all', { method: 'POST' });
+}
+
+// ============================================================================
+// Forensics Reports
+// ============================================================================
+
+/** List forensics reports */
+export function getForensicsReports({ meterId, limit = 50 } = {}) {
+    const params = new URLSearchParams();
+    if (meterId != null) params.set('meter_id', meterId);
+    if (limit) params.set('limit', limit);
+    const qs = params.toString();
+    return request(`/forensics/reports${qs ? '?' + qs : ''}`);
+}
+
+/** Get a single forensics report */
+export function getForensicsReport(id) {
+    return request(`/forensics/reports/${id}`);
+}
+=======
+>>>>>>> origin/main

@@ -66,3 +66,51 @@ class Meter(Base):
     status = Column(String(20), default="offline")  # online / offline / tampered
     registered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_seen_at = Column(DateTime, default=None, nullable=True)
+<<<<<<< HEAD
+
+
+class Notification(Base):
+    """In-app notification generated from alerts and anomalies."""
+
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    notification_type = Column(String(30), nullable=False)  # tamper_alert / anomaly / forensics
+    severity = Column(String(20), default="info")  # info / low / medium / high / critical
+    message = Column(String(500), nullable=False)
+    meter_id = Column(BigInteger, nullable=True, index=True)
+    is_read = Column(Boolean, default=False)
+    source_id = Column(Integer, nullable=True)  # FK-like reference to alert/anomaly/report id
+
+
+class WebhookConfig(Base):
+    """External webhook endpoint configuration."""
+
+    __tablename__ = "webhook_configs"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    url = Column(String(500), nullable=False)
+    secret = Column(String(100), default="")
+    enabled = Column(Boolean, default=True)
+    event_types = Column(String(200), default="all")  # comma-separated: all, tamper_alert, anomaly, forensics
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    description = Column(String(200), default="")
+
+
+class ForensicsReport(Base):
+    """Forensic incident report from firmware."""
+
+    __tablename__ = "forensics_reports"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    meter_id = Column(BigInteger, nullable=False, index=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    report_type = Column(String(30), nullable=False)  # physical / network / fraud / hybrid
+    severity = Column(String(20), default="low")
+    confidence = Column(Integer, default=0)
+    event_count = Column(Integer, default=0)
+    summary = Column(String(1000), default="")
+    raw_payload = Column(String(5000), default="{}")
+=======
+>>>>>>> origin/main

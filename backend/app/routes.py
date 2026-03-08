@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from . import models, schemas
 from .anomaly_engine import analyze_reading
 from .database import get_db
+from . import notification_engine
 
 router = APIRouter(prefix="/api", tags=["GridShield API"])
 
@@ -64,6 +65,7 @@ def create_tamper_alert(alert: schemas.TamperAlertCreate, db: Session = Depends(
     db.add(db_alert)
     db.commit()
     db.refresh(db_alert)
+    notification_engine.on_alert(db_alert, db)
     return db_alert
 
 
@@ -106,6 +108,7 @@ def create_anomaly_log(anomaly: schemas.AnomalyLogCreate, db: Session = Depends(
     db.add(db_anomaly)
     db.commit()
     db.refresh(db_anomaly)
+    notification_engine.on_anomaly(db_anomaly, db)
     return db_anomaly
 
 
