@@ -131,6 +131,7 @@ class MeterStats(BaseModel):
     avg_voltage_mv: float
     avg_current_ma: float
     last_reading_time: datetime | None = None
+<<<<<<< HEAD
 
 
 # ============================================================================
@@ -208,3 +209,5 @@ class ForensicsReportResponse(BaseModel):
     raw_payload: str
 
     model_config = {"from_attributes": True}
+=======
+>>>>>>> origin/main

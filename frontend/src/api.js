@@ -123,6 +123,7 @@ export function exportAnomalies(meterId) {
     const params = meterId != null ? `?meter_id=${meterId}` : '';
     triggerDownload(`/export/anomalies${params}`, 'gridshield_anomalies.csv');
 }
+<<<<<<< HEAD
 
 // ============================================================================
 // Notifications
@@ -169,3 +170,5 @@ export function getForensicsReports({ meterId, limit = 50 } = {}) {
 export function getForensicsReport(id) {
     return request(`/forensics/reports/${id}`);
 }
+=======
+>>>>>>> origin/main

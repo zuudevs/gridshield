@@ -66,6 +66,7 @@ class Meter(Base):
     status = Column(String(20), default="offline")  # online / offline / tampered
     registered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_seen_at = Column(DateTime, default=None, nullable=True)
+<<<<<<< HEAD
 
 
 class Notification(Base):
@@ -111,3 +112,5 @@ class ForensicsReport(Base):
     event_count = Column(Integer, default=0)
     summary = Column(String(1000), default="")
     raw_payload = Column(String(5000), default="{}")
+=======
+>>>>>>> origin/main

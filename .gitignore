@@ -5,6 +5,7 @@
 /build/
 /build-*/
 /.cache/
+/clangd/
 /logs/
 
 # ESP-IDF
@@ -88,6 +89,7 @@ ehthumbs.db
 *.dll
 *.a
 *.lib
+*.db
 
 # =========================
 # Logs & temp
@@ -133,4 +135,3 @@ firmware/fuzz/fuzz_*
 firmware/stubs/
 clang-tidy.log
 code-coverage.log
-*.db

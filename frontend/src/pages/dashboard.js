@@ -3,7 +3,11 @@
  * KPI cards + energy chart + recent alerts
  */
 
+<<<<<<< HEAD
 import { getStatus, getReadings, getAlerts, exportReadings, getNotificationSummary, getForensicsReports } from '../api.js';
+=======
+import { getStatus, getReadings, getAlerts, exportReadings } from '../api.js';
+>>>>>>> origin/main
 import { createLineChart } from '../components/chart.js';
 
 /** Helper: format timestamp */
@@ -26,12 +30,19 @@ function severityColor(sev) {
 
 export default async function renderDashboard(container) {
   // Fetch data in parallel
+<<<<<<< HEAD
   const [status, readings, alerts, notifSummary, forensics] = await Promise.all([
     getStatus(),
     getReadings({ limit: 100 }),
     getAlerts({ limit: 10 }),
     getNotificationSummary(),
     getForensicsReports({ limit: 5 }),
+=======
+  const [status, readings, alerts] = await Promise.all([
+    getStatus(),
+    getReadings({ limit: 100 }),
+    getAlerts({ limit: 10 }),
+>>>>>>> origin/main
   ]);
 
   container.innerHTML = `
@@ -188,6 +199,7 @@ export default async function renderDashboard(container) {
     exportReadings();
   });
 
+<<<<<<< HEAD
   // --- Forensics Reports ---
   const forensicsList = document.getElementById('forensics-list');
   if (forensics.length === 0) {
@@ -213,12 +225,21 @@ export default async function renderDashboard(container) {
   const interval = setInterval(async () => {
     try {
       const [s, ns] = await Promise.all([getStatus(), getNotificationSummary()]);
+=======
+  // --- Auto-refresh ---
+  const interval = setInterval(async () => {
+    try {
+      const s = await getStatus();
+>>>>>>> origin/main
       const el = (id) => document.getElementById(id);
       if (el('stat-readings')) el('stat-readings').textContent = s.total_readings.toLocaleString();
       if (el('stat-meters')) el('stat-meters').textContent = s.active_meters;
       if (el('stat-alerts')) el('stat-alerts').textContent = s.unacknowledged_alerts;
       if (el('stat-anomalies')) el('stat-anomalies').textContent = s.total_anomalies;
+<<<<<<< HEAD
       if (el('stat-notifs')) el('stat-notifs').textContent = ns.unread_count;
+=======
+>>>>>>> origin/main
     } catch (_) { /* ignore if navigated away */ }
   }, 10000);
 

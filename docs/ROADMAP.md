@@ -3,8 +3,18 @@
 Future development plans and feature roadmap for GridShield AMI Security System.
 
 **Last Updated:** March 2026  
+<<<<<<< HEAD
 **Current Version:** 3.3.0  
 **Next Target:** 3.4.0 (Q3 2027)
+=======
+<<<<<<< HEAD
+**Current Version:** 3.2.0  
+**Next Target:** 3.3.0 (Q2 2027)
+=======
+**Current Version:** 3.1.0-fw  
+**Next Target:** 3.2.0 (Q2 2027)
+>>>>>>> 469b660da70c38354fe5127353f451559b605a7f
+>>>>>>> origin/main
 
 ---
 
@@ -224,6 +234,10 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ---
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> origin/main
 ### Q2 2027 — Integration & Export Enhancement (v3.2.0)
 
 **Target Release:** June 2027 (completed March 2026)
@@ -262,6 +276,7 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ---
 
+<<<<<<< HEAD
 ### Q3 2027 — Notification System & Forensics API (v3.3.0)
 
 **Target Release:** September 2027 (completed March 2026)
@@ -306,6 +321,10 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ---
 
+=======
+=======
+>>>>>>> 469b660da70c38354fe5127353f451559b605a7f
+>>>>>>> origin/main
 ## Feature Backlogs
 
 ### Core Features
@@ -362,7 +381,15 @@ GridShield aims to become the **industry-standard open-source security framework
 - [x] **Forensics**
   - [x] Attack signature event logger (SecurityEvent + EventLogger)
   - [x] Incident timeline reconstruction (get_timeline)
+<<<<<<< HEAD
   - [x] Evidence preservation (EvidenceStore + hash chain)
+=======
+<<<<<<< HEAD
+  - [x] Evidence preservation (EvidenceStore + hash chain)
+=======
+  - [ ] Evidence preservation
+>>>>>>> 469b660da70c38354fe5127353f451559b605a7f
+>>>>>>> origin/main
   - [x] Automated reporting (IncidentReportGenerator)
 
 ---
@@ -512,8 +539,15 @@ Features are prioritized based on:
 | **3.0.0** | December 2026 | Cloud integration, ML analytics, 206 tests (total) |
 | **3.0.1** | March 2026 | CI fixes, hardware testing (ESP32-D0WD), HKDF test fix, 152 tests |
 | **3.1.0** | March 2026 | Fleet management API, server-side anomaly detection, forensics module, backend tests (31), firmware tests (+16 = 168 total) |
+<<<<<<< HEAD
 | **3.2.0** | March 2026 | Data export API (CSV), frontend fleet integration, evidence preservation, backend CI tests, 37+ backend tests, 176 firmware tests |
 | **3.3.0** | March 2026 | Notification & webhook system, forensics API, frontend notifications page, alert dispatcher, 59 backend tests, 186 firmware tests |
+=======
+<<<<<<< HEAD
+| **3.2.0** | March 2026 | Data export API (CSV), frontend fleet integration, evidence preservation, backend CI tests, 37+ backend tests, 176 firmware tests |
+=======
+>>>>>>> 469b660da70c38354fe5127353f451559b605a7f
+>>>>>>> origin/main
 
 ---
 
