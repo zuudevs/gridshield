@@ -128,7 +128,7 @@ idf.py qemu
 
 ```
 [GridShield] ==============================================
-[GridShield] GridShield v3.0.1 [ESP32 - QEMU Simulation]
+[GridShield] GridShield v3.3.0 [ESP32 - QEMU Simulation]
 [GridShield] Platform: ESP-IDF + QEMU
 [GridShield] ==============================================
 [GridShield] System started successfully

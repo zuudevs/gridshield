@@ -4,10 +4,46 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> origin/main
+
+## [3.3.0] - 2026-03-30
+
+### Added
+- **Notification & Webhook System** (`backend/app/notifications.py`, `backend/app/webhooks.py`):
+  - In-app notification engine with auto-generation from alerts/anomalies.
+  - Notification API (list, summary, mark-read, mark-all-read).
+  - Webhook configuration CRUD with event-type filtering.
+  - HTTP POST dispatch with secret header authentication.
+- **Forensics API** (`backend/app/forensics.py`):
+  - Incident report ingestion from firmware.
+  - Report listing with meter_id and type filters.
+  - Auto-notification for critical/high severity reports.
+- **Frontend Notifications**:
+  - Notification center page with read/unread filtering.
+  - Navigation bell badge with unread count polling.
+  - Dashboard forensics report summary panel.
+- **Firmware Alert Dispatcher** (`firmware/include/common/alerts/alert_dispatcher.hpp`):
+  - Configurable rule-based event dispatch (16 rules, zero-heap).
+  - Multiple action types (LogOnly, HttpPost, MqttPublish, All).
+  - AlertDispatcher tests (10 tests).
+- **IoT Hardware Design v2.0** (`docs/design/iot-design.html`):
+  - Complete component catalog (9 components with detailed specs).
+  - Interactive SVG wiring schematic with color-coded wire paths.
+  - Step-by-step connection paths for all 8 sensor/peripheral groups.
+  - Power distribution tree (220VAC → 5V → 3.3V hierarchy).
+  - GPIO pin mapping with wire color coding.
+  - 8-step assembly guide for building a GridShield node.
+  - Updated BOM with estimated pricing (Rp 370,000).
+- **Backend Testing**:
+  - Notification tests (6), Webhook tests (6), Forensics tests (7).
+  - Total backend tests: 59.
+- **Firmware Tests**:
+  - AlertDispatcher tests (10).
+  - Total firmware test count: 186.
+
+### Changed
+- Backend API version bumped to `3.3.0`.
+- IoT hardware design split into separate CSS (`iot-design-styles.css`) for maintainability.
+- Documentation updated across CHANGELOG, ROADMAP, README, and ARCHITECTURE.
 ## [3.2.0] - 2026-03-07
 
 ### Added
@@ -42,11 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Frontend `api.js` extended with meter CRUD and CSV export functions.
 - Frontend `style.css` extended with modal, status indicator, and form styles.
 
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 469b660da70c38354fe5127353f451559b605a7f
->>>>>>> origin/main
+
 ## [3.1.0] - 2026-03-06
 
 ### Added
@@ -240,6 +272,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Defined C++17 coding standards.
   - Established error handling patterns using `Result<T>`.
 
+[3.3.0]: https://github.com/zuudevs/gridshield/compare/v3.2.0...v3.3.0
+[3.2.0]: https://github.com/zuudevs/gridshield/compare/v3.1.0...v3.2.0
+[3.1.0]: https://github.com/zuudevs/gridshield/compare/v3.0.1-fw...v3.1.0
 [3.0.1]: https://github.com/zuudevs/gridshield/compare/v3.0.0-fw...v3.0.1-fw
 [3.0.0]: https://github.com/zuudevs/gridshield/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/zuudevs/gridshield/compare/v1.1.0...v2.0.0

@@ -45,7 +45,9 @@ gridshield/
 ├── backend/       ← FastAPI REST API (Python)
 ├── frontend/      ← Dashboard Web (Vite + Chart.js)
 ├── firmware/      ← Firmware ESP32 (C++17)
-└── docs/          ← Dokumentasi
+└── docs/
+    ├── design/    ← IoT Hardware Design (wiring, components)
+    └── ...        ← Dokumentasi lainnya
 ```
 
 ---
@@ -122,7 +124,7 @@ npm run dev
 
 Buka browser: **http://localhost:5173**
 
-Dashboard memiliki **4 halaman**:
+Dashboard memiliki **5 halaman**:
 
 | Halaman | URL | Fungsi |
 |---------|-----|--------|
@@ -130,6 +132,7 @@ Dashboard memiliki **4 halaman**:
 | **Tamper Alerts** | `http://localhost:5173/#/alerts` | Manajemen alert keamanan fisik |
 | **Anomalies** | `http://localhost:5173/#/anomalies` | Log deteksi anomali konsumsi |
 | **Fleet** | `http://localhost:5173/#/fleet` | Manajemen dan monitoring meter |
+| **Notifications** | `http://localhost:5173/#/notifications` | Pusat notifikasi (webhook, forensics) |
 
 **Tampilan Dashboard:**
 
@@ -195,7 +198,7 @@ idf.py -p COM3 monitor      # Monitor serial output
 
 ```
 [GridShield] ==============================================
-[GridShield] GridShield v3.0.1 [ESP32 - QEMU Simulation]
+[GridShield] GridShield v3.3.0 [ESP32 - QEMU Simulation]
 [GridShield] Platform: ESP-IDF + QEMU
 [GridShield] ==============================================
 
@@ -294,6 +297,7 @@ Pastikan backend sudah berjalan di port 8000 **sebelum** menjalankan frontend.
 | Dokumen | Isi |
 |---------|-----|
 | [Architecture](ARCHITECTURE.md) | Desain sistem lengkap dengan diagram |
+| [IoT Hardware Design](design/iot-design.html) | Wiring schematic, komponen, assembly guide |
 | [API Reference](API.md) | Dokumentasi endpoint firmware & backend |
 | [Build Guide](../BUILD.md) | Konfigurasi build lanjutan |
 | [Tech Stack](TECHSTACK.md) | Teknologi yang digunakan |

@@ -1,7 +1,7 @@
 # GridShield - System Architecture
 
-**Version:** 3.0.1  
-**Last Updated:** February 2026  
+**Version:** 3.3.0  
+**Last Updated:** March 2026  
 **Authors:** M. Ichwan Fauzi, Rafi Indra Pramudhito Zuhayr, Cesar Ardika Bhayangkara  
 **Implementasi Aktual:** Seluruh implementasi teknis di repository ini dikerjakan oleh **Rafi Indra Pramudhito Zuhayr**
 
@@ -717,7 +717,10 @@ gridshield/
     ├── QUICKSTART.md                   # Getting started guide
     ├── TECHSTACK.md                    # Technology choices
     ├── ROADMAP.md                      # Planned features
-    └── REQUIREMENTS.md                 # System requirements
+    ├── REQUIREMENTS.md                 # System requirements
+    └── design/
+        ├── iot-design.html             # IoT hardware design (interactive)
+        └── iot-design-styles.css       # Design page styles
 ```
 
 ### Compilation Units
