@@ -1,4 +1,4 @@
-# Security Audit Report — GridShield v2.0.1
+# Security Audit Report — GridShield v3.3.0
 
 **Audit Date:** February 2026  
 **Auditor:** zuudevs  
@@ -87,8 +87,8 @@ Critical cryptographic operations are sound, but some areas require hardening be
 
 | ID | Severity | Finding | Recommendation |
 |----|----------|---------|----------------|
-| SA-011 | **Medium** | Single sensor input (GPIO only) | Add multi-sensor fusion (accelerometer, light, capacitive) |
-| SA-012 | **Low** | No tamper event logging to persistent storage | Log tamper events to NVS for post-incident forensics |
+| SA-011 | ~~**Medium**~~ | ~~Single sensor input (GPIO only)~~ | ✅ **Resolved in v3.3.0** — Multi-sensor fusion implemented (MPU6050 accelerometer, DS18B20 temperature, micro switch, power-cut ADC) |
+| SA-012 | ~~**Low**~~ | ~~No tamper event logging to persistent storage~~ | ✅ **Resolved in v3.1.0** — EventLogger + EvidenceStore with hash chain |
 
 ---
 

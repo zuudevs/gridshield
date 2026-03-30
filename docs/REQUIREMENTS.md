@@ -1,10 +1,10 @@
 # SOFTWARE REQUIREMENTS SPECIFICATION (SRS)
 ## Project: GridShield - Multi-layer Security Model for AMI
-**Version:** 2.0.0  
+**Version:** 3.3.0  
 **Status:** Active  
 **Analysis by:** Rafi  
 **Implementasi Aktual:** Seluruh implementasi teknis di repository ini dikerjakan oleh **Rafi Indra Pramudhito Zuhayr**  
-**Last Updated:** February 2026
+**Last Updated:** March 2026
 
 ---
 
@@ -20,8 +20,8 @@ As per the proposal, the main problems being solved are:
 
 ### 1.3 POC Scope
 Dokumen ini mendefinisikan requirements untuk **Proof of Concept (POC)** dengan batasan:
-- **Hardware Target:** ESP32 DevKit V1 (simulasi via Wokwi, deploy ke hardware fisik)
-- **Build System:** PlatformIO (satu-satunya toolchain)
+- **Hardware Target:** ESP32 DevKit V1 (simulasi via QEMU, deploy ke hardware fisik)
+- **Build System:** ESP-IDF v5.5 (satu-satunya toolchain)
 - **Backend:** Python + FastAPI + SQLite
 - **Tim:** 3 orang (lihat section PIC mapping)
 
@@ -98,9 +98,10 @@ Dokumen ini mendefinisikan requirements untuk **Proof of Concept (POC)** dengan 
 
 ## 5. SYSTEM CONSTRAINTS
 1.  **Programming Language:** Firmware side must use **C++17**. Server/Analytics side uses **Python 3.11+**.
-2.  **Hardware:** ESP32 DevKit V1 sebagai target utama. Development/testing via **Wokwi simulator**.
-3.  **Build System:** **PlatformIO** sebagai satu-satunya toolchain (tanpa CMake native build).
-4.  **Connectivity:** Serial (UART) untuk POC demo, WiFi HTTP untuk production-like demo.
+2.  **Hardware:** ESP32 DevKit V1 sebagai target utama. Development/testing via **QEMU simulator** atau hardware fisik.
+3.  **Build System:** **ESP-IDF v5.5** sebagai satu-satunya toolchain.
+4.  **Connectivity:** Serial (UART) untuk POC demo, WiFi HTTP/MQTT untuk production-like demo.
+5.  **Sensors:** ACS712, ZMPT101B, PZEM-004T, DS18B20, MPU6050, Micro Switch (lihat [IoT Hardware Design](design/iot-design.html)).
 
 ---
 
@@ -116,6 +117,6 @@ Dokumen ini mendefinisikan requirements untuk **Proof of Concept (POC)** dengan 
 ---
 
 **Document Information:**
-- **Version:** 2.0.0
-- **Last Updated:** February 2026
+- **Version:** 3.3.0
+- **Last Updated:** March 2026
 - **Language:** Indonesian + English
