@@ -1,7 +1,7 @@
 # Threat Model — GridShield
 
-**Version:** 2.0.1  
-**Date:** February 2026  
+**Version:** 3.3.0  
+**Date:** March 2026  
 **Methodology:** STRIDE (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege)
 
 ---
@@ -19,6 +19,15 @@ graph LR
         A --> C[Energy Sensors]
         A --> D[Crypto Engine]
         A --> E[NVS Storage]
+        A --> F2[Alert Dispatcher]
+    end
+    subgraph Sensors
+        B --> B1[Micro Switch GPIO4]
+        B --> B2[MPU6050 I2C]
+        C --> C1[ACS712 ADC]
+        C --> C2[ZMPT101B ADC]
+        C --> C3[PZEM-004T UART]
+        C --> C4[DS18B20 OneWire]
     end
     A -- Signed Packets --> F[Backend Server]
     F --> G[Dashboard]
@@ -45,6 +54,7 @@ graph LR
 | Firmware Binary | **High** | Flash |
 | Configuration | **Medium** | NVS |
 | Tamper Event Logs | **Medium** | RAM / Transit |
+| Forensic Evidence Chain | **High** | RAM (EvidenceStore) |
 | Device Identity (meter_id) | **Medium** | NVS + Firmware |
 
 ---
@@ -134,6 +144,6 @@ After all planned mitigations:
 
 ## 6. Next Review
 
-- **Q3 2026:** After communication protocol implementation
-- **Q4 2026:** After cloud integration + OTA updates
+- **Q2 2026:** After IoT hardware deployment with physical sensors
+- **Q3 2026:** After communication protocol hardening
 - **Annually** thereafter, or after any security incident

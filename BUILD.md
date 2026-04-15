@@ -46,7 +46,26 @@ Or via the automation script:
 
 ## Quick Start
 
-### Using Automation Script (Recommended)
+### Production Hardware (ESP32 DevKit V1)
+
+> 📌 See **[docs/WIRING_GUIDE.md](docs/WIRING_GUIDE.md)** for complete wiring instructions.
+
+```bash
+cd firmware
+idf.py menuconfig        # Set WiFi SSID, Password, Backend IP
+idf.py build
+idf.py -p COM3 flash monitor
+```
+
+Start the backend on your computer (must be on the same WiFi network):
+
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+### Using Automation Script (QEMU Simulation)
 
 ```powershell
 # First time: install QEMU
@@ -128,7 +147,7 @@ idf.py qemu
 
 ```
 [GridShield] ==============================================
-[GridShield] GridShield v3.0.1 [ESP32 - QEMU Simulation]
+[GridShield] GridShield v3.3.0 [ESP32 - QEMU Simulation]
 [GridShield] Platform: ESP-IDF + QEMU
 [GridShield] ==============================================
 [GridShield] System started successfully
@@ -153,7 +172,11 @@ pip install -r requirements.txt
 ### Run Development Server
 
 ```bash
+# Local only (browser access)
 uvicorn app.main:app --reload --port 8000
+
+# LAN access (required for ESP32 to connect)
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 ### Interactive API Docs
@@ -258,10 +281,11 @@ firmware/
 │   │   ├── network/             # packet.hpp
 │   │   ├── analytics/           # detector.hpp
 │   │   └── utils/               # gs_macros.hpp, gs_utils.hpp
-│   └── platform/                # platform.hpp, mock_platform.hpp
+│   └── platform/                # platform.hpp, esp32_platform.hpp
 ├── main/
 │   ├── CMakeLists.txt           # Component registration
-│   ├── app_main.cpp             # ESP-IDF entry point
+│   ├── app_main.cpp             # QEMU simulation entry point
+│   ├── demo_main.cpp            # Production firmware (real ESP32)
 │   └── src/                     # Implementation files
 │       ├── analytics/           # detector.cpp
 │       ├── core/                # system.cpp

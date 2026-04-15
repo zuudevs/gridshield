@@ -16,8 +16,12 @@ class MeterReadingCreate(BaseModel):
     energy_wh: int = Field(..., ge=0, description="Energy in watt-hours")
     voltage_mv: int = Field(..., ge=0, description="Voltage in millivolts")
     current_ma: int = Field(..., ge=0, description="Current in milliamps")
+    power_mw: int = Field(default=0, ge=0, description="Power in milliwatts")
     power_factor: int = Field(default=0, ge=0, le=1000, description="Power factor (0-1000)")
     phase: int = Field(default=0, ge=0, le=3)
+    temperature_c: float | None = Field(default=None, description="Temperature in Celsius")
+    humidity_pct: float | None = Field(default=None, description="Humidity percentage")
+    relay_on: bool | None = Field(default=None, description="Relay state")
 
 
 class MeterReadingResponse(BaseModel):
@@ -27,8 +31,12 @@ class MeterReadingResponse(BaseModel):
     energy_wh: int
     voltage_mv: int
     current_ma: int
+    power_mw: int
     power_factor: int
     phase: int
+    temperature_c: float | None = None
+    humidity_pct: float | None = None
+    relay_on: bool | None = None
 
     model_config = {"from_attributes": True}
 
@@ -131,7 +139,6 @@ class MeterStats(BaseModel):
     avg_voltage_mv: float
     avg_current_ma: float
     last_reading_time: datetime | None = None
-<<<<<<< HEAD
 
 
 # ============================================================================
@@ -209,5 +216,4 @@ class ForensicsReportResponse(BaseModel):
     raw_payload: str
 
     model_config = {"from_attributes": True}
-=======
->>>>>>> origin/main
+

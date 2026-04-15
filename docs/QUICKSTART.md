@@ -45,7 +45,9 @@ gridshield/
 ├── backend/       ← FastAPI REST API (Python)
 ├── frontend/      ← Dashboard Web (Vite + Chart.js)
 ├── firmware/      ← Firmware ESP32 (C++17)
-└── docs/          ← Dokumentasi
+└── docs/
+    ├── design/    ← IoT Hardware Design (wiring, components)
+    └── ...        ← Dokumentasi lainnya
 ```
 
 ---
@@ -68,7 +70,11 @@ pip install -r requirements.txt
 Database sudah terisi data contoh (`gridshield.db`). Jika ingin reset:
 
 ```powershell
-py seed.py
+# Opsi 1: Via API (saat server sudah jalan)
+curl -X DELETE http://localhost:8000/api/reset
+
+# Opsi 2: Hapus file database, lalu restart server
+del gridshield.db
 ```
 
 ### 2.3. Jalankan Server
@@ -122,14 +128,15 @@ npm run dev
 
 Buka browser: **http://localhost:5173**
 
-Dashboard memiliki **4 halaman**:
+Dashboard memiliki **5 halaman**:
 
 | Halaman | URL | Fungsi |
 |---------|-----|--------|
-| **Dashboard** | `http://localhost:5173/` | Overview KPI, grafik konsumsi energi, alert terbaru |
+| **Dashboard** | `http://localhost:5173/` | Live monitor 8 hero cards (V, I, P, E, T, RH, Relay, PF) — bilingual ID/EN |
 | **Tamper Alerts** | `http://localhost:5173/#/alerts` | Manajemen alert keamanan fisik |
 | **Anomalies** | `http://localhost:5173/#/anomalies` | Log deteksi anomali konsumsi |
 | **Fleet** | `http://localhost:5173/#/fleet` | Manajemen dan monitoring meter |
+| **Notifications** | `http://localhost:5173/#/notifications` | Pusat notifikasi (webhook, forensics) |
 
 **Tampilan Dashboard:**
 
@@ -195,23 +202,22 @@ idf.py -p COM3 monitor      # Monitor serial output
 
 ```
 [GridShield] ==============================================
-[GridShield] GridShield v3.0.1 [ESP32 - QEMU Simulation]
-[GridShield] Platform: ESP-IDF + QEMU
+[GridShield]   GridShield v3.3.1 - Production Mode
+[GridShield]   PZEM-004T + DHT11 + Relay + Buzzer + Tamper
 [GridShield] ==============================================
+[GridShield] Backend: http://192.168.x.x:8000
+[GridShield] Meter ID: 0x00000000000003E9
+[GridShield] [OK] NVS storage initialized
+[GridShield] [OK] LED + Relay + Buzzer initialized
+[GridShield] [OK] WiFi connected
+[GridShield] [OK] DHT11 initialized (GPIO13)
+[GridShield] [OK] System initialized (state=3)
 
-[GridShield] [Init] Configuring system...
-[GridShield]   Meter ID: 0x1234567890ABCDEF
-[GridShield]   Tamper Pin: 4 | Debounce: 50ms
-[GridShield]   Max Cycles: 20
-
-[GridShield] System started successfully
-[GridShield] Entering main processing loop...
-
-[GridShield] Cycle 1/20 OK
-[GridShield] Cycle 2/20 OK
-...
-[GridShield] Cycle 20/20 OK
-[GridShield] Simulation complete — all cycles finished
+[GridShield] ---- Reading #1 ----
+[GridShield]  231.9V | 0.00A | 0.0W | 14Wh | PF 0.00
+[GridShield]  31.2 degC | 61.0% RH
+[GridShield] Relay: ON
+[GridShield] POST /api/meter-data -> 201 OK
 ```
 
 > **🎉 Berhasil!** Firmware multi-layer security berjalan — tamper detection, crypto, dan anomaly detection aktif.
@@ -294,6 +300,8 @@ Pastikan backend sudah berjalan di port 8000 **sebelum** menjalankan frontend.
 | Dokumen | Isi |
 |---------|-----|
 | [Architecture](ARCHITECTURE.md) | Desain sistem lengkap dengan diagram |
+| [Wiring Guide](WIRING_GUIDE.md) | Pin mapping, wiring diagram, UPS power system |
+| [IoT Hardware Design](design/iot-design.html) | Wiring schematic, komponen, assembly guide |
 | [API Reference](API.md) | Dokumentasi endpoint firmware & backend |
 | [Build Guide](../BUILD.md) | Konfigurasi build lanjutan |
 | [Tech Stack](TECHSTACK.md) | Teknologi yang digunakan |

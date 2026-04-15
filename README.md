@@ -3,7 +3,7 @@
 **Multi-Layer Security Framework for Advanced Metering Infrastructure (AMI)**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-3.0.1-brightgreen)](.)
+[![Version](https://img.shields.io/badge/Version-3.3.1-brightgreen)](.)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)](https://en.cppreference.com/w/cpp/17)
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.5-E7352C?logo=espressif)](https://docs.espressif.com/projects/esp-idf/)
 [![Platform](https://img.shields.io/badge/Platform-ESP32%20%7C%20QEMU-green)](BUILD.md)
@@ -21,7 +21,8 @@ GridShield is a production-grade security solution designed to protect smart ele
 
 ### 🔐 Physical Security Layer
 - **ISR-driven tamper detection** with debouncing logic
-- Power-loss alerting via backup capacitor
+- **Backup power (UPS)** — Li-ion 2500mAh via TP4056 + MT3608
+- **Buzzer alarm** — 4 alert patterns (tamper, temp, PZEM fail, boot)
 - Priority flagging for emergency transmission
 
 ### 🌐 Network Security Layer
@@ -41,14 +42,16 @@ GridShield is a production-grade security solution designed to protect smart ele
 - Mock implementations for simulation testing
 
 ### 🖥️ Backend & Dashboard
-- **FastAPI** REST backend with 9 API endpoints
+- **FastAPI** REST backend with 12 API endpoints
 - SQLite database with SQLAlchemy ORM
 - **Vite + Chart.js** real-time web dashboard
-- 4 dashboards: Overview, Alerts, Anomalies, Fleet Management
+- 5 dashboards: Live Monitor (hero cards), Alerts, Anomalies, Fleet, Notifications
+- Bilingual UI (Bahasa Indonesia + English)
+- 2-second live polling with threshold coloring
 
 ### 🧪 CI/CD & Testing
-- **152 unit tests** across 17 test suites
-- 6-job GitHub Actions pipeline (build, test, backend-lint, frontend-build, clang-tidy, coverage)
+- **186 unit tests** across 20 test suites
+- 7-job GitHub Actions pipeline (build, test, backend-test, backend-lint, frontend-build, clang-tidy, coverage)
 - LibFuzzer + ASan/UBSan fuzzing for packet parser
 - Code coverage reports via gcov/lcov
 - Hardware tested on ESP32-D0WD rev1.1 (Dual Core 240MHz)
@@ -98,8 +101,10 @@ See [BUILD.md](BUILD.md) for full instructions.
 
 - [**Build Instructions**](BUILD.md) — Build & simulate with ESP-IDF + QEMU
 - [**Architecture**](docs/ARCHITECTURE.md) — System design with diagrams
+- [**IoT Hardware Design**](docs/design/iot-design.html) — Component catalog, wiring schematic, assembly guide
 - [**API Reference**](docs/API.md) — Firmware & backend API documentation
 - [**Quick Start Guide**](docs/QUICKSTART.md) — Getting started tutorial
+- [**Wiring Guide**](docs/WIRING_GUIDE.md) — Pin mapping, wiring diagrams, UPS power system
 - [**Tech Stack**](docs/TECHSTACK.md) — Technology choices
 - [**Roadmap**](docs/ROADMAP.md) — Future development plans
 - [**Changelog**](docs/CHANGELOG.md) — Version history
@@ -114,7 +119,7 @@ gridshield/
 │   │   ├── common/              # Platform-agnostic headers
 │   │   └── platform/            # HAL interfaces + mock impls
 │   ├── main/                    # Implementation files
-│   ├── test_app/                # Unity test suites (152 tests)
+│   ├── test_app/                # Unity test suites (186 tests)
 │   ├── fuzz/                    # LibFuzzer harness
 │   ├── coverage/                # gcov/lcov coverage scripts
 │   └── lib/micro-ecc/           # ECC library (secp256r1)
@@ -131,9 +136,10 @@ gridshield/
 │   │   ├── components/          # Navbar, Chart components
 │   │   └── api.js               # Backend API client
 │   └── package.json
-├── .github/workflows/           # CI/CD (6-job pipeline)
+├── .github/workflows/           # CI/CD (7-job pipeline)
 ├── scripts/script.ps1           # Build/run automation
 └── docs/                        # Documentation
+    └── design/                  # IoT hardware design (HTML/CSS)
 ```
 
 ## 🤝 Contributing

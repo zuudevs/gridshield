@@ -1,7 +1,7 @@
 # GridShield Technology Stack
 
-**Version:** 3.0.1  
-**Last Updated:** February 2026  
+**Version:** 3.3.1  
+**Last Updated:** April 2026  
 **Maintained By:** GridShield Development Team  
 **Implementasi Aktual:** Seluruh implementasi teknis di repository ini dikerjakan oleh **Rafi Indra Pramudhito Zuhayr**
 
@@ -188,9 +188,12 @@ QEMU Commands:
 - **WebSocket**: Dashboard live updates
 
 ### Hardware Protocols
-- **GPIO**: Tamper sensor digital input
-- **Interrupt**: ISR for tamper detection
-- **I2C**: Sensor communication (if needed)
+- **GPIO**: Tamper sensor digital input (GPIO4, ISR FALLING edge)
+- **Interrupt**: ISR for tamper detection (50ms debounce)
+- **UART2**: PZEM-004T energy meter (RX→GPIO16, TX→GPIO17)
+- **OneWire**: DHT11 temperature/humidity (GPIO13, open-drain)
+- **PWM (LEDC)**: Buzzer alert tones (GPIO25)
+- **Digital OUT**: Relay control (GPIO26), LED heartbeat (GPIO2)
 
 ### Data Formats
 - **Binary**: Optimized secure packet (firmware → backend)
@@ -214,16 +217,22 @@ QEMU Commands:
 ### Development Boards (PIC: Cesar)
 - ESP32 DevKit V1 (×2) — primary target
 - Logic Analyzer (debugging)
+- Multimeter Digital (validation)
 
-### Sensors Inventory (PIC: Cesar)
-- Hall Effect Sensors (ACS712) — current measurement
-- Voltage Sensors (ZMPT101B) — voltage measurement
-- Limit Switches — tamper detection
-- Temperature Sensors (DS18B20) — temperature monitoring
+### Hardware Inventory (PIC: Cesar)
+- **PZEM-004T v3.0** Energy Meter — V/I/P/E/F/PF via UART2 Modbus
+- **PZKHCT** CT Clamp — current transformer for PZEM
+- **DHT11** Temp/Humidity — thermal monitoring via GPIO13 (open-drain)
+- **JQC-3FF-S-Z** Relay — AC load control via GPIO26
+- **Piezo Buzzer** — alert tones via GPIO25 (LEDC PWM)
+- **Tamper Switch** (pull-up) — enclosure protection via GPIO4 ISR
+- **MCB IC60N** — AC circuit breaker
+- **MEAN WELL IRM-10-3.3** — AC-DC PSU 3.3V 3A
+- **TP4056** — Li-ion charger module
+- **MT3608** — DC-DC boost converter (3.3V → 5V)
+- **Li-ion 18650 2500mAh** — backup battery (UPS)
 
-### Power Supply
-- USB Power Banks (portable testing)
-- Supercapacitors (backup power simulation)
+> **📋 Hardware Design:** Lihat [Wiring Guide](WIRING_GUIDE.md) dan [IoT Hardware Design](design/iot-design.html) untuk wiring schematic, pinout, dan assembly guide lengkap.
 
 ---
 
@@ -258,15 +267,23 @@ Required:
 - Python 3.11+
 - Git
 
-Hardware (when ready for physical testing):
-- ESP32 DevKit V1 (×2)
-- Limit switch sensors
-- ACS712 current sensor
-- Breadboard + jumper wires
+Hardware (actual components):
+- ESP32 DevKit V1
+- PZEM-004T v3.0 + PZKHCT CT Clamp
+- DHT11 temperature/humidity sensor
+- JQC-3FF-S-Z relay module
+- Piezo buzzer (3.3V)
+- Tamper switch (pull-up)
+- MCB IC60N
+- MEAN WELL IRM-10-3.3 (AC-DC PSU)
+- TP4056 Li-ion charger module
+- MT3608 DC-DC boost converter
+- Li-ion 18650 2500mAh battery
+- Terminal blocks + breadboard + jumper wires
 ```
 
 ---
 
-**Document Version:** 3.0.1  
-**Last Updated:** February 2026  
+**Document Version:** 3.3.1  
+**Last Updated:** April 2026  
 **Review Cycle:** Quarterly

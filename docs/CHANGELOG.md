@@ -4,10 +4,85 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> origin/main
+
+## [3.3.1] - 2026-04-15
+
+### Added
+- **Backend API Endpoints**:
+  - `GET /api/readings/latest` — Fetch most recent reading for efficient polling.
+  - `DELETE /api/reset` — Truncate all data tables (readings, alerts, anomalies, notifications, forensics).
+- **Backend Schema Extensions**:
+  - Added `temperature_c`, `humidity_pct`, `power_mw`, `relay_on` fields to `MeterReading` model and Pydantic schemas.
+  - ESP32 now sends DHT11 temperature/humidity and relay state with each reading.
+- **Frontend Dashboard Redesign**:
+  - 8 hero cards: Voltage, Current, Power, Energy, Temperature, Humidity, Relay, Power Factor.
+  - Bilingual labels (Bahasa Indonesia + English) on all dashboard elements.
+  - Reset Data button with confirmation dialog.
+  - Live polling reduced from 10s to 2s for near-real-time updates.
+  - "Last updated" live indicator with seconds counter.
+  - Threshold coloring: voltage (green/amber/red), temperature (green/amber/red).
+  - Simplified chart: voltage trend only (removed dual-axis Energy+Voltage).
+- **Buzzer Alert System** (`firmware/main/demo_main.cpp`):
+  - Piezo buzzer on GPIO25 via LEDC PWM.
+  - 4 distinct alert patterns: boot OK (2x chirp), PZEM fail (1x short), high temp (2x medium), tamper (3x long).
+- **Backup Power System (UPS)**:
+  - TP4056 Li-ion charger + MT3608 boost converter + Li-ion 2500mAh battery.
+  - ESP32 always powered from battery via VIN pin (seamless AC-to-battery switchover).
+  - Estimated backup time: ~10 hours at ~200mA WiFi draw.
+
+### Fixed
+- **DHT11 Driver** (`firmware/include/common/hardware/sensors/dht11.hpp`):
+  - Root cause: `GPIO_MODE_OUTPUT` (push-pull) was holding data line HIGH, preventing DHT11 from pulling LOW to respond. Fixed to `GPIO_MODE_OUTPUT_OD` (open-drain).
+  - Critical section now covers the entire release + response + read sequence (no race condition).
+  - Increased timeouts from 300us to 500us for better tolerance.
+  - Added GPIO diagnostic logging (idle level, after-release level, fail phase, bits read).
+- **DHT11 Pin Relocation**: Moved from GPIO15 (strapping pin) to GPIO13 (clean pin) to avoid boot-time interference.
+- **Stack Overflow**: Increased `CONFIG_ESP_MAIN_TASK_STACK_SIZE` from 3584 to 8192 bytes.
+
+### Changed
+- **Serial Monitor Logs**: Cleaned up to ASCII-only format (no UTF-8/emoji). Format: `231.9V | 0.00A | 0.0W | 14Wh | PF 0.00` + `31.2 degC | 61.0% RH`.
+- **Wiring Guide Rewrite**: Updated component list (removed CBB61 capacitors, added TP4056/MT3608/Li-ion), added UPS power architecture, updated all diagrams.
+- Backend API version bumped to `3.3.1`.
+
+## [3.3.0] - 2026-03-30
+
+### Added
+- **Notification & Webhook System** (`backend/app/notifications.py`, `backend/app/webhooks.py`):
+  - In-app notification engine with auto-generation from alerts/anomalies.
+  - Notification API (list, summary, mark-read, mark-all-read).
+  - Webhook configuration CRUD with event-type filtering.
+  - HTTP POST dispatch with secret header authentication.
+- **Forensics API** (`backend/app/forensics.py`):
+  - Incident report ingestion from firmware.
+  - Report listing with meter_id and type filters.
+  - Auto-notification for critical/high severity reports.
+- **Frontend Notifications**:
+  - Notification center page with read/unread filtering.
+  - Navigation bell badge with unread count polling.
+  - Dashboard forensics report summary panel.
+- **Firmware Alert Dispatcher** (`firmware/include/common/alerts/alert_dispatcher.hpp`):
+  - Configurable rule-based event dispatch (16 rules, zero-heap).
+  - Multiple action types (LogOnly, HttpPost, MqttPublish, All).
+  - AlertDispatcher tests (10 tests).
+- **IoT Hardware Design v2.0** (`docs/design/iot-design.html`):
+  - Complete component catalog (9 components with detailed specs).
+  - Interactive SVG wiring schematic with color-coded wire paths.
+  - Step-by-step connection paths for all 8 sensor/peripheral groups.
+  - Power distribution tree (220VAC → 5V → 3.3V hierarchy).
+  - GPIO pin mapping with wire color coding.
+  - 8-step assembly guide for building a GridShield node.
+  - Updated BOM with estimated pricing (Rp 370,000).
+- **Backend Testing**:
+  - Notification tests (6), Webhook tests (6), Forensics tests (7).
+  - Total backend tests: 59.
+- **Firmware Tests**:
+  - AlertDispatcher tests (10).
+  - Total firmware test count: 186.
+
+### Changed
+- Backend API version bumped to `3.3.0`.
+- IoT hardware design split into separate CSS (`iot-design-styles.css`) for maintainability.
+- Documentation updated across CHANGELOG, ROADMAP, README, and ARCHITECTURE.
 ## [3.2.0] - 2026-03-07
 
 ### Added
@@ -42,11 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Frontend `api.js` extended with meter CRUD and CSV export functions.
 - Frontend `style.css` extended with modal, status indicator, and form styles.
 
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 469b660da70c38354fe5127353f451559b605a7f
->>>>>>> origin/main
+
 ## [3.1.0] - 2026-03-06
 
 ### Added
@@ -240,6 +311,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Defined C++17 coding standards.
   - Established error handling patterns using `Result<T>`.
 
+[3.3.1]: https://github.com/zuudevs/gridshield/compare/v3.3.0...v3.3.1
+[3.3.0]: https://github.com/zuudevs/gridshield/compare/v3.2.0...v3.3.0
+[3.2.0]: https://github.com/zuudevs/gridshield/compare/v3.1.0...v3.2.0
+[3.1.0]: https://github.com/zuudevs/gridshield/compare/v3.0.1-fw...v3.1.0
 [3.0.1]: https://github.com/zuudevs/gridshield/compare/v3.0.0-fw...v3.0.1-fw
 [3.0.0]: https://github.com/zuudevs/gridshield/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/zuudevs/gridshield/compare/v1.1.0...v2.0.0
