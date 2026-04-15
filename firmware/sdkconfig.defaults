@@ -28,3 +28,6 @@ CONFIG_NVS_COMPATIBLE_ENCRYPTION=n
 
 # === Security: NVS Encryption ===
 # CONFIG_NVS_ENCRYPTION=y
+
+# === Main Task Stack (default 3584 too small for UART + DHT11 + HTTP) ===
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192

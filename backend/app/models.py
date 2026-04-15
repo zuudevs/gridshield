@@ -4,7 +4,7 @@ GridShield Backend — Database Models
 
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, BigInteger, String, Float, DateTime, Boolean
+from sqlalchemy import Column, Integer, BigInteger, String, Float, DateTime, Boolean, Text
 
 from .database import Base
 
@@ -20,8 +20,12 @@ class MeterReading(Base):
     energy_wh = Column(Integer, nullable=False)
     voltage_mv = Column(Integer, nullable=False)
     current_ma = Column(Integer, nullable=False)
+    power_mw = Column(Integer, default=0)
     power_factor = Column(Integer, default=0)
     phase = Column(Integer, default=0)
+    temperature_c = Column(Float, nullable=True)
+    humidity_pct = Column(Float, nullable=True)
+    relay_on = Column(Boolean, nullable=True)
 
 
 class TamperAlert(Base):
@@ -66,7 +70,6 @@ class Meter(Base):
     status = Column(String(20), default="offline")  # online / offline / tampered
     registered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_seen_at = Column(DateTime, default=None, nullable=True)
-<<<<<<< HEAD
 
 
 class Notification(Base):
@@ -112,5 +115,4 @@ class ForensicsReport(Base):
     event_count = Column(Integer, default=0)
     summary = Column(String(1000), default="")
     raw_payload = Column(String(5000), default="{}")
-=======
->>>>>>> origin/main
+

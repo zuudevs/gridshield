@@ -123,7 +123,6 @@ export function exportAnomalies(meterId) {
     const params = meterId != null ? `?meter_id=${meterId}` : '';
     triggerDownload(`/export/anomalies${params}`, 'gridshield_anomalies.csv');
 }
-<<<<<<< HEAD
 
 // ============================================================================
 // Notifications
@@ -170,5 +169,14 @@ export function getForensicsReports({ meterId, limit = 50 } = {}) {
 export function getForensicsReport(id) {
     return request(`/forensics/reports/${id}`);
 }
-=======
->>>>>>> origin/main
+
+/** Get latest reading (for efficient polling) */
+export function getLatestReading(meterId) {
+    const params = meterId != null ? `?meter_id=${meterId}` : '';
+    return request(`/readings/latest${params}`);
+}
+
+/** Reset all data (readings, alerts, anomalies, notifications) */
+export function resetAllData() {
+    return fetch(`${BASE}/reset`, { method: 'DELETE' }).then(r => r.json());
+}

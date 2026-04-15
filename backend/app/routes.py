@@ -149,3 +149,38 @@ def get_status(db: Session = Depends(get_db)):
         unacknowledged_alerts=unack,
         latest_reading_time=latest,
     )
+
+
+# ============================================================================
+# Latest Reading (for efficient polling)
+# ============================================================================
+@router.get("/readings/latest", response_model=schemas.MeterReadingResponse | None)
+def get_latest_reading(
+    meter_id: int | None = None,
+    db: Session = Depends(get_db),
+):
+    """Get the most recent meter reading."""
+    query = db.query(models.MeterReading)
+    if meter_id is not None:
+        query = query.filter(models.MeterReading.meter_id == meter_id)
+    return query.order_by(models.MeterReading.timestamp.desc()).first()
+
+
+# ============================================================================
+# Reset All Data
+# ============================================================================
+@router.delete("/reset")
+def reset_all_data(db: Session = Depends(get_db)):
+    """Delete all readings, alerts, anomalies, notifications, and forensics."""
+    counts = {}
+    for model_cls, name in [
+        (models.MeterReading, "readings"),
+        (models.TamperAlert, "alerts"),
+        (models.AnomalyLog, "anomalies"),
+        (models.Notification, "notifications"),
+        (models.ForensicsReport, "forensics"),
+    ]:
+        count = db.query(model_cls).delete()
+        counts[name] = count
+    db.commit()
+    return {"message": "All data reset", "deleted": counts}

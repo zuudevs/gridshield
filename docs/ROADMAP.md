@@ -2,8 +2,8 @@
 
 Future development plans and feature roadmap for GridShield AMI Security System.
 
-**Last Updated:** March 2026  
-**Current Version:** 3.3.0  
+**Last Updated:** April 2026  
+**Current Version:** 3.3.1  
 **Next Target:** 3.4.0 (Q3 2027)
 
 ---
@@ -263,7 +263,6 @@ GridShield aims to become the **industry-standard open-source security framework
 
 ---
 
-<<<<<<< HEAD
 ### Q3 2027 — Notification System & Forensics API (v3.3.0)
 
 **Target Release:** September 2027 (completed March 2026)

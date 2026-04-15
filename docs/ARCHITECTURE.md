@@ -1,7 +1,7 @@
 # GridShield - System Architecture
 
-**Version:** 3.3.0  
-**Last Updated:** March 2026  
+**Version:** 3.3.1  
+**Last Updated:** April 2026  
 **Authors:** M. Ichwan Fauzi, Rafi Indra Pramudhito Zuhayr, Cesar Ardika Bhayangkara  
 **Implementasi Aktual:** Seluruh implementasi teknis di repository ini dikerjakan oleh **Rafi Indra Pramudhito Zuhayr**
 

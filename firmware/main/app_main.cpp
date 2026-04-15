@@ -118,7 +118,7 @@ static bool validate_config(const SystemConfig& config)
 void app_main(void)
 {
     ESP_LOGI(TAG, "==============================================");
-    ESP_LOGI(TAG, "GridShield v2.1 [ESP32 - QEMU Simulation]");
+    ESP_LOGI(TAG, "GridShield v3.3.0 [ESP32 - QEMU Simulation]");
     ESP_LOGI(TAG, "Platform: ESP-IDF + QEMU + mbedTLS");
     ESP_LOGI(TAG, "==============================================");
 

@@ -42,7 +42,7 @@ export function renderNavbar() {
       </nav>
 
       <div class="sidebar-footer">
-        <span class="live-dot"></span> System Online — v3.3.0
+        <span class="live-dot"></span> System Online — v3.3.1
       </div>
     </aside>
   `;

@@ -1,11 +1,12 @@
-menu "GridShield Demo Config"
+menu "GridShield Configuration"
 
     config GRIDSHIELD_DEMO_MODE
-        bool "Enable Demo Mode (no sensors, simulated data)"
-        default y
+        bool "Enable QEMU Simulation Mode (disable for real hardware)"
+        default n
         help
-            Enable demo mode. The ESP32 will generate simulated meter readings
-            and send them to the backend over WiFi. No sensors required.
+            When disabled (default): Production mode — ESP32 runs with real
+            sensors, WiFi, and full security pipeline.
+            When enabled: QEMU simulation mode with mock platform.
 
     config GRIDSHIELD_WIFI_SSID
         string "WiFi SSID"

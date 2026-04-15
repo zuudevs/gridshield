@@ -2,7 +2,7 @@
 
 Complete API documentation for GridShield Multi-Layer AMI Security System.
 
-**Version:** 3.3.0  
+**Version:** 3.3.1  
 **Language:** C++17 (Firmware), Python 3.11+ (Backend)  
 **Namespace:** `gridshield`
 
@@ -1901,12 +1901,60 @@ Implementations for QEMU simulation and testing:
 curl -X POST http://localhost:8000/api/meter-data \
   -H "Content-Type: application/json" \
   -d '{
-    "meter_id": 1311768467294899695,
+    "meter_id": 1001,
     "energy_wh": 1200,
-    "voltage_mv": 220000,
+    "voltage_mv": 231900,
     "current_ma": 500,
-    "power_factor": 950
+    "power_mw": 115950,
+    "power_factor": 950,
+    "temperature_c": 31.2,
+    "humidity_pct": 61.0,
+    "relay_on": true
   }'
+```
+
+### Example: Get Latest Reading
+
+```bash
+curl http://localhost:8000/api/readings/latest
+```
+
+**Response:**
+```json
+{
+  "id": 42,
+  "meter_id": 1001,
+  "timestamp": "2026-04-15T16:30:00",
+  "energy_wh": 1200,
+  "voltage_mv": 231900,
+  "current_ma": 500,
+  "power_mw": 115950,
+  "power_factor": 950,
+  "phase": 0,
+  "temperature_c": 31.2,
+  "humidity_pct": 61.0,
+  "relay_on": true
+}
+```
+
+### Example: Reset All Data
+
+```bash
+curl -X DELETE http://localhost:8000/api/reset
+```
+
+**Response:**
+```json
+{
+  "message": "All data reset",
+  "deleted": {
+    "readings": 150,
+    "alerts": 3,
+    "anomalies": 5,
+    "notifications": 12,
+    "forensics": 1
+  }
+}
 ```
 
 ### Interactive Docs

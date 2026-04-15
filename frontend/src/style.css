@@ -991,7 +991,6 @@ a:hover {
   gap: var(--space-2);
 }
 
-<<<<<<< HEAD
 /* --- Notification Badge --- */
 .notif-badge {
   display: inline-flex;
@@ -1103,11 +1102,205 @@ a:hover {
   color: var(--severity-medium);
 }
 
-/* --- Charts Row Responsive for 3 panels --- */
+/* --- Charts Row Responsive for 2 panels --- */
 @media (min-width: 1025px) {
   .charts-row {
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr;
   }
 }
-=======
->>>>>>> origin/main
+
+/* ============================================================================
+   Hero Cards — Live Monitor Dashboard
+   ============================================================================ */
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 500px) {
+  .hero-grid { grid-template-columns: 1fr; }
+}
+
+.hero-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-6);
+  text-align: center;
+  backdrop-filter: blur(12px);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.hero-voltage::before { background: var(--color-accent); }
+.hero-current::before { background: var(--color-purple); }
+.hero-power::before   { background: var(--color-amber); }
+.hero-energy::before  { background: var(--color-blue); }
+.hero-temp::before    { background: var(--color-orange); }
+.hero-humidity::before{ background: var(--color-green); }
+.hero-relay::before   { background: var(--color-purple); }
+.hero-pf::before      { background: var(--color-text-secondary); }
+
+.hero-card:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.hero-value {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+  transition: color var(--transition-fast);
+}
+
+.hero-unit {
+  font-size: var(--text-lg);
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  margin-left: 2px;
+}
+
+.hero-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+  line-height: 1.4;
+}
+
+/* Bilingual labels */
+.l-id {
+  display: inline;
+}
+.l-en {
+  display: none;
+}
+.hero-label .l-id::after {
+  content: ' / ';
+  color: var(--color-text-muted);
+  font-size: 0.75em;
+}
+.hero-label .l-en {
+  display: inline;
+  color: var(--color-text-muted);
+  font-size: 0.85em;
+}
+
+/* Relay badge */
+.relay-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 1px;
+}
+
+.relay-on {
+  background: var(--color-green-dim);
+  color: var(--color-green);
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.2);
+}
+
+.relay-off {
+  background: var(--color-red-dim);
+  color: var(--color-red);
+}
+
+/* Live indicator */
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+}
+
+/* Header actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Reset button danger variant */
+.btn-danger {
+  background: var(--color-red-dim);
+  color: var(--color-red);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+.btn-danger:hover {
+  background: rgba(248, 113, 113, 0.25);
+  border-color: var(--color-red);
+}
+
+/* Stats footer */
+.panel-footer {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.stats-footer {
+  display: flex;
+  justify-content: space-around;
+}
+
+.stat-mini {
+  text-align: center;
+}
+
+.stat-mini-val {
+  display: block;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--color-text-primary);
+}
+
+.stat-mini-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.stat-mini-label .l-en {
+  display: inline;
+  color: var(--color-text-muted);
+  font-size: 0.85em;
+}
+.stat-mini-label .l-id::after {
+  content: ' / ';
+  color: var(--color-text-muted);
+  font-size: 0.75em;
+}
+
+/* Chart & alerts panel sizing */
+.chart-panel { min-height: 320px; }
+.alerts-panel {
+  display: flex;
+  flex-direction: column;
+}
+.alerts-panel .panel-body {
+  flex: 1;
+}

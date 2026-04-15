@@ -103,11 +103,10 @@ def analyze_reading(reading: models.MeterReading, db: Session) -> models.Anomaly
     db.commit()
     db.refresh(anomaly)
 
-<<<<<<< HEAD
+
     # Auto-generate notification for detected anomaly
     from .notification_engine import on_anomaly
     on_anomaly(anomaly, db)
 
-=======
->>>>>>> origin/main
     return anomaly
+
